@@ -6,8 +6,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && browserify bin/index.js -o ./public/index.js",
-    "serve": "browserify-server --server=public --port 8080"
+    "build": "tsc -p client && browserify client/bin/index.js -o ./client/public/index.js",
+    "serve": "browserify-server --server=client/public --port 8080"
   },
   "author": "",
   "license": "MIT",
@@ -17,6 +17,7 @@
     "react-router-dom": "^4.2.2"
   },
   "devDependencies": {
+    "browserify": "^14.5.0",
     "browserify-server": "^2.1.18"
   }
 }

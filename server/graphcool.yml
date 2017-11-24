@@ -1,0 +1,9 @@
+types: ./types.graphql
+functions:
+  hello:
+    schema: src/hello.graphql
+    type: resolver
+    handler:
+      code: ./src/hello.ts
+
+rootTokens: []

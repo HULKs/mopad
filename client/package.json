@@ -6,18 +6,30 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "tsc && browserify bin/index.js -o ./public/index.js",
-        "serve": "npm run build && browserify-server --server=public --port 8080"
+        "build": "webpack",
+        "serve": "webpack-dev-server",
+        "schema": "apollo-codegen introspect-schema https://api.graph.cool/simple/v1/mopad --output schema.json",
+        "typings": "apollo-codegen generate 'src/**/*.ts*' --schema schema.json --target typescript --output mopad-graphql.ts"
     },
     "author": "",
     "license": "MIT",
     "dependencies": {
+        "apollo-cache-inmemory": "^1.1.1",
+        "apollo-client": "^2.0.3",
+        "apollo-link-http": "^1.2.0",
+        "graphql": "^0.11.7",
+        "graphql-tag": "^2.5.0",
         "react": "^16.1.1",
+        "react-apollo": "^2.0.1",
         "react-dom": "^16.1.1",
         "react-router-dom": "^4.2.2"
     },
     "devDependencies": {
-        "browserify": "^14.5.0",
-        "browserify-server": "^2.1.18"
+        "@types/react": "^16.0.25",
+        "apollo-codegen": "0.16.x",
+        "ts-loader": "^3.1.1",
+        "typescript": "^2.6.1",
+        "webpack": "^3.8.1",
+        "webpack-dev-server": "^2.9.4"
     }
 }

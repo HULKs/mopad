@@ -28,7 +28,7 @@ functions:
 
 permissions:
 - operation: Talk.read
-  authenticated: true
+#  authenticated: true
 - operation: Talk.create
   authenticated: true
 - operation: Talk.update

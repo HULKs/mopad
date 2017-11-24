@@ -1,2 +1,4 @@
 bin
 public/index.js
+mopad-graphql.ts
+schema.json

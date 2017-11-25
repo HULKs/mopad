@@ -1,0 +1,37 @@
+types: ./server/types.graphql
+functions:
+  ## Authentication
+  signup:
+    type: resolver
+    schema: server/src/email-password/signup.graphql
+    handler:
+      code: server/src/email-password/signup.ts
+
+  authenticate:
+    type: resolver
+    schema: server/src/email-password/authenticate.graphql
+    handler:
+      code: server/src/email-password/authenticate.ts
+
+  loggedInUser:
+    type: resolver
+    schema: server/src/email-password/loggedInUser.graphql
+    handler:
+      code: server/src/email-password/loggedInUser.ts
+
+  ## Business Logic
+  hello:
+    schema: server/src/hello.graphql
+    type: resolver
+    handler:
+      code: server/src/hello.ts
+
+permissions:
+- operation: Talk.read
+  authenticated: true
+- operation: Talk.create
+  authenticated: true
+- operation: Talk.update
+  authenticated: true
+- operation: Talk.delete
+  authenticated: true

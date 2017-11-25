@@ -6,8 +6,6 @@ interface User {
 }
 
 export default async (event: FunctionEvent<{}>) => {
-    console.log(event);
-
     try {
         // no logged in user
         if (!event.context.auth || !event.context.auth.nodeId) {
@@ -28,7 +26,6 @@ export default async (event: FunctionEvent<{}>) => {
 
         return { data: { id: user.id } };
     } catch (e) {
-        console.log(e);
         return { error: "An unexpected error occured during authentication." };
     }
 };

@@ -12,7 +12,7 @@
         "serve": "webpack-dev-server --config ./client/webpack.config.js",
         "prettier": "prettier --write '**/*.ts*'",
         "prettier:check": "prettier -l '**/*.ts*'",
-        "lint": "tslint -p client",
+        "lint": "tslint -p client -p server",
         "check": "npm run prettier:check; npm run lint"
     },
     "author": "Robert Oehlmann, Finn Poppinga",

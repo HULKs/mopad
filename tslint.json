@@ -11,7 +11,9 @@
         "interface-name": false,
         "jsx-boolean-value": false,
         "ordered-imports": false,
-        "no-empty-interface": false
+        "no-empty-interface": false,
+        "max-classes-per-file": false,
+        "jsx-no-lambda": false
     },
     "rulesDirectory": []
 }

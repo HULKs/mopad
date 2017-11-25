@@ -20,6 +20,7 @@
     "dependencies": {
         "apollo-cache-inmemory": "^1.1.1",
         "apollo-client": "^2.0.3",
+        "apollo-link": "^1.0.3",
         "apollo-link-http": "^1.2.0",
         "bcryptjs": "^2.4.3",
         "graphcool-lib": "^0.1.0",
@@ -29,6 +30,7 @@
         "react": "^16.1.1",
         "react-apollo": "^2.0.1",
         "react-dom": "^16.1.1",
+        "react-intl": "^2.4.0",
         "react-router-dom": "^4.2.2",
         "validator": "^9.0.0"
     },
@@ -36,6 +38,7 @@
         "@types/bcryptjs": "^2.4.1",
         "@types/node": "^8.0.44",
         "@types/react": "^16.0.25",
+        "@types/react-intl": "^2.3.2",
         "@types/validator": "^6.3.0",
         "apollo-codegen": "0.16.x",
         "prettier": "^1.8.2",

@@ -15,8 +15,6 @@ interface EventData {
 const SALT_ROUNDS = 10;
 
 export default async (event: FunctionEvent<EventData>) => {
-    console.log(event);
-
     try {
         const graphcool = fromEvent(event);
         const api = graphcool.api("simple/v1");
@@ -36,7 +34,6 @@ export default async (event: FunctionEvent<EventData>) => {
         }
 
         // create password hash
-        const salt = bcrypt.genSaltSync(SALT_ROUNDS);
         const hash = await bcrypt.hash(password, SALT_ROUNDS);
 
         // create new user
@@ -47,7 +44,6 @@ export default async (event: FunctionEvent<EventData>) => {
 
         return { data: { id: userId, token } };
     } catch (e) {
-        console.log(e);
         return { error: "An unexpected error occured during signup." };
     }
 };
@@ -86,7 +82,7 @@ async function createGraphcoolUser(
 
     const variables = {
         email,
-        password: password
+        password
     };
 
     return api

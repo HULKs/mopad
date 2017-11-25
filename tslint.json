@@ -7,7 +7,11 @@
     ],
     "jsRules": {},
     "rules": {
-        "object-literal-sort-keys": false
+        "object-literal-sort-keys": false,
+        "interface-name": false,
+        "jsx-boolean-value": false,
+        "ordered-imports": false,
+        "no-empty-interface": false
     },
     "rulesDirectory": []
 }

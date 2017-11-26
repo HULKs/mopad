@@ -43,6 +43,7 @@ export class DisconnectedLoginForm extends React.Component<
                 <label>
                     <FormattedMessage id="app.login.email" />
                     <input
+                        id="email"
                         type="text"
                         onChange={e => this.setState({ email: e.target.value })}
                     />
@@ -50,6 +51,7 @@ export class DisconnectedLoginForm extends React.Component<
                 <label>
                     <FormattedMessage id="app.login.password" />
                     <input
+                        id="password"
                         type="password"
                         onChange={e =>
                             this.setState({ password: e.target.value })
@@ -72,6 +74,7 @@ export class DisconnectedLoginForm extends React.Component<
             );
             this.props.sessionStore.token =
                 response.data.authenticateUser.token;
+            this.props.sessionStore.userId = response.data.authenticateUser.id;
         } catch (err) {
             console.error("Error during login:", err);
             this.setState({ showError: true });

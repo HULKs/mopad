@@ -6,14 +6,15 @@
     "main": "index.js",
     "scripts": {
         "setup:schema": "apollo-codegen introspect-schema https://api.graph.cool/simple/v1/mopad --output schema.json",
-        "setup:typings": "apollo-codegen generate './client/src/**/*.ts*' --schema schema.json --target typescript --output ./client/mopad-graphql.ts",
+        "setup:typings": "apollo-codegen generate './client/src/**/*.{ts,tsx}' --schema schema.json --target typescript --output ./client/mopad-graphql.ts",
         "postinstall": "npm run setup:schema && npm run setup:typings",
         "build": "webpack --config ./client/webpack.config.js",
         "serve": "webpack-dev-server --config ./client/webpack.config.js",
-        "prettier": "prettier --write '**/*.ts*'",
-        "prettier:check": "prettier -l '**/*.ts*'",
+        "prettier": "prettier --write '**/*.{ts,tsx}'",
+        "prettier:check": "prettier -l '**/*.{ts,tsx}'",
         "lint": "tslint -p client -p server",
-        "check": "npm run prettier:check; npm run lint"
+        "check": "npm run prettier:check; npm run lint",
+        "test": "jest --coverage"
     },
     "author": "Robert Oehlmann, Finn Poppinga",
     "license": "MIT",
@@ -35,13 +36,23 @@
         "validator": "^9.0.0"
     },
     "devDependencies": {
+        "@babel/core": "^7.0.0-beta.32",
         "@types/bcryptjs": "^2.4.1",
+        "@types/enzyme": "^3.1.5",
+        "@types/jest": "^21.1.8",
         "@types/node": "^8.0.44",
         "@types/react": "^16.0.25",
         "@types/react-intl": "^2.3.2",
         "@types/validator": "^6.3.0",
         "apollo-codegen": "0.16.x",
+        "babel-jest": "^21.2.0",
+        "babel-node-modules": "^0.0.1",
+        "babel-preset-es2015": "^6.24.1",
+        "enzyme": "^3.2.0",
+        "enzyme-adapter-react-16": "^1.1.0",
+        "jest": "^21.2.1",
         "prettier": "^1.8.2",
+        "ts-jest": "^21.2.3",
         "ts-loader": "^3.1.1",
         "tslint": "^5.8.0",
         "tslint-config-prettier": "^1.6.0",
@@ -52,5 +63,43 @@
     },
     "prettier": {
         "tabWidth": 4
+    },
+    "jest": {
+        "transform": {
+            "^.+\\.tsx?$": "ts-jest",
+            "^.+\\.js$": "babel-jest"
+        },
+        "transformIgnorePatterns": [
+            "node_modules/(?!(react-apollo)/)"
+        ],
+        "browser": true,
+        "globals": {
+            "ts-jest": {
+                "tsConfigFile": "client/tsconfig.json",
+                "useBabelrc": true
+            }
+        },
+        "testRegex": "(/__tests__/.*(test|spec))\\.(jsx?|tsx?)$",
+        "moduleFileExtensions": [
+            "ts",
+            "tsx",
+            "js",
+            "jsx",
+            "json"
+        ],
+        "setupFiles": [
+            "<rootDir>/client/src/__tests__/setup.js"
+        ]
+    },
+    "babel": {
+        "presets": [
+            "es2015"
+        ],
+        "plugins": [
+            "transform-es2015-modules-commonjs"
+        ],
+        "only": [
+            "**/react-apollo/*"
+        ]
     }
 }

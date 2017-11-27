@@ -6,5 +6,4 @@ node_modules
 client/public/index.js
 mopad-graphql.ts
 schema.json
-
-
+coverage

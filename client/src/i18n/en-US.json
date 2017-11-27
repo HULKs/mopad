@@ -4,5 +4,6 @@
     "app.login.headline": "Login",
     "app.login.password": "Password",
     "app.login.login_cta": "Login",
-    "app.login.error.message": "An error occurred during login. Try again."
+    "app.login.error.message": "An error occurred during login. Try again.",
+    "topics.add.dialog.title": "Add new topic"
 }

@@ -13,6 +13,10 @@ import Dialog from "material-ui/Dialog";
 import TextField from "material-ui/TextField";
 import ContentAdd from "material-ui/svg-icons/content/add";
 import { FormattedMessage, InjectedIntl, injectIntl } from "react-intl";
+import gql from "graphql-tag";
+import graphql from "react-apollo/graphql";
+import { ApolloQueryResult } from "apollo-client";
+import { AddTopicMutation } from "../../../mopad-graphql";
 
 const floatStyle = {
     position: "fixed",
@@ -21,20 +25,30 @@ const floatStyle = {
 };
 
 interface PublicProps {
+    onChange?: () => void;
+}
+interface IntlProps {
     intl: InjectedIntl;
 }
+interface TopicAddProps {
+    addTopic(
+        title: string,
+        description?: string
+    ): Promise<ApolloQueryResult<AddTopicMutation>>;
+}
+type Props = PublicProps & IntlProps & TopicAddProps;
 
 interface State {
     dialogOpen: boolean;
-    topicName: string;
+    topicTitle: string;
 }
 
-export class TopicAdd extends React.Component<PublicProps, State> {
+export class DisconnectedTopicAdd extends React.Component<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
             dialogOpen: false,
-            topicName: ""
+            topicTitle: ""
         };
         this.handleClose = this.handleClose.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -83,9 +97,9 @@ export class TopicAdd extends React.Component<PublicProps, State> {
                         floatingLabelText={this.props.intl.formatMessage({
                             id: "topics.add.dialog.input.label"
                         })}
-                        value={this.state.topicName}
+                        value={this.state.topicTitle}
                         onChange={(e, val) => {
-                            this.setState({ topicName: val });
+                            this.setState({ topicTitle: val });
                         }}
                     />
                 </Dialog>
@@ -94,12 +108,38 @@ export class TopicAdd extends React.Component<PublicProps, State> {
     }
 
     private handleClose() {
-        this.setState({ dialogOpen: false, topicName: "" });
+        this.setState({ dialogOpen: false, topicTitle: "" });
     }
 
-    private handleSubmit() {
-        this.setState({ dialogOpen: false, topicName: "" });
+    private async handleSubmit() {
+        try {
+            const result = await this.props.addTopic(this.state.topicTitle);
+            this.props.onChange();
+        } catch (e) {
+            console.error(e);
+        }
+        this.setState({ dialogOpen: false, topicTitle: "" });
     }
 }
 
-export default injectIntl(TopicAdd);
+const ADD_TOPIC_MUTATION = gql`
+    mutation AddTopic($title: String!, $description: String) {
+        createTopic(title: $title, description: $description) {
+            id
+        }
+    }
+`;
+
+const ConnectedTopicAdd = graphql<
+    AddTopicMutation,
+    IntlProps,
+    TopicAddProps & IntlProps
+>(ADD_TOPIC_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        intl: ownProps.intl,
+        addTopic: (title: string, description?: string) =>
+            mutate({ variables: { title, description } })
+    })
+})(DisconnectedTopicAdd);
+
+export default injectIntl<PublicProps>(ConnectedTopicAdd);

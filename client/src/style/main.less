@@ -1,9 +1,30 @@
+
+@maxWidthMobile: 700px;
+
+.mobile(@rules, @maxWidth: @maxWidthMobile) {
+	@media only screen and (max-width: @maxWidth) {
+		@rules();
+	}
+}
+.nonmobile(@rules, @maxWidth: @maxWidthMobile) {
+	@media only screen and (min-width: (@maxWidth+1)) {
+		@rules();
+	}
+}
+
 html, body {
 	margin: 0;
 	padding: 0;
 	font-family: Roboto;
 }
 
+.page {
+	margin: 2em;
+	.mobile({
+		margin: 1em;
+	});
+}
+
 .topic.card {
-	margin: 0 1em;
+	margin: 1em 0;
 }

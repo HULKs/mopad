@@ -8,6 +8,7 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { from } from "apollo-link";
 import { AuthenticationLink, LocalSessionStore } from "./business/auth";
 import { IntlProvider } from "react-intl";
+import MuiThemeProvider from "material-ui/styles/MuiThemeProvider";
 
 const client = new ApolloClient({
     link: from([
@@ -20,7 +21,9 @@ const client = new ApolloClient({
 ReactDOM.render(
     <IntlProvider locale="en" messages={require("./i18n/en-US.json")}>
         <ApolloProvider client={client}>
-            <App />
+            <MuiThemeProvider>
+                <App />
+            </MuiThemeProvider>
         </ApolloProvider>
     </IntlProvider>,
     document.getElementById("root")

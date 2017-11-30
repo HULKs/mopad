@@ -17,7 +17,7 @@ type User @model {
     updatedAt: DateTime! # read-only (managed by Graphcool)
     email: String! @isUnique
     password: String!
-    name: String! @migrationValue(value: "Karl")
+    name: String!
     topicsAsExpert: [Topic!]! @relation(name: "ExpertParticipation")
     topicsAsNewbie: [Topic!]! @relation(name: "NewbieParticipation")
 }

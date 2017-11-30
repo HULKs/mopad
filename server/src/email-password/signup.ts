@@ -10,6 +10,7 @@ interface User {
 interface EventData {
     email: string;
     password: string;
+    name: string;
 }
 
 const SALT_ROUNDS = 10;
@@ -19,7 +20,7 @@ export default async (event: FunctionEvent<EventData>) => {
         const graphcool = fromEvent(event);
         const api = graphcool.api("simple/v1");
 
-        const { email, password } = event.data;
+        const { name, email, password } = event.data;
 
         if (!validator.isEmail(email)) {
             return { error: "Not a valid email" };
@@ -30,21 +31,21 @@ export default async (event: FunctionEvent<EventData>) => {
             r => r.User !== null
         );
         if (userExists) {
-            return { error: "Email already in use" };
+            return { error: "EMAIL_IN_USE" };
         }
 
         // create password hash
         const hash = await bcrypt.hash(password, SALT_ROUNDS);
 
         // create new user
-        const userId = await createGraphcoolUser(api, email, hash);
+        const userId = await createGraphcoolUser(api, name, email, hash);
 
         // generate node token for new User node
         const token = await graphcool.generateNodeToken(userId, "User");
 
         return { data: { id: userId, token } };
     } catch (e) {
-        return { error: "An unexpected error occured during signup." };
+        return { error: "UNEXPECTED_ERROR" };
     }
 };
 
@@ -66,14 +67,16 @@ async function getUser(api: GraphQLClient, email: string): Promise<{ User }> {
 
 async function createGraphcoolUser(
     api: GraphQLClient,
+    name: string,
     email: string,
     password: string
 ): Promise<string> {
     const mutation = `
-    mutation createGraphcoolUser($email: String!, $password: String!) {
+    mutation createGraphcoolUser($name: String!, $email: String!, $password: String!) {
       createUser(
         email: $email,
-        password: $password
+        password: $password,
+        name: $name
       ) {
         id
       }
@@ -81,6 +84,7 @@ async function createGraphcoolUser(
   `;
 
     const variables = {
+        name,
         email,
         password
     };

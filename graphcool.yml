@@ -43,6 +43,14 @@ permissions:
   authenticated: true
 - operation: Topic.delete
   authenticated: true
+- operation: Location.read
+  authenticated: true
+- operation: Location.create
+  authenticated: true
+- operation: Location.update
+  authenticated: true
+- operation: Location.delete
+  authenticated: true
 - operation: ExpertParticipation.connect
   authenticated: true
 - operation: ExpertParticipation.disconnect
@@ -50,4 +58,8 @@ permissions:
 - operation: NewbieParticipation.connect
   authenticated: true
 - operation: NewbieParticipation.disconnect
+  authenticated: true
+- operation: TopicsInLocation.connect
+  authenticated: true
+- operation: TopicsInLocation.disconnect
   authenticated: true

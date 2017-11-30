@@ -1,114 +1,137 @@
 import * as React from "react";
-import { FormattedMessage } from "react-intl";
-import { ISessionStore } from "../../business/auth";
-import gql from "graphql-tag";
-import { LoginMutation } from "../../../mopad-graphql";
-import graphql from "react-apollo/graphql";
-import { ApolloQueryResult } from "apollo-client";
-
-interface PublicProps {
-    sessionStore: ISessionStore;
-}
+import { FormattedMessage, InjectedIntl, injectIntl } from "react-intl";
+import { ApolloError } from "apollo-client";
+import TextField from "material-ui/TextField";
+import RaisedButton from "material-ui/RaisedButton";
+import { Card, CardText, CardTitle, CardActions } from "material-ui/Card";
 
 interface LoginFormProps {
-    doLogin(
-        email: string,
-        password: string
-    ): Promise<ApolloQueryResult<LoginMutation>>;
+    error?: ApolloError;
+    intl: InjectedIntl;
+
+    onLogin(email: string, password: string): void;
+    onSignUp(name: string, email: string, password: string): void;
 }
 
 interface LoginFormState {
     email: string;
     password: string;
-    showError: boolean;
+    name?: string;
 }
 
 export class DisconnectedLoginForm extends React.Component<
-    LoginFormProps & PublicProps,
+    LoginFormProps,
     LoginFormState
 > {
     constructor(props) {
         super(props);
         this.handleLogin = this.handleLogin.bind(this);
+        this.handleSignUp = this.handleSignUp.bind(this);
         this.state = {
             email: null,
-            password: null,
-            showError: false
+            password: null
         };
     }
 
     public render() {
         return (
-            <div>
-                <label>
-                    <FormattedMessage id="app.login.email" />
-                    <input
+            <Card className="card login">
+                <CardTitle>
+                    <h1>
+                        <FormattedMessage id="app.login.headline" />
+                    </h1>
+                </CardTitle>
+                <CardText>
+                    <TextField
+                        id="name"
+                        fullWidth
+                        hintText={this.props.intl.formatMessage({
+                            id: "app.login.name.hint"
+                        })}
+                        floatingLabelText={this.props.intl.formatMessage({
+                            id: "app.login.name"
+                        })}
+                        onChange={(event, name) => this.setState({ name })}
+                    />
+                    <br />
+                    <TextField
                         id="email"
-                        type="text"
-                        onChange={e => this.setState({ email: e.target.value })}
+                        fullWidth
+                        hintText={this.props.intl.formatMessage({
+                            id: "app.login.email.hint"
+                        })}
+                        floatingLabelText={this.props.intl.formatMessage({
+                            id: "app.login.email"
+                        })}
+                        onChange={(event, email) => this.setState({ email })}
                     />
-                </label>
-                <label>
-                    <FormattedMessage id="app.login.password" />
-                    <input
+                    <br />
+                    <TextField
                         id="password"
-                        type="password"
-                        onChange={e =>
-                            this.setState({ password: e.target.value })
+                        fullWidth
+                        floatingLabelText={this.props.intl.formatMessage({
+                            id: "app.login.password"
+                        })}
+                        onChange={(event, password) =>
+                            this.setState({ password })
                         }
+                        type="password"
                     />
-                </label>
-                <button type="submit" onClick={this.handleLogin}>
-                    <FormattedMessage id="app.login.login_cta" />
-                </button>
+                </CardText>
                 {this.renderError()}
-            </div>
+                <CardActions>
+                    <RaisedButton
+                        primary
+                        onClick={this.handleLogin}
+                        label={this.props.intl.formatMessage({
+                            id: "app.login.login_cta"
+                        })}
+                    />
+                    <RaisedButton
+                        onClick={this.handleSignUp}
+                        label={this.props.intl.formatMessage({
+                            id: "app.login.signup_cta"
+                        })}
+                    />
+                </CardActions>
+            </Card>
         );
     }
 
-    private async handleLogin() {
-        try {
-            const response = await this.props.doLogin(
-                this.state.email,
-                this.state.password
-            );
-            this.props.sessionStore.token =
-                response.data.authenticateUser.token;
-            this.props.sessionStore.userId = response.data.authenticateUser.id;
-        } catch (err) {
-            console.error("Error during login:", err);
-            this.setState({ showError: true });
-        }
+    private handleLogin() {
+        this.props.onLogin(this.state.email, this.state.password);
+    }
+
+    private handleSignUp() {
+        this.props.onSignUp(
+            this.state.name,
+            this.state.email,
+            this.state.password
+        );
     }
 
     private renderError() {
-        if (!this.state.showError) {
+        if (!this.props.error) {
             return null;
         }
 
+        const errorKeys = new Set();
+        if (this.props.error.graphQLErrors) {
+            errorKeys.add(
+                this.props.error.graphQLErrors.map(
+                    err => err.functionError || "general"
+                )
+            );
+        }
+
         return (
-            <div>
-                <FormattedMessage id="app.login.error.message" />
-            </div>
+            <CardText className="error">
+                {[...errorKeys.values()].map(key => (
+                    <FormattedMessage key={key} id={"app.login.error." + key} />
+                ))}
+            </CardText>
         );
     }
 }
 
-const LOGIN_MUTATION = gql`
-    mutation Login($email: String!, $password: String!) {
-        authenticateUser(email: $email, password: $password) {
-            id
-            token
-        }
-    }
-`;
-
-export default graphql<LoginMutation, PublicProps, LoginFormProps>(
-    LOGIN_MUTATION,
-    {
-        props: ({ mutate }) => ({
-            doLogin: (email: string, password: string) =>
-                mutate({ variables: { password, email } })
-        })
-    }
-)(DisconnectedLoginForm);
+export default injectIntl(DisconnectedLoginForm);

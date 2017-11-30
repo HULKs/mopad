@@ -17,16 +17,29 @@ type User @model {
     updatedAt: DateTime! # read-only (managed by Graphcool)
     email: String! @isUnique
     password: String!
-    talksAsExpert: [Talk!]! @relation(name: "ExpertParticipation")
-    talksAsNewbie: [Talk!]! @relation(name: "NewbieParticipation")
+    name: String! @migrationValue(value: "Karl")
+    topicsAsExpert: [Topic!]! @relation(name: "ExpertParticipation")
+    topicsAsNewbie: [Topic!]! @relation(name: "NewbieParticipation")
 }
 
-type Talk @model {
+type Location @model {
+    id: ID! @isUnique # read-only (managed by Graphcool)
+    createdAt: DateTime! # read-only (managed by Graphcool)
+    updatedAt: DateTime! # read-only (managed by Graphcool)
+
+    name: String!
+    topics: [Topic!]! @relation(name: "TopicsInLocation")
+}
+
+type Topic @model {
     id: ID! @isUnique # read-only (managed by Graphcool)
     createdAt: DateTime! # read-only (managed by Graphcool)
     updatedAt: DateTime! # read-only (managed by Graphcool)
 
     title: String!
+    description: String
     experts: [User!]! @relation(name: "ExpertParticipation")
     newbies: [User!]! @relation(name: "NewbieParticipation")
+    begin: DateTime
+    location: Location @relation(name: "TopicsInLocation")
 }

@@ -27,11 +27,11 @@ functions:
       code: server/src/hello.ts
 
 permissions:
-- operation: Talk.read
+- operation: Topic.read
   authenticated: true
-- operation: Talk.create
+- operation: Topic.create
   authenticated: true
-- operation: Talk.update
+- operation: Topic.update
   authenticated: true
-- operation: Talk.delete
+- operation: Topic.delete
   authenticated: true

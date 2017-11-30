@@ -4,6 +4,7 @@ node_modules
 *.graphcoolrc
 *.log
 client/public/index.js
+client/public/mopad.css
 mopad-graphql.ts
 schema.json
 coverage

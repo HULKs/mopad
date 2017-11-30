@@ -35,3 +35,11 @@ permissions:
   authenticated: true
 - operation: Topic.delete
   authenticated: true
+- operation: ExpertParticipation.connect
+  authenticated: true
+- operation: ExpertParticipation.disconnect
+  authenticated: true
+- operation: NewbieParticipation.connect
+  authenticated: true
+- operation: NewbieParticipation.disconnect
+  authenticated: true

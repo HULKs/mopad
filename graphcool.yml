@@ -27,6 +27,14 @@ functions:
       code: server/src/hello.ts
 
 permissions:
+- operation: User.read
+  authenticated: true
+- operation: User.create
+  authenticated: true
+- operation: User.update
+  authenticated: true
+- operation: User.delete
+  authenticated: true
 - operation: Topic.read
   authenticated: true
 - operation: Topic.create

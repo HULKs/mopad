@@ -5,5 +5,11 @@
     "app.login.password": "Password",
     "app.login.login_cta": "Login",
     "app.login.error.message": "An error occurred during login. Try again.",
-    "topics.add.dialog.title": "Add new topic"
+    "topics.add.dialog.title": "Add new topic",
+    "topics.add.dialog.input.label": "Please enter a title for your discussion",
+    "topics.add.dialog.input.hint": "Discuss standardisation of image labeling (xkcd.com/927)",
+    "topics.add.dialog.submit": "Submit",
+    "topics.add.dialog.cancel": "Cancel",
+    "topic.join.expert": "I can share some knowledge",
+    "topic.join.newbie": "I like to learn about this"
 }

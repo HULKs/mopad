@@ -14,14 +14,16 @@ import { AllTopicsQuery } from "../../../mopad-graphql";
 
 interface PublicProps {
     topics: AllTopicsQuery["allTopics"];
+    onJoin(topicId: string, as: 'expert'|'newbie');
 }
 
 export default class TopicList extends React.Component<PublicProps> {
     public render() {
+        const { onJoin } = this.props;
         return (
             <div>
                 {this.props.topics.map(topic => (
-                    <Topic key={topic.id} topic={topic} />
+                    <Topic key={topic.id} topic={topic} onJoin={onJoin} />
                 ))}
             </div>
         );

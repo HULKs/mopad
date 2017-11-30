@@ -5,33 +5,50 @@ import { ISessionStore, LocalSessionStore } from "../../business/auth";
 import gql from "graphql-tag";
 import graphql from "react-apollo/graphql";
 import { compose } from "react-apollo";
-import { LoginMutation } from "../../../mopad-graphql";
-import { ApolloQueryResult } from "apollo-client";
-import { Router, RouterProps, withRouter } from "react-router";
+import { LoginMutation, SignupMutation } from "../../../mopad-graphql";
+import { ApolloError, ApolloQueryResult } from "apollo-client";
+import { RouterProps, withRouter } from "react-router";
 
 export interface LoginPageProps extends RouterProps {
     doLogin(
         email: string,
         password: string
     ): Promise<ApolloQueryResult<LoginMutation>>;
+    doSignUp(
+        name: string,
+        email: string,
+        password: string
+    ): Promise<ApolloQueryResult<SignupMutation>>;
 }
 
-export class LoginPage extends React.Component<LoginPageProps> {
+export interface LoginPageState {
+    error: ApolloError | string;
+}
+
+export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
     private sessionStore: ISessionStore;
 
     constructor(props: LoginPageProps) {
         super(props);
+
         this.handleLogin = this.handleLogin.bind(this);
+        this.handleSignUp = this.handleSignUp.bind(this);
+
         this.sessionStore = new LocalSessionStore();
+
+        this.state = {
+            error: null
+        };
     }
 
     public render() {
         return (
-            <div>
-                <h1>
-                    <FormattedMessage id="app.login.headline" />
-                </h1>
-                <LoginForm onLogin={this.handleLogin} />
+            <div className="page">
+                <LoginForm
+                    onLogin={this.handleLogin}
+                    onSignUp={this.handleSignUp}
+                    error={this.state.error}
+                />
             </div>
         );
     }
@@ -43,7 +60,17 @@ export class LoginPage extends React.Component<LoginPageProps> {
             this.sessionStore.userId = response.data.authenticateUser.id;
             this.props.history.push("/");
         } catch (err) {
-            console.error(err);
+            this.setState({ error: err });
+        }
+    }
+
+    private async handleSignUp(name: string, email: string, password: string) {
+        try {
+            const response = await this.props.doSignUp(name, email, password);
+            this.sessionStore.token = response.data.signupUser.token;
+            this.sessionStore.userId = response.data.signupUser.id;
+            this.props.history.push("/");
+        } catch (err) {
             this.setState({ error: err });
         }
     }
@@ -58,6 +85,15 @@ const LOGIN_MUTATION = gql`
     }
 `;
 
+const SIGNUP_MUTATION = gql`
+    mutation Signup($name: String!, $email: String!, $password: String!) {
+        signupUser(name: $name, email: $email, password: $password) {
+            id
+            token
+        }
+    }
+`;
+
 const loginUser = graphql(LOGIN_MUTATION, {
     props: ({ mutate, ownProps }) => ({
         ...ownProps,
@@ -66,4 +102,12 @@ const loginUser = graphql(LOGIN_MUTATION, {
     })
 });
 
-export default compose(loginUser, withRouter)(LoginPage);
+const signupUser = graphql(SIGNUP_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        doSignUp: (name: string, email: string, password: string) =>
+            mutate({ variables: { name, password, email } })
+    })
+});
+
+export default compose(loginUser, signupUser, withRouter)(LoginPage);

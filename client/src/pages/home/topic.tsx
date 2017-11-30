@@ -29,6 +29,10 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps> 
                     title={this.props.topic.title}
                     subtitle={this.props.topic.description}
                 />
+                <CardText>
+                    <div>Experten: {this.props.topic.experts.map((u) => u.name).join(', ')}</div>
+                    <div>Newbies: {this.props.topic.newbies.map((u) => u.name).join(', ')}</div>
+                </CardText>
                 <CardActions>
                     <FlatButton onClick={() => onJoin(this.props.topic.id, 'expert')} label={intl.formatMessage({ id:"topic.join.expert" })}/>
                     <FlatButton onClick={() => onJoin(this.props.topic.id, 'newbie')} label={intl.formatMessage({ id:"topic.join.newbie" })}/>

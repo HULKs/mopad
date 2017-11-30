@@ -1,9 +1,9 @@
 import * as React from "react";
-import { shallow } from "enzyme";
-import { DisconnectedLoginForm } from "../loginForm";
+import LoginForm, { DisconnectedLoginForm } from "../loginForm";
+import { InjectedIntl, IntlProvider } from "react-intl";
+import { shallowWithIntl } from "../../../__tests__/enzyme-intl-helpers";
+
 jest.mock("../../../business/auth");
-import { LocalSessionStore } from "../../../business/auth";
-import { flushAllPromises } from "../../../__tests__/testutil";
 
 describe("LoginForm", () => {
     function changeEvent(value: string) {
@@ -15,23 +15,9 @@ describe("LoginForm", () => {
     }
 
     it("uses the credentials from the form to log in", () => {
-        const doLogin = jest.fn().mockReturnValue(
-            Promise.resolve({
-                data: {
-                    authenticateUser: {
-                        token: "my-token",
-                        id: "my-id"
-                    }
-                }
-            })
-        );
-
-        const sessionStore = new LocalSessionStore();
-        const form = shallow(
-            <DisconnectedLoginForm
-                sessionStore={sessionStore}
-                doLogin={doLogin}
-            />
+        const loginSpy = jest.fn();
+        const form = shallowWithIntl(
+            <DisconnectedLoginForm onLogin={loginSpy} />
         );
 
         const emailInput = form.find("#email");
@@ -39,62 +25,24 @@ describe("LoginForm", () => {
         const passwordInput = form.find("#password");
         expect(passwordInput).toHaveLength(1);
 
-        form.find("#email").simulate("change", changeEvent("test@example.com"));
-        form.find("#password").simulate("change", changeEvent("p4ssw0rd!"));
+        form.find("#email").simulate("change", {}, "test@example.com");
+        form.find("#password").simulate("change", {}, "p4ssw0rd!");
         form.find('button[type="submit"]').simulate("click");
 
-        expect(doLogin).toHaveBeenCalledWith("test@example.com", "p4ssw0rd!");
+        expect(loginSpy).toHaveBeenCalledWith("test@example.com", "p4ssw0rd!");
+        expect(form.find(".error")).toHaveLength(0);
     });
 
-    it("handles errors during login", async () => {
-        const doLogin = jest.fn().mockReturnValue(Promise.reject(new Error()));
-
-        const sessionStore = new LocalSessionStore();
-        const form = shallow(
+    it("renders errors", async () => {
+        const form = shallowWithIntl(
             <DisconnectedLoginForm
-                sessionStore={sessionStore}
-                doLogin={doLogin}
+                doLogin={jest.fn()}
+                error={{
+                    message: "MY_MESSAGE"
+                }}
             />
         );
 
-        expect(
-            form.findWhere(n => n.prop("id") === "app.login.error.message")
-        ).toHaveLength(0);
-
-        form.find('button[type="submit"]').simulate("click");
-        await flushAllPromises();
-
-        expect(
-            form
-                .update()
-                .findWhere(n => n.prop("id") === "app.login.error.message")
-        ).toHaveLength(1);
-    });
-
-    it("saves the session after login", async () => {
-        const doLogin = jest.fn().mockReturnValue(
-            Promise.resolve({
-                data: {
-                    authenticateUser: {
-                        token: "my-token",
-                        id: "my-id"
-                    }
-                }
-            })
-        );
-
-        const sessionStore = new LocalSessionStore();
-        const form = shallow(
-            <DisconnectedLoginForm
-                sessionStore={sessionStore}
-                doLogin={doLogin}
-            />
-        );
-
-        form.find('button[type="submit"]').simulate("click");
-        await flushAllPromises();
-
-        expect(sessionStore.token).toBe("my-token");
-        expect(sessionStore.userId).toBe("my-id");
+        expect(form.find(".error")).toHaveLength(1);
     });
 });

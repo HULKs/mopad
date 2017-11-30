@@ -4,11 +4,13 @@ import gql from "graphql-tag";
 import graphql from "react-apollo/graphql";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
-import { AddTopicMutation, AllTopicsQuery } from "../../../mopad-graphql";
+import { ISessionStore, LocalSessionStore } from "../../business/auth";
+import { AddTopicMutation, JoinAsExpertMutation, AllTopicsQuery } from "../../../mopad-graphql";
 import { ApolloError, ApolloQueryResult } from "apollo-client";
 import { compose } from "react-apollo";
 
-interface PublicProps {}
+interface PublicProps {
+}
 interface HomeProps {
     error: ApolloError;
     loading: boolean;
@@ -17,13 +19,20 @@ interface HomeProps {
         title: string,
         description?: string
     ): Promise<ApolloQueryResult<AddTopicMutation>>;
+    joinAsExpert(
+        userId: string,
+        topicId: string
+    ): Promise<ApolloQueryResult<JoinAsExpertMutation>>;
 }
 type Props = PublicProps & HomeProps;
 
 export class Home extends React.Component<Props> {
+    private sessionStore : ISessionStore;
+
     constructor(props: Props) {
         super(props);
 
+        this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
         this.onJoin = this.onJoin.bind(this);
     }
@@ -45,7 +54,10 @@ export class Home extends React.Component<Props> {
     }
 
     private onJoin(topicId: string, type: 'expert'|'newbie'): void {
-        console.log('join', topicId, type);
+        console.log('join', type, this.sessionStore.userId, topicId);
+        if ( type == 'expert' ) {
+            this.props.joinAsExpert(this.sessionStore.userId, topicId);
+        }
     }
 }
 
@@ -55,6 +67,23 @@ const ADD_TOPIC_MUTATION = gql`
             id
             title
             description
+            experts { id, name }
+            newbies { id, name }
+        }
+    }
+`;
+
+const JOIN_AS_EXPERT_MUTATION = gql`
+    mutation JoinAsExpert($userId: ID!, $topicId: ID!) {
+        addToExpertParticipation(expertsUserId: $userId, topicsAsExpertTopicId: $topicId) {
+            expertsUser { id }
+            topicsAsExpertTopic {
+                id
+                title
+                description
+                experts { id, name }
+                newbies { id, name }
+            }
         }
     }
 `;
@@ -65,6 +94,8 @@ const ALL_TOPICS_QUERY = gql`
             id
             title
             description
+            experts { id, name }
+            newbies { id, name }
         }
     }
 `;
@@ -75,7 +106,7 @@ const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
         addTopic: (title: string, description?: string) =>
             mutate({
                 variables: { title, description },
-                update: (proxy, { data: { createTopic } }) => {
+                update: (proxy, { data: { createTopic } } : { data: AddTopicMutation }) => {
                     // Read the data from our cache for this query.
                     const data = proxy.readQuery<AllTopicsQuery>({ query: ALL_TOPICS_QUERY });
                     // Add our todo from the mutation to the end.
@@ -87,6 +118,15 @@ const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
     })
 });
 
+const joinTopicAsExpert = graphql<JoinAsExpertMutation>(JOIN_AS_EXPERT_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        joinAsExpert: (userId: string, topicId: string) =>
+            mutate({ variables: { userId, topicId } })
+    })
+});
+
+
 const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     props: ({ data, ownProps }) => ({
         ...ownProps,
@@ -96,4 +136,4 @@ const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     })
 });
 
-export default compose(addTopic, loadTopic)(Home);
+export default compose(addTopic, joinTopicAsExpert, loadTopic)(Home);

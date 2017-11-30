@@ -13,10 +13,6 @@ import Dialog from "material-ui/Dialog";
 import TextField from "material-ui/TextField";
 import ContentAdd from "material-ui/svg-icons/content/add";
 import { FormattedMessage, InjectedIntl, injectIntl } from "react-intl";
-import gql from "graphql-tag";
-import graphql from "react-apollo/graphql";
-import { ApolloQueryResult } from "apollo-client";
-import { AddTopicMutation } from "../../../mopad-graphql";
 
 const floatStyle = {
     position: "fixed",
@@ -24,26 +20,20 @@ const floatStyle = {
     right: "5%"
 };
 
-interface PublicProps {
-    onChange?: () => void;
-}
-interface IntlProps {
-    intl: InjectedIntl;
-}
 interface TopicAddProps {
-    addTopic(
-        title: string,
-        description?: string
-    ): Promise<ApolloQueryResult<AddTopicMutation>>;
+    intl: InjectedIntl;
+    onTopicAdd(title: string);
 }
-type Props = PublicProps & IntlProps & TopicAddProps;
 
 interface State {
     dialogOpen: boolean;
     topicTitle: string;
 }
 
-export class DisconnectedTopicAdd extends React.Component<Props, State> {
+export class DisconnectedTopicAdd extends React.Component<
+    TopicAddProps,
+    State
+> {
     constructor(props) {
         super(props);
         this.state = {
@@ -111,35 +101,10 @@ export class DisconnectedTopicAdd extends React.Component<Props, State> {
         this.setState({ dialogOpen: false, topicTitle: "" });
     }
 
-    private async handleSubmit() {
-        try {
-            const result = await this.props.addTopic(this.state.topicTitle);
-            this.props.onChange();
-        } catch (e) {
-            console.error(e);
-        }
+    private handleSubmit() {
+        this.props.onTopicAdd(this.state.topicTitle);
         this.setState({ dialogOpen: false, topicTitle: "" });
     }
 }
 
-const ADD_TOPIC_MUTATION = gql`
-    mutation AddTopic($title: String!, $description: String) {
-        createTopic(title: $title, description: $description) {
-            id
-        }
-    }
-`;
-
-const ConnectedTopicAdd = graphql<
-    AddTopicMutation,
-    IntlProps,
-    TopicAddProps & IntlProps
->(ADD_TOPIC_MUTATION, {
-    props: ({ mutate, ownProps }) => ({
-        intl: ownProps.intl,
-        addTopic: (title: string, description?: string) =>
-            mutate({ variables: { title, description } })
-    })
-})(DisconnectedTopicAdd);
-
-export default injectIntl<PublicProps>(ConnectedTopicAdd);
+export default injectIntl(DisconnectedTopicAdd);

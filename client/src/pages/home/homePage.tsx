@@ -19,10 +19,9 @@ import { compose } from "react-apollo";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {}
-interface HomeProps {
+interface HomeProps extends TopicViewModelProps {
     error: ApolloError;
     loading: boolean;
-    topics: TopicDisplayFragment[];
     addTopic(
         title: string,
         description?: string
@@ -258,9 +257,56 @@ const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
         ...ownProps,
         error: data.error,
         loading: data.loading,
-        topics: data.allTopics
+        allTopics: data.allTopics
     })
 });
+
+export interface TopicViewModel extends TopicDisplayFragment {
+    userIsExpert: boolean;
+    userIsNewbie: boolean;
+}
+interface TopicProps {
+    allTopics: TopicDisplayFragment[];
+}
+interface TopicViewModelProps {
+    topics: TopicViewModel[];
+}
+function topicConverter<Props extends TopicViewModelProps, State>(
+    Comp: new () => React.Component<Props, State>
+) {
+    return class ConvertedTopicComponent extends React.Component<
+        Props & TopicProps,
+        State
+    > {
+        private sessionStore: ISessionStore;
+        constructor(props) {
+            super(props);
+            this.sessionStore = new LocalSessionStore();
+            this.convertTopic = this.convertTopic.bind(this);
+        }
+
+        private convertTopic(topic: TopicDisplayFragment): TopicViewModel {
+            return {
+                ...topic,
+                userIsExpert: topic.experts.some(
+                    u => u.id == this.sessionStore.userId
+                ),
+                userIsNewbie: topic.newbies.some(
+                    u => u.id == this.sessionStore.userId
+                )
+            };
+        }
+
+        render() {
+            return (
+                <Comp
+                    {...this.props}
+                    topics={(this.props.allTopics || []).map(this.convertTopic)}
+                />
+            );
+        }
+    };
+}
 
 export default compose(
     addTopic,
@@ -268,5 +314,6 @@ export default compose(
     joinTopicAsNewbie,
     leaveTopicAsExpert,
     leaveTopicAsNewbie,
-    loadTopic
+    loadTopic,
+    topicConverter
 )(Home);

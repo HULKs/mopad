@@ -4,5 +4,5 @@ type SignupUserPayload {
 }
 
 extend type Mutation {
-    signupUser(name: String!, email: String!, password: String!, isAdmin: Boolean!): SignupUserPayload
+    signupUser(name: String!, email: String!, password: String!): SignupUserPayload
 }

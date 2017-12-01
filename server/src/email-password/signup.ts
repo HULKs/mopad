@@ -88,7 +88,8 @@ async function createGraphcoolUser(
     const variables = {
         name,
         email,
-        password
+        password,
+        isAdmin
     };
 
     return api

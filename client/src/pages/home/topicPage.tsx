@@ -1,8 +1,9 @@
 import * as React from "react";
 import { FormattedMessage } from "react-intl";
+import { ApolloError } from "apollo-client";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
-import { ApolloError } from "apollo-client";
+import TopicFilterSelector from "./topicFilterSelector";
 import { ISessionStore, LocalSessionStore } from "../../business/auth";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 import { TopicConnector, TopicViewModel } from "../../business/topics";
@@ -19,8 +20,11 @@ interface HomeProps {
     leaveAsNewbie(userId: string, topicId: string);
 }
 type Props = PublicProps & HomeProps;
+interface State {
+    filterUserTopics: boolean;
+}
 
-export class DisconnectedTopicsPage extends React.Component<Props> {
+export class DisconnectedTopicsPage extends React.Component<Props, State> {
     private sessionStore: ISessionStore;
     private actionMap: {
         [action: string]: (userId: string, topicId: string) => any;
@@ -28,10 +32,14 @@ export class DisconnectedTopicsPage extends React.Component<Props> {
 
     constructor(props: Props) {
         super(props);
+        this.state = {
+            filterUserTopics: false
+        };
 
         this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
         this.onChangeParticipation = this.onChangeParticipation.bind(this);
+        this.onFilterChange = this.onFilterChange.bind(this);
         this.actionMap = {
             "join:expert": this.props.joinAsExpert,
             "join:newbie": this.props.joinAsNewbie,
@@ -41,18 +49,37 @@ export class DisconnectedTopicsPage extends React.Component<Props> {
     }
 
     public render() {
+        const { filterUserTopics } = this.state;
         return (
             <div className="page">
-                <h1>
-                    <FormattedMessage id="app.home" />
-                </h1>
+                <div className="pageHeader">
+                    <h1>
+                        <FormattedMessage id="topics.headline" />
+                    </h1>
+                    <TopicFilterSelector
+                        value={filterUserTopics}
+                        onChange={this.onFilterChange}
+                    />
+                </div>
                 <TopicList
-                    topics={this.props.topics || []}
+                    topics={this.getFilteredTopics()}
                     onChangeParticipation={this.onChangeParticipation}
                 />
                 <TopicAdd onTopicAdd={this.onTopicAdd} />
             </div>
         );
+    }
+
+    private getFilteredTopics() {
+        const { topics } = this.props;
+        const { filterUserTopics } = this.state;
+        return (topics || []).filter(
+            t => !filterUserTopics || (t.userIsExpert || t.userIsNewbie)
+        );
+    }
+
+    private onFilterChange(value) {
+        this.setState({ filterUserTopics: value });
     }
 
     private onTopicAdd(title: string): void {

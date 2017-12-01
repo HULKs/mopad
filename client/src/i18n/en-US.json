@@ -1,5 +1,4 @@
 {
-    "app.home": "Home",
     "app.login.email": "Email address:",
     "app.login.name": "Name:",
     "app.login.name.hint": "Kim Human",
@@ -11,6 +10,9 @@
     "app.login.error.general": "An error occurred during login. Try again.",
     "app.login.error.badCredentials": "Bad credentials. Please correct your input or sign up.",
     "app.login.error.EMAIL_IN_USE": "This email is already in use.",
+    "topics.headline": "Topics",
+    "topics.filter.all": "All Topics",
+    "topics.filter.my": "My Topics",
     "topics.add.dialog.title": "Add new topic",
     "topics.add.dialog.input.label": "Please enter a title for your discussion",
     "topics.add.dialog.input.hint": "Discuss standardisation of image labeling (xkcd.com/927)",

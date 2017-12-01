@@ -116,6 +116,7 @@ const ADD_TOPIC_MUTATION = gql`
             ...TopicDisplay
         }
     }
+    ${TOPIC_DISPLAY_FRAGMENT}
 `;
 
 /* TODO: maybe use factory and define types manually */

@@ -10,7 +10,7 @@ import {
 import FlatButton from "material-ui/FlatButton";
 import Topic from "./topic";
 import { FormattedMessage, injectIntl } from "react-intl";
-import { TopicViewModel } from "./homePage";
+import { TopicViewModel } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {

@@ -9,7 +9,7 @@ import {
 } from "material-ui/Card";
 import FlatButton from "material-ui/FlatButton";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
-import { TopicViewModel } from "./homePage";
+import { TopicViewModel } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
@@ -32,15 +32,7 @@ export class DisconnectedTopic extends React.Component<
         const { onChangeParticipation, intl, topic } = this.props;
         return (
             <Card className="topic card">
-                <CardTitle
-                    title={topic.title}
-                    subtitle={topic.description}
-                    titleColor={
-                        topic.userIsExpert || topic.userIsNewbie
-                            ? "red"
-                            : "black"
-                    }
-                />
+                <CardTitle title={topic.title} subtitle={topic.description} />
                 <CardText>
                     <div>
                         <FormattedMessage id="topic.label.expert" />:{" "}
@@ -52,22 +44,64 @@ export class DisconnectedTopic extends React.Component<
                     </div>
                 </CardText>
                 <CardActions>
-                    <FlatButton
-                        onClick={() =>
-                            onChangeParticipation(topic.id, "expert", "join")
-                        }
-                        label={intl.formatMessage({ id: "topic.join.expert" })}
-                    />
-                    <FlatButton
-                        onClick={() =>
-                            onChangeParticipation(topic.id, "newbie", "join")
-                        }
-                        label={intl.formatMessage({ id: "topic.join.newbie" })}
+                    <TopicActions
+                        topic={topic}
+                        onChangeParticipation={onChangeParticipation}
+                        intl={intl}
                     />
                 </CardActions>
             </Card>
         );
     }
+}
+
+function TopicActions(props: {
+    topic: TopicViewModel;
+    onChangeParticipation: PublicProps["onChangeParticipation"];
+    intl: InjectedIntl;
+}) {
+    const { topic, onChangeParticipation, intl } = props;
+
+    if (topic.userIsExpert) {
+        return (
+            <FlatButton
+                primary={true}
+                onClick={() =>
+                    onChangeParticipation(topic.id, "expert", "leave")
+                }
+                label={intl.formatMessage({ id: "topic.leave.expert" })}
+            />
+        );
+    }
+
+    if (topic.userIsNewbie) {
+        return (
+            <FlatButton
+                primary={true}
+                onClick={() =>
+                    onChangeParticipation(topic.id, "newbie", "leave")
+                }
+                label={intl.formatMessage({ id: "topic.leave.newbie" })}
+            />
+        );
+    }
+
+    return (
+        <div>
+            <FlatButton
+                onClick={() =>
+                    onChangeParticipation(topic.id, "expert", "join")
+                }
+                label={intl.formatMessage({ id: "topic.join.expert" })}
+            />
+            <FlatButton
+                onClick={() =>
+                    onChangeParticipation(topic.id, "newbie", "join")
+                }
+                label={intl.formatMessage({ id: "topic.join.newbie" })}
+            />
+        </div>
+    );
 }
 
 export default injectIntl<PublicProps>(DisconnectedTopic);

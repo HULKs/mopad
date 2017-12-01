@@ -10,20 +10,29 @@ import {
 import FlatButton from "material-ui/FlatButton";
 import Topic from "./topic";
 import { FormattedMessage, injectIntl } from "react-intl";
-import { AllTopicsQuery } from "../../../mopad-graphql";
+import { TopicDisplayFragment } from "../../../mopad-graphql";
+import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
-    topics: AllTopicsQuery["allTopics"];
-    onJoin(topicId: string, as: "expert" | "newbie");
+    topics: TopicDisplayFragment[];
+    onChangeParticipation(
+        topicId: string,
+        as: ParticipationType,
+        action: ParticipationChange
+    );
 }
 
 export default class TopicList extends React.Component<PublicProps> {
     public render() {
-        const { onJoin } = this.props;
+        const { onChangeParticipation } = this.props;
         return (
             <div>
                 {this.props.topics.map(topic => (
-                    <Topic key={topic.id} topic={topic} onJoin={onJoin} />
+                    <Topic
+                        key={topic.id}
+                        topic={topic}
+                        onChangeParticipation={onChangeParticipation}
+                    />
                 ))}
             </div>
         );

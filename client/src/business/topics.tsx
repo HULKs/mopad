@@ -9,6 +9,7 @@ import {
     LeaveAsExpertMutation,
     LeaveAsNewbieMutation,
     DeleteTopicMutation,
+    ConnectLocationMutation,
     AllTopicsQuery,
     TopicDisplayFragment
 } from "../../mopad-graphql";
@@ -101,6 +102,20 @@ const LEAVE_AS_NEWBIE_MUTATION = gql`
             topicsAsNewbieTopicId: $topicId
         ) {
             topicsAsNewbieTopic {
+                ...TopicDisplay
+            }
+        }
+    }
+    ${TOPIC_DISPLAY_FRAGMENT}
+`;
+
+const CONNECT_LOCATION_MUTATION = gql`
+    mutation ConnectLocation($topicId: ID!, $locationId: ID!) {
+        addToTopicsInLocation(
+            topicsTopicId: $topicId
+            locationLocationId: $locationId
+        ) {
+            topicsTopic {
                 ...TopicDisplay
             }
         }
@@ -210,6 +225,17 @@ const leaveTopicAsNewbie = graphql<JoinAsExpertMutation>(
     }
 );
 
+const connectLocation = graphql<ConnectLocationMutation>(
+    CONNECT_LOCATION_MUTATION,
+    {
+        props: ({ mutate, ownProps }) => ({
+            ...ownProps,
+            connectLocation: (topicId: string, locationId: string) =>
+                mutate({ variables: { topicId, locationId } })
+        })
+    }
+);
+
 const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     props: ({ data, ownProps }) => ({
         ...ownProps,
@@ -275,6 +301,7 @@ export const TopicConnector = compose(
     joinTopicAsNewbie,
     leaveTopicAsExpert,
     leaveTopicAsNewbie,
+    connectLocation,
     loadTopic,
     topicConverter
 );

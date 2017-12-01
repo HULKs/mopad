@@ -1,4 +1,6 @@
 import * as React from "react";
+import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
+import * as Moment from "moment";
 import {
     Card,
     CardActions,
@@ -11,10 +13,9 @@ import FlatButton from "material-ui/FlatButton";
 import IconButton from "material-ui/IconButton";
 import ActionDeleteForeverIcon from "material-ui/svg-icons/action/delete-forever";
 import ActionQueryBuilderIcon from "material-ui/svg-icons/action/query-builder";
-import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
 import { TopicViewModel } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
-import * as Moment from "moment";
+import TopicScheduleDialog from "./topicScheduleDialog";
 
 interface PublicProps {
     topic: TopicViewModel;
@@ -23,6 +24,7 @@ interface PublicProps {
         as: ParticipationType,
         action: ParticipationChange
     );
+    onSchedule?(topicId: string, locationId: string, begin: Date);
     onDelete?(topicId: string);
 }
 
@@ -30,15 +32,37 @@ interface IntlProps {
     intl: InjectedIntl;
 }
 
+interface TopicState {
+    scheduleDialogOpen: boolean;
+}
+
 export class DisconnectedTopic extends React.Component<
-    PublicProps & IntlProps
+    PublicProps & IntlProps,
+    TopicState
 > {
+    constructor(props) {
+        super(props);
+        this.state = {
+            scheduleDialogOpen: false
+        };
+    }
     public render() {
-        const { onChangeParticipation, intl, topic, onDelete } = this.props;
+        const {
+            onChangeParticipation,
+            intl,
+            topic,
+            onSchedule,
+            onDelete
+        } = this.props;
+        const { scheduleDialogOpen } = this.state;
+
         return (
             <Card className="topic card">
                 <TopicActionIcons
                     show={topic.canManage}
+                    onScheduleClick={() =>
+                        this.setState({ scheduleDialogOpen: true })
+                    }
                     onDeleteClick={() => onDelete(topic.id)}
                 />
                 <CardTitle
@@ -63,6 +87,16 @@ export class DisconnectedTopic extends React.Component<
                         intl={intl}
                     />
                 </CardActions>
+                <TopicScheduleDialog
+                    open={scheduleDialogOpen}
+                    onSubmit={(locId, begin) => {
+                        onSchedule(topic.id, locId, begin);
+                        this.setState({ scheduleDialogOpen: false });
+                    }}
+                    onCancel={() =>
+                        this.setState({ scheduleDialogOpen: false })
+                    }
+                />
             </Card>
         );
     }

@@ -14,7 +14,7 @@ import ActionQueryBuilderIcon from "material-ui/svg-icons/action/query-builder";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
 import { TopicViewModel } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
-import * as Moment from 'moment';
+import * as Moment from "moment";
 
 interface PublicProps {
     topic: TopicViewModel;
@@ -67,13 +67,18 @@ export class DisconnectedTopic extends React.Component<
         );
     }
 
-    private getDescriptionText(topic: TopicViewModel) : string {
-        const desc : string[] = [];
-        if (topic.description) { desc.push(topic.description) }
-        if (topic.begin) {
-            desc.push(Moment(topic.begin).format('dddd h:mma'))
+    private getDescriptionText(topic: TopicViewModel): string {
+        const desc: string[] = [];
+        if (topic.description) {
+            desc.push(topic.description);
         }
-        return desc.join(' ');
+        if (topic.begin) {
+            desc.push(Moment(topic.begin).format("dddd h:mma"));
+        }
+        if (topic.location && topic.location.name) {
+            desc.push(topic.location.name);
+        }
+        return desc.join(", ");
     }
 }
 

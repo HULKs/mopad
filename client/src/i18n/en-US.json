@@ -1,4 +1,5 @@
 {
+    "app.menu.signOut": "Sign out",
     "app.login.email": "Email address:",
     "app.login.name": "Name:",
     "app.login.name.hint": "Kim Human",

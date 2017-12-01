@@ -58,6 +58,7 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             const response = await this.props.doLogin(email, password);
             this.sessionStore.token = response.data.authenticateUser.token;
             this.sessionStore.userId = response.data.authenticateUser.id;
+            this.sessionStore.userIsAdmin = response.data.authenticateUser.isAdmin;
             this.props.history.push("/");
         } catch (err) {
             this.setState({ error: err });
@@ -69,6 +70,7 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             const response = await this.props.doSignUp(name, email, password);
             this.sessionStore.token = response.data.signupUser.token;
             this.sessionStore.userId = response.data.signupUser.id;
+            this.sessionStore.userIsAdmin = false;
             this.props.history.push("/");
         } catch (err) {
             this.setState({ error: err });
@@ -80,6 +82,7 @@ const LOGIN_MUTATION = gql`
     mutation Login($email: String!, $password: String!) {
         authenticateUser(email: $email, password: $password) {
             id
+            isAdmin
             token
         }
     }

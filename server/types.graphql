@@ -18,6 +18,7 @@ type User @model {
     email: String! @isUnique
     password: String!
     name: String!
+    isAdmin: Boolean!
     topicsAsExpert: [Topic!]! @relation(name: "ExpertParticipation")
     topicsAsNewbie: [Topic!]! @relation(name: "NewbieParticipation")
 }

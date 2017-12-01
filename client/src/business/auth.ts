@@ -20,6 +20,7 @@ export class AuthenticationLink extends ApolloLink {
 export interface ISessionStore {
     token: string;
     userId: string;
+    userIsAdmin: boolean;
 }
 
 export class LocalSessionStore implements ISessionStore {
@@ -37,5 +38,13 @@ export class LocalSessionStore implements ISessionStore {
 
     public set userId(value: string) {
         localStorage.setItem("userId", value);
+    }
+
+    public get userIsAdmin(): boolean {
+        return localStorage.getItem("userIsAdmin") === 'true';
+    }
+
+    public set userIsAdmin(value: boolean) {
+        localStorage.setItem("userIsAdmin", value ? 'true' : 'false');
     }
 }

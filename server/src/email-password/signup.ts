@@ -38,7 +38,7 @@ export default async (event: FunctionEvent<EventData>) => {
         const hash = await bcrypt.hash(password, SALT_ROUNDS);
 
         // create new user
-        const userId = await createGraphcoolUser(api, name, email, hash);
+        const userId = await createGraphcoolUser(api, name, email, hash, false);
 
         // generate node token for new User node
         const token = await graphcool.generateNodeToken(userId, "User");
@@ -69,14 +69,16 @@ async function createGraphcoolUser(
     api: GraphQLClient,
     name: string,
     email: string,
-    password: string
+    password: string,
+    isAdmin: boolean
 ): Promise<string> {
     const mutation = `
-    mutation createGraphcoolUser($name: String!, $email: String!, $password: String!) {
+    mutation createGraphcoolUser($name: String!, $email: String!, $password: String!, $isAdmin: Boolean!) {
       createUser(
         email: $email,
         password: $password,
-        name: $name
+        name: $name,
+        isAdmin: $isAdmin
       ) {
         id
       }

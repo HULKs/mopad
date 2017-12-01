@@ -1,5 +1,6 @@
 type AuthenticateUserPayload {
     id: ID!
+    isAdmin: Boolean!
     token: String!
 }
 

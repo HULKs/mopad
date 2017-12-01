@@ -58,7 +58,6 @@ export class DisconnectedTopicAdd extends React.Component<
                     id: "topics.add.dialog.submit"
                 })}
                 primary={true}
-                keyboardFocused={true}
                 onClick={this.handleSubmit}
             />
         ];

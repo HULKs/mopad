@@ -18,6 +18,7 @@ interface HomeProps {
     joinAsNewbie(userId: string, topicId: string);
     leaveAsExpert(userId: string, topicId: string);
     leaveAsNewbie(userId: string, topicId: string);
+    connectLocation(topicId: string, locationId: string);
     deleteTopic(topicId: string);
 }
 type Props = PublicProps & HomeProps;
@@ -40,6 +41,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
         this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
         this.onChangeParticipation = this.onChangeParticipation.bind(this);
+        this.onScheduleTopic = this.onScheduleTopic.bind(this);
         this.onDeleteTopic = this.onDeleteTopic.bind(this);
         this.onFilterChange = this.onFilterChange.bind(this);
         this.actionMap = {
@@ -66,6 +68,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
                 <TopicList
                     topics={this.getFilteredTopics()}
                     onChangeParticipation={this.onChangeParticipation}
+                    onScheduleTopic={this.onScheduleTopic}
                     onDeleteTopic={this.onDeleteTopic}
                 />
                 <TopicAdd onTopicAdd={this.onTopicAdd} />
@@ -99,6 +102,10 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
             throw new Error("invalid change of participation");
         }
         this.actionMap[actionString](this.sessionStore.userId, topicId);
+    }
+
+    private onScheduleTopic(topicId: string, locationId: string, begin: Date) {
+        console.log("Schedule", topicId, locationId, begin);
     }
 
     private onDeleteTopic(topicId: string) {

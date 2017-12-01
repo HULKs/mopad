@@ -24,5 +24,8 @@
     "topic.leave.expert": "Leave",
     "topic.leave.newbie": "Leave",
     "topic.label.expert": "Experts",
-    "topic.label.newbie": "Newbies"
+    "topic.label.newbie": "Newbies",
+    "topic.schedule.dialog.title": "Schedule Topic",
+    "topic.schedule.dialog.submit": "Submit",
+    "topic.schedule.dialog.cancel": "Cancel"
 }

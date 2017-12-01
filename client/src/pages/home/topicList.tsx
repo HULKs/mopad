@@ -20,12 +20,17 @@ interface PublicProps {
         as: ParticipationType,
         action: ParticipationChange
     );
+    onScheduleTopic?(topicId: string, locationId: string, begin: Date);
     onDeleteTopic?(topicId: string);
 }
 
 export default class TopicList extends React.Component<PublicProps> {
     public render() {
-        const { onChangeParticipation, onDeleteTopic } = this.props;
+        const {
+            onChangeParticipation,
+            onScheduleTopic,
+            onDeleteTopic
+        } = this.props;
         return (
             <div className="topicList">
                 {this.props.topics.map(topic => (
@@ -33,6 +38,7 @@ export default class TopicList extends React.Component<PublicProps> {
                         key={topic.id}
                         topic={topic}
                         onChangeParticipation={onChangeParticipation}
+                        onSchedule={onScheduleTopic}
                         onDelete={onDeleteTopic}
                     />
                 ))}

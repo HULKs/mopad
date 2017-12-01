@@ -8,6 +8,7 @@ import {
     JoinAsNewbieMutation,
     LeaveAsExpertMutation,
     LeaveAsNewbieMutation,
+    DeleteTopicMutation,
     AllTopicsQuery,
     TopicDisplayFragment
 } from "../../mopad-graphql";
@@ -36,6 +37,14 @@ const ADD_TOPIC_MUTATION = gql`
         }
     }
     ${TOPIC_DISPLAY_FRAGMENT}
+`;
+
+const DELETE_TOPIC_MUTATION = gql`
+    mutation DeleteTopic($topicId: ID!) {
+        deleteTopic(id: $topicId) {
+            id
+        }
+    }
 `;
 
 /* TODO: maybe use factory and define types manually */
@@ -120,6 +129,31 @@ const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
                     });
                     // Add our todo from the mutation to the end.
                     data.allTopics.push(createTopic);
+                    // Write our data back to the cache.
+                    proxy.writeQuery({ query: ALL_TOPICS_QUERY, data });
+                }
+            })
+    })
+});
+
+const deleteTopic = graphql<DeleteTopicMutation>(DELETE_TOPIC_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        deleteTopic: (topicId: string) =>
+            mutate({
+                variables: { topicId },
+                update: (
+                    proxy,
+                    { data: { deleteTopic } }: { data: DeleteTopicMutation }
+                ) => {
+                    // Read the data from our cache for this query.
+                    const data = proxy.readQuery<AllTopicsQuery>({
+                        query: ALL_TOPICS_QUERY
+                    });
+                    // Remove our topic from the cached topics
+                    data.allTopics = data.allTopics.filter(
+                        t => t.id != deleteTopic.id
+                    );
                     // Write our data back to the cache.
                     proxy.writeQuery({ query: ALL_TOPICS_QUERY, data });
                 }
@@ -215,7 +249,7 @@ function topicConverter<Props extends TopicViewModelProps, State>(
                 userIsNewbie: topic.newbies.some(
                     u => u.id == this.sessionStore.userId
                 ),
-                canManage: false
+                canManage: this.sessionStore.userIsAdmin
             };
         }
 
@@ -232,6 +266,7 @@ function topicConverter<Props extends TopicViewModelProps, State>(
 
 export const TopicConnector = compose(
     addTopic,
+    deleteTopic,
     joinTopicAsExpert,
     joinTopicAsNewbie,
     leaveTopicAsExpert,

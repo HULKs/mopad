@@ -41,10 +41,10 @@ export class LocalSessionStore implements ISessionStore {
     }
 
     public get userIsAdmin(): boolean {
-        return localStorage.getItem("userIsAdmin") === 'true';
+        return localStorage.getItem("userIsAdmin") === "true";
     }
 
     public set userIsAdmin(value: boolean) {
-        localStorage.setItem("userIsAdmin", value ? 'true' : 'false');
+        localStorage.setItem("userIsAdmin", value ? "true" : "false");
     }
 }

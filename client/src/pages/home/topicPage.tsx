@@ -20,7 +20,7 @@ interface HomeProps {
 }
 type Props = PublicProps & HomeProps;
 
-export class Home extends React.Component<Props> {
+export class DisconnectedTopicsPage extends React.Component<Props> {
     private sessionStore: ISessionStore;
     private actionMap: {
         [action: string]: (userId: string, topicId: string) => any;
@@ -72,4 +72,4 @@ export class Home extends React.Component<Props> {
     }
 }
 
-export default TopicConnector(Home);
+export default TopicConnector(DisconnectedTopicsPage);

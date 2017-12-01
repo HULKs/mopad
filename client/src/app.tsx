@@ -2,7 +2,7 @@ import * as React from "react";
 import { HashRouter as Router } from "react-router-dom";
 import { Route } from "react-router";
 import AppBar from "material-ui/AppBar";
-import Home from "./pages/home/homePage";
+import TopicPage from "./pages/home/topicPage";
 import LoginPage from "./pages/login/loginPage";
 import { PrivateRoute } from "./business/routerAuth";
 import { ISessionStore, LocalSessionStore } from "./business/auth";
@@ -25,7 +25,7 @@ export class App extends React.Component {
                         sessionStore={this.sessionStore}
                         exact
                         path="/"
-                        component={Home}
+                        component={TopicPage}
                     />
                 </div>
             </Router>

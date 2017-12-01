@@ -18,6 +18,8 @@
     "topics.add.dialog.cancel": "Cancel",
     "topic.join.expert": "I can share some knowledge",
     "topic.join.newbie": "I like to learn about this",
+    "topic.leave.expert": "Leave",
+    "topic.leave.newbie": "Leave",
     "topic.label.expert": "Experts",
     "topic.label.newbie": "Newbies"
 }

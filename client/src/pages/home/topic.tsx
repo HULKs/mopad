@@ -8,6 +8,9 @@ import {
     CardText
 } from "material-ui/Card";
 import FlatButton from "material-ui/FlatButton";
+import IconButton from "material-ui/IconButton";
+import ActionDeleteForeverIcon from "material-ui/svg-icons/action/delete-forever";
+import ActionQueryBuilderIcon from "material-ui/svg-icons/action/query-builder";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
 import { TopicViewModel } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
@@ -32,7 +35,12 @@ export class DisconnectedTopic extends React.Component<
         const { onChangeParticipation, intl, topic } = this.props;
         return (
             <Card className="topic card">
-                <CardTitle title={topic.title} subtitle={topic.description} />
+                <TopicActionIcons show={topic.canManage} />
+                <CardTitle
+                    title={topic.title}
+                    subtitle={topic.description}
+                    style={{ pointerEvents: "none" }}
+                />
                 <CardText>
                     <div>
                         <FormattedMessage id="topic.label.expert" />:{" "}
@@ -53,6 +61,27 @@ export class DisconnectedTopic extends React.Component<
             </Card>
         );
     }
+}
+
+function TopicActionIcons({ show }: { show: boolean }) {
+    if (!show) return <div />;
+
+    const divStyle: React.CSSProperties = {
+        float: "right",
+        padding: 16
+    };
+    const iconOuterStyle = { padding: 0, width: 36, height: 36 };
+    const iconInnerStyle = { width: 24, height: 24 };
+    return (
+        <div style={divStyle}>
+            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle}>
+                <ActionQueryBuilderIcon />
+            </IconButton>
+            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle}>
+                <ActionDeleteForeverIcon />
+            </IconButton>
+        </div>
+    );
 }
 
 function TopicActions(props: {

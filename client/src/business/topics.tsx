@@ -184,6 +184,7 @@ const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
 export interface TopicViewModel extends TopicDisplayFragment {
     userIsExpert: boolean;
     userIsNewbie: boolean;
+    canManage: boolean;
 }
 interface TopicProps {
     allTopics: TopicDisplayFragment[];
@@ -213,7 +214,8 @@ function topicConverter<Props extends TopicViewModelProps, State>(
                 ),
                 userIsNewbie: topic.newbies.some(
                     u => u.id == this.sessionStore.userId
-                )
+                ),
+                canManage: false
             };
         }
 

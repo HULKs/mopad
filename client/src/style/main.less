@@ -1,21 +1,12 @@
 
 @maxWidthMobile: 700px;
-
-.mobile(@rules, @maxWidth: @maxWidthMobile) {
-	@media only screen and (max-width: @maxWidth) {
-		@rules();
-	}
-}
-.nonmobile(@rules, @maxWidth: @maxWidthMobile) {
-	@media only screen and (min-width: (@maxWidth+1)) {
-		@rules();
-	}
-}
+@import "helper.less";
 
 html, body {
 	margin: 0;
 	padding: 0;
 	font-family: Roboto;
+	background: #f5f5f5;
 }
 
 .page {
@@ -25,8 +16,20 @@ html, body {
 	});
 }
 
+.topicList {
+	.nonmobile({
+		display:flex;
+		flex-wrap: wrap;
+		margin:-.5em;
+	});
+}
 .topic.card {
 	margin: 1em 0;
+	.nonmobile({
+		margin: .5em;
+		flex: 1 1 0;
+		min-width: 300px;
+	})
 }
 
 .error {

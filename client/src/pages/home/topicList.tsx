@@ -15,16 +15,17 @@ import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
     topics: TopicViewModel[];
-    onChangeParticipation(
+    onChangeParticipation?(
         topicId: string,
         as: ParticipationType,
         action: ParticipationChange
     );
+    onDeleteTopic?(topicId: string);
 }
 
 export default class TopicList extends React.Component<PublicProps> {
     public render() {
-        const { onChangeParticipation } = this.props;
+        const { onChangeParticipation, onDeleteTopic } = this.props;
         return (
             <div className="topicList">
                 {this.props.topics.map(topic => (
@@ -32,6 +33,7 @@ export default class TopicList extends React.Component<PublicProps> {
                         key={topic.id}
                         topic={topic}
                         onChangeParticipation={onChangeParticipation}
+                        onDelete={onDeleteTopic}
                     />
                 ))}
             </div>

@@ -58,7 +58,8 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             const response = await this.props.doLogin(email, password);
             this.sessionStore.token = response.data.authenticateUser.token;
             this.sessionStore.userId = response.data.authenticateUser.id;
-            this.sessionStore.userIsAdmin = response.data.authenticateUser.isAdmin;
+            this.sessionStore.userIsAdmin =
+                response.data.authenticateUser.isAdmin;
             this.props.history.push("/");
         } catch (err) {
             this.setState({ error: err });

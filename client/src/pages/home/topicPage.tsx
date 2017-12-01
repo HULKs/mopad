@@ -18,6 +18,7 @@ interface HomeProps {
     joinAsNewbie(userId: string, topicId: string);
     leaveAsExpert(userId: string, topicId: string);
     leaveAsNewbie(userId: string, topicId: string);
+    deleteTopic(topicId: string);
 }
 type Props = PublicProps & HomeProps;
 interface State {
@@ -39,6 +40,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
         this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
         this.onChangeParticipation = this.onChangeParticipation.bind(this);
+        this.onDeleteTopic = this.onDeleteTopic.bind(this);
         this.onFilterChange = this.onFilterChange.bind(this);
         this.actionMap = {
             "join:expert": this.props.joinAsExpert,
@@ -64,6 +66,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
                 <TopicList
                     topics={this.getFilteredTopics()}
                     onChangeParticipation={this.onChangeParticipation}
+                    onDeleteTopic={this.onDeleteTopic}
                 />
                 <TopicAdd onTopicAdd={this.onTopicAdd} />
             </div>
@@ -96,6 +99,10 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
             throw new Error("invalid change of participation");
         }
         this.actionMap[actionString](this.sessionStore.userId, topicId);
+    }
+
+    private onDeleteTopic(topicId: string) {
+        this.props.deleteTopic(topicId);
     }
 }
 

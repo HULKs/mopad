@@ -17,11 +17,12 @@ import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
     topic: TopicViewModel;
-    onChangeParticipation(
+    onChangeParticipation?(
         topicId: string,
         as: ParticipationType,
         action: ParticipationChange
     );
+    onDelete?(topicId: string);
 }
 
 interface IntlProps {
@@ -32,10 +33,13 @@ export class DisconnectedTopic extends React.Component<
     PublicProps & IntlProps
 > {
     public render() {
-        const { onChangeParticipation, intl, topic } = this.props;
+        const { onChangeParticipation, intl, topic, onDelete } = this.props;
         return (
             <Card className="topic card">
-                <TopicActionIcons show={topic.canManage} />
+                <TopicActionIcons
+                    show={topic.canManage}
+                    onDeleteClick={() => onDelete(topic.id)}
+                />
                 <CardTitle
                     title={topic.title}
                     subtitle={topic.description}
@@ -63,7 +67,15 @@ export class DisconnectedTopic extends React.Component<
     }
 }
 
-function TopicActionIcons({ show }: { show: boolean }) {
+function TopicActionIcons({
+    show,
+    onScheduleClick,
+    onDeleteClick
+}: {
+    show: boolean;
+    onScheduleClick?: Function;
+    onDeleteClick?: Function;
+}) {
     if (!show) return <div />;
 
     const divStyle: React.CSSProperties = {
@@ -74,10 +86,18 @@ function TopicActionIcons({ show }: { show: boolean }) {
     const iconInnerStyle = { width: 24, height: 24 };
     return (
         <div style={divStyle}>
-            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle}>
+            <IconButton
+                style={iconOuterStyle}
+                iconStyle={iconInnerStyle}
+                onClick={onScheduleClick}
+            >
                 <ActionQueryBuilderIcon />
             </IconButton>
-            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle}>
+            <IconButton
+                style={iconOuterStyle}
+                iconStyle={iconInnerStyle}
+                onClick={onDeleteClick}
+            >
                 <ActionDeleteForeverIcon />
             </IconButton>
         </div>

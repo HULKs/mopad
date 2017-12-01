@@ -43,14 +43,18 @@ permissions:
   authenticated: true
 - operation: Topic.delete
   authenticated: true
+  query: server/src/permissions/isAdmin.graphql
 - operation: Location.read
   authenticated: true
 - operation: Location.create
   authenticated: true
+  query: server/src/permissions/isAdmin.graphql
 - operation: Location.update
   authenticated: true
+  query: server/src/permissions/isAdmin.graphql
 - operation: Location.delete
   authenticated: true
+  query: server/src/permissions/isAdmin.graphql
 - operation: ExpertParticipation.connect
   authenticated: true
 - operation: ExpertParticipation.disconnect
@@ -61,5 +65,7 @@ permissions:
   authenticated: true
 - operation: TopicsInLocation.connect
   authenticated: true
+  query: server/src/permissions/isAdmin.graphql
 - operation: TopicsInLocation.disconnect
   authenticated: true
+  query: server/src/permissions/isAdmin.graphql

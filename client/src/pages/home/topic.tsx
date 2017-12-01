@@ -14,6 +14,7 @@ import ActionQueryBuilderIcon from "material-ui/svg-icons/action/query-builder";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
 import { TopicViewModel } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
+import * as Moment from 'moment';
 
 interface PublicProps {
     topic: TopicViewModel;
@@ -42,7 +43,7 @@ export class DisconnectedTopic extends React.Component<
                 />
                 <CardTitle
                     title={topic.title}
-                    subtitle={topic.description}
+                    subtitle={this.getDescriptionText(topic)}
                     style={{ pointerEvents: "none" }}
                 />
                 <CardText>
@@ -64,6 +65,15 @@ export class DisconnectedTopic extends React.Component<
                 </CardActions>
             </Card>
         );
+    }
+
+    private getDescriptionText(topic: TopicViewModel) : string {
+        const desc : string[] = [];
+        if (topic.description) { desc.push(topic.description) }
+        if (topic.begin) {
+            desc.push(Moment(topic.begin).format('dddd h:mma'))
+        }
+        return desc.join(' ');
     }
 }
 

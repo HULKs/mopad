@@ -19,6 +19,7 @@ const TOPIC_DISPLAY_FRAGMENT = gql`
         id
         title
         description
+        begin
         experts {
             id
             name

@@ -29,6 +29,7 @@
         "graphql-request": "^1.4.0",
         "graphql-tag": "^2.5.0",
         "material-ui": "^0.19.4",
+        "moment": "^2.19.3",
         "prop-types": "^15.6.0",
         "react": "^16.1.1",
         "react-apollo": "^2.0.1",

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { HashRouter as Router } from "react-router-dom";
-import { Route } from "react-router";
+import { Route, Redirect } from "react-router";
 import AppBar from "material-ui/AppBar";
 import TopicPage from "./pages/home/topicPage";
 import LoginPage from "./pages/login/loginPage";
@@ -24,6 +24,12 @@ export class App extends React.Component {
                     <PrivateRoute
                         sessionStore={this.sessionStore}
                         exact
+                        path="/logout"
+                        component={LogoutPage}
+                    />
+                    <PrivateRoute
+                        sessionStore={this.sessionStore}
+                        exact
                         path="/"
                         component={TopicPage}
                     />
@@ -31,4 +37,10 @@ export class App extends React.Component {
             </Router>
         );
     }
+}
+
+function LogoutPage() {
+	const sessionStore = new LocalSessionStore();
+	sessionStore.clearSession();
+	return (<Redirect to="/login" />);
 }

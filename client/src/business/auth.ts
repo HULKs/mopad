@@ -21,6 +21,7 @@ export interface ISessionStore {
     token: string;
     userId: string;
     userIsAdmin: boolean;
+    clearSession();
 }
 
 export class LocalSessionStore implements ISessionStore {
@@ -46,5 +47,11 @@ export class LocalSessionStore implements ISessionStore {
 
     public set userIsAdmin(value: boolean) {
         localStorage.setItem("userIsAdmin", value ? "true" : "false");
+    }
+
+    public clearSession() {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userIsAdmin");
     }
 }

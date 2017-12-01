@@ -9,16 +9,20 @@ import {
     AddTopicMutation,
     JoinAsExpertMutation,
     JoinAsNewbieMutation,
-    AllTopicsQuery
+    LeaveAsExpertMutation,
+    LeaveAsNewbieMutation,
+    AllTopicsQuery,
+    TopicDisplayFragment
 } from "../../../mopad-graphql";
 import { ApolloError, ApolloQueryResult } from "apollo-client";
 import { compose } from "react-apollo";
+import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {}
 interface HomeProps {
     error: ApolloError;
     loading: boolean;
-    topics: AllTopicsQuery["allTopics"];
+    topics: TopicDisplayFragment[];
     addTopic(
         title: string,
         description?: string
@@ -31,6 +35,14 @@ interface HomeProps {
         userId: string,
         topicId: string
     ): Promise<ApolloQueryResult<JoinAsNewbieMutation>>;
+    leaveAsExpert(
+        userId: string,
+        topicId: string
+    ): Promise<ApolloQueryResult<LeaveAsExpertMutation>>;
+    leaveAsNewbie(
+        userId: string,
+        topicId: string
+    ): Promise<ApolloQueryResult<LeaveAsNewbieMutation>>;
 }
 type Props = PublicProps & HomeProps;
 
@@ -42,7 +54,7 @@ export class Home extends React.Component<Props> {
 
         this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
-        this.onJoin = this.onJoin.bind(this);
+        this.onChangeParticipation = this.onChangeParticipation.bind(this);
     }
 
     public render() {
@@ -53,7 +65,7 @@ export class Home extends React.Component<Props> {
                 </h1>
                 <TopicList
                     topics={this.props.topics || []}
-                    onJoin={this.onJoin}
+                    onChangeParticipation={this.onChangeParticipation}
                 />
                 <TopicAdd onTopicAdd={this.onTopicAdd} />
             </div>
@@ -64,32 +76,49 @@ export class Home extends React.Component<Props> {
         this.props.addTopic(title);
     }
 
-    private onJoin(topicId: string, type: "expert" | "newbie"): void {
-        console.log("join", type, this.sessionStore.userId, topicId);
-        if (type == "expert") {
-            this.props.joinAsExpert(this.sessionStore.userId, topicId);
+    private onChangeParticipation(
+        topicId: string,
+        type: ParticipationType,
+        action: ParticipationChange
+    ): void {
+        switch (`${action}:${type}`) {
+            case "join:expert":
+                this.props.joinAsExpert(this.sessionStore.userId, topicId);
+                break;
+            case "join:newbie":
+                this.props.joinAsNewbie(this.sessionStore.userId, topicId);
+                break;
+            default:
+                throw new Error("invalid change of participation");
         }
     }
 }
 
-const ADD_TOPIC_MUTATION = gql`
-    mutation AddTopic($title: String!, $description: String) {
-        createTopic(title: $title, description: $description) {
+const TOPIC_DISPLAY_FRAGMENT = gql`
+    fragment TopicDisplay on Topic {
+        id
+        title
+        description
+        experts {
             id
-            title
-            description
-            experts {
-                id
-                name
-            }
-            newbies {
-                id
-                name
-            }
+            name
+        }
+        newbies {
+            id
+            name
         }
     }
 `;
 
+const ADD_TOPIC_MUTATION = gql`
+    mutation AddTopic($title: String!, $description: String) {
+        createTopic(title: $title, description: $description) {
+            ...TopicDisplay
+        }
+    }
+`;
+
+/* TODO: maybe use factory and define types manually */
 const JOIN_AS_EXPERT_MUTATION = gql`
     mutation JoinAsExpert($userId: ID!, $topicId: ID!) {
         addToExpertParticipation(
@@ -97,20 +126,11 @@ const JOIN_AS_EXPERT_MUTATION = gql`
             topicsAsExpertTopicId: $topicId
         ) {
             topicsAsExpertTopic {
-                id
-                title
-                description
-                experts {
-                    id
-                    name
-                }
-                newbies {
-                    id
-                    name
-                }
+                ...TopicDisplay
             }
         }
     }
+    ${TOPIC_DISPLAY_FRAGMENT}
 `;
 
 const JOIN_AS_NEWBIE_MUTATION = gql`
@@ -120,38 +140,48 @@ const JOIN_AS_NEWBIE_MUTATION = gql`
             topicsAsNewbieTopicId: $topicId
         ) {
             topicsAsNewbieTopic {
-                id
-                title
-                description
-                experts {
-                    id
-                    name
-                }
-                newbies {
-                    id
-                    name
-                }
+                ...TopicDisplay
             }
         }
     }
+    ${TOPIC_DISPLAY_FRAGMENT}
+`;
+
+const LEAVE_AS_EXPERT_MUTATION = gql`
+    mutation LeaveAsExpert($userId: ID!, $topicId: ID!) {
+        removeFromExpertParticipation(
+            expertsUserId: $userId
+            topicsAsExpertTopicId: $topicId
+        ) {
+            topicsAsExpertTopic {
+                ...TopicDisplay
+            }
+        }
+    }
+    ${TOPIC_DISPLAY_FRAGMENT}
+`;
+
+const LEAVE_AS_NEWBIE_MUTATION = gql`
+    mutation LeaveAsNewbie($userId: ID!, $topicId: ID!) {
+        removeFromNewbieParticipation(
+            newbiesUserId: $userId
+            topicsAsNewbieTopicId: $topicId
+        ) {
+            topicsAsNewbieTopic {
+                ...TopicDisplay
+            }
+        }
+    }
+    ${TOPIC_DISPLAY_FRAGMENT}
 `;
 
 const ALL_TOPICS_QUERY = gql`
     query AllTopics {
         allTopics {
-            id
-            title
-            description
-            experts {
-                id
-                name
-            }
-            newbies {
-                id
-                name
-            }
+            ...TopicDisplay
         }
     }
+    ${TOPIC_DISPLAY_FRAGMENT}
 `;
 
 const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
@@ -177,6 +207,7 @@ const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
     })
 });
 
+/* TODO: maybe use factory pattern and define types manually */
 const joinTopicAsExpert = graphql<JoinAsExpertMutation>(
     JOIN_AS_EXPERT_MUTATION,
     {
@@ -199,6 +230,28 @@ const joinTopicAsNewbie = graphql<JoinAsExpertMutation>(
     }
 );
 
+const leaveTopicAsExpert = graphql<JoinAsExpertMutation>(
+    LEAVE_AS_EXPERT_MUTATION,
+    {
+        props: ({ mutate, ownProps }) => ({
+            ...ownProps,
+            leaveAsExpert: (userId: string, topicId: string) =>
+                mutate({ variables: { userId, topicId } })
+        })
+    }
+);
+
+const leaveTopicAsNewbie = graphql<JoinAsExpertMutation>(
+    LEAVE_AS_NEWBIE_MUTATION,
+    {
+        props: ({ mutate, ownProps }) => ({
+            ...ownProps,
+            leaveAsNewbie: (userId: string, topicId: string) =>
+                mutate({ variables: { userId, topicId } })
+        })
+    }
+);
+
 const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     props: ({ data, ownProps }) => ({
         ...ownProps,
@@ -212,5 +265,7 @@ export default compose(
     addTopic,
     joinTopicAsExpert,
     joinTopicAsNewbie,
+    leaveTopicAsExpert,
+    leaveTopicAsNewbie,
     loadTopic
 )(Home);

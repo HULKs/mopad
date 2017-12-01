@@ -9,11 +9,16 @@ import {
 } from "material-ui/Card";
 import FlatButton from "material-ui/FlatButton";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
-import { AllTopicsQuery } from "../../../mopad-graphql";
+import { TopicDisplayFragment } from "../../../mopad-graphql";
+import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
-    topic: AllTopicsQuery["allTopics"][0];
-    onJoin(topicId: string, as: "expert" | "newbie");
+    topic: TopicDisplayFragment;
+    onChangeParticipation(
+        topicId: string,
+        as: ParticipationType,
+        action: ParticipationChange
+    );
 }
 
 interface IntlProps {
@@ -24,7 +29,7 @@ export class DisconnectedTopic extends React.Component<
     PublicProps & IntlProps
 > {
     public render() {
-        const { onJoin, intl } = this.props;
+        const { onChangeParticipation, intl } = this.props;
         return (
             <Card className="topic card">
                 <CardTitle
@@ -43,11 +48,23 @@ export class DisconnectedTopic extends React.Component<
                 </CardText>
                 <CardActions>
                     <FlatButton
-                        onClick={() => onJoin(this.props.topic.id, "expert")}
+                        onClick={() =>
+                            onChangeParticipation(
+                                this.props.topic.id,
+                                "expert",
+                                "join"
+                            )
+                        }
                         label={intl.formatMessage({ id: "topic.join.expert" })}
                     />
                     <FlatButton
-                        onClick={() => onJoin(this.props.topic.id, "newbie")}
+                        onClick={() =>
+                            onChangeParticipation(
+                                this.props.topic.id,
+                                "newbie",
+                                "join"
+                            )
+                        }
                         label={intl.formatMessage({ id: "topic.join.newbie" })}
                     />
                 </CardActions>

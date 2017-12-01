@@ -2,19 +2,9 @@ import * as React from "react";
 import { FormattedMessage } from "react-intl";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
+import { ApolloError } from "apollo-client";
 import { ISessionStore, LocalSessionStore } from "../../business/auth";
-import {
-    AddTopicMutation,
-    JoinAsExpertMutation,
-    JoinAsNewbieMutation,
-    LeaveAsExpertMutation,
-    LeaveAsNewbieMutation,
-    AllTopicsQuery,
-    TopicDisplayFragment
-} from "../../../mopad-graphql";
-import { ApolloError, ApolloQueryResult } from "apollo-client";
 import { ParticipationType, ParticipationChange } from "../../business/types";
-
 import { TopicConnector, TopicViewModel } from "../../business/topics";
 
 interface PublicProps {}
@@ -22,26 +12,11 @@ interface HomeProps {
     error: ApolloError;
     loading: boolean;
     topics: TopicViewModel[];
-    addTopic(
-        title: string,
-        description?: string
-    ): Promise<ApolloQueryResult<AddTopicMutation>>;
-    joinAsExpert(
-        userId: string,
-        topicId: string
-    ): Promise<ApolloQueryResult<JoinAsExpertMutation>>;
-    joinAsNewbie(
-        userId: string,
-        topicId: string
-    ): Promise<ApolloQueryResult<JoinAsNewbieMutation>>;
-    leaveAsExpert(
-        userId: string,
-        topicId: string
-    ): Promise<ApolloQueryResult<LeaveAsExpertMutation>>;
-    leaveAsNewbie(
-        userId: string,
-        topicId: string
-    ): Promise<ApolloQueryResult<LeaveAsNewbieMutation>>;
+    addTopic(title: string, description?: string);
+    joinAsExpert(userId: string, topicId: string);
+    joinAsNewbie(userId: string, topicId: string);
+    leaveAsExpert(userId: string, topicId: string);
+    leaveAsNewbie(userId: string, topicId: string);
 }
 type Props = PublicProps & HomeProps;
 

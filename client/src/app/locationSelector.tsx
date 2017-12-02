@@ -24,6 +24,7 @@ function DisconnectedLocationSelector(props: LocationSelectorProps) {
                 onChange(v);
             }}
         >
+            <MenuItem key="none" value={null} primaryText="---" />
             {(locations || []).map(l => (
                 <MenuItem key={l.id} value={l.id} primaryText={l.name} />
             ))}

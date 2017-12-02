@@ -22,12 +22,13 @@ const floatStyle = {
 
 interface TopicAddProps {
     intl: InjectedIntl;
-    onTopicAdd(title: string);
+    onTopicAdd(title: string, description: string);
 }
 
 interface State {
     dialogOpen: boolean;
     topicTitle: string;
+    topicDescription: string;
 }
 
 export class DisconnectedTopicAdd extends React.Component<
@@ -38,7 +39,8 @@ export class DisconnectedTopicAdd extends React.Component<
         super(props);
         this.state = {
             dialogOpen: false,
-            topicTitle: ""
+            topicTitle: "",
+            topicDescription: ""
         };
         this.handleClose = this.handleClose.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -81,14 +83,27 @@ export class DisconnectedTopicAdd extends React.Component<
                     <TextField
                         fullWidth
                         hintText={this.props.intl.formatMessage({
-                            id: "topics.add.dialog.input.hint"
+                            id: "topics.add.dialog.titleInput.hint"
                         })}
                         floatingLabelText={this.props.intl.formatMessage({
-                            id: "topics.add.dialog.input.label"
+                            id: "topics.add.dialog.titleInput.label"
                         })}
                         value={this.state.topicTitle}
                         onChange={(e, val) => {
                             this.setState({ topicTitle: val });
+                        }}
+                    />
+                    <TextField
+                        fullWidth
+                        hintText={this.props.intl.formatMessage({
+                            id: "topics.add.dialog.descriptionInput.hint"
+                        })}
+                        floatingLabelText={this.props.intl.formatMessage({
+                            id: "topics.add.dialog.descriptionInput.label"
+                        })}
+                        value={this.state.topicDescription}
+                        onChange={(e, val) => {
+                            this.setState({ topicDescription: val });
                         }}
                     />
                 </Dialog>
@@ -97,12 +112,23 @@ export class DisconnectedTopicAdd extends React.Component<
     }
 
     private handleClose() {
-        this.setState({ dialogOpen: false, topicTitle: "" });
+        this.setState({
+            dialogOpen: false,
+            topicTitle: "",
+            topicDescription: ""
+        });
     }
 
     private handleSubmit() {
-        this.props.onTopicAdd(this.state.topicTitle);
-        this.setState({ dialogOpen: false, topicTitle: "" });
+        this.props.onTopicAdd(
+            this.state.topicTitle,
+            this.state.topicDescription
+        );
+        this.setState({
+            dialogOpen: false,
+            topicTitle: "",
+            topicDescription: ""
+        });
     }
 }
 

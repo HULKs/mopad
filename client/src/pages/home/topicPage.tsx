@@ -1,9 +1,11 @@
 import * as React from "react";
 import { FormattedMessage } from "react-intl";
 import { ApolloError } from "apollo-client";
+import * as Moment from "moment";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
+import { TopicFilterValue } from "./topicFilterSelector";
 import { withUser, User } from "../../business/withUser";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 import {
@@ -28,7 +30,7 @@ interface HomeProps {
 }
 type Props = PublicProps & HomeProps;
 interface State {
-    filterUserTopics: boolean;
+    filterUserTopics: TopicFilterValue;
 }
 
 export class DisconnectedTopicsPage extends React.Component<Props, State> {
@@ -39,7 +41,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
-            filterUserTopics: false
+            filterUserTopics: "all-upcoming"
         };
 
         this.onTopicAdd = this.onTopicAdd.bind(this);
@@ -82,9 +84,17 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
     private getFilteredTopics() {
         const { topics } = this.props;
         const { filterUserTopics } = this.state;
-        return (topics || []).filter(
-            t => !filterUserTopics || (t.userIsExpert || t.userIsNewbie)
-        );
+        return (topics || []).filter(t => {
+            const isPast = Moment(t.begin)
+                .add(30, "m")
+                .isBefore(Moment());
+            const isMy = t.userIsExpert || t.userIsNewbie;
+            if (filterUserTopics === "past" && isPast) return true;
+            if (filterUserTopics === "my-upcoming" && !isPast && isMy)
+                return true;
+            if (filterUserTopics === "all-upcoming" && !isPast) return true;
+            return false;
+        });
     }
 
     private onFilterChange(value) {

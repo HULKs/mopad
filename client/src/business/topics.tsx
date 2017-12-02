@@ -4,16 +4,32 @@ import graphql from "react-apollo/graphql";
 import { compose } from "react-apollo";
 import {
     AddTopicMutation,
+    UpdateTopicMutation,
     JoinAsExpertMutation,
     JoinAsNewbieMutation,
     LeaveAsExpertMutation,
     LeaveAsNewbieMutation,
     DeleteTopicMutation,
-    ConnectLocationMutation,
     AllTopicsQuery,
     TopicDisplayFragment
 } from "../../mopad-graphql";
 import { ISessionStore, LocalSessionStore } from "./auth";
+import * as Moment from "moment";
+
+export interface TopicViewModel extends TopicDisplayFragment {
+    userIsExpert: boolean;
+    userIsNewbie: boolean;
+    canManage: boolean;
+}
+
+export interface TopicUpdate {
+    id: string;
+    title: string;
+    description: string | null;
+    begin: Date | null;
+    locationId: string | null;
+    oldLocationId: string | null;
+}
 
 const TOPIC_DISPLAY_FRAGMENT = gql`
     fragment TopicDisplay on Topic {
@@ -22,6 +38,7 @@ const TOPIC_DISPLAY_FRAGMENT = gql`
         description
         begin
         location {
+            id
             name
         }
         experts {
@@ -38,6 +55,15 @@ const TOPIC_DISPLAY_FRAGMENT = gql`
 const ADD_TOPIC_MUTATION = gql`
     mutation AddTopic($title: String!, $description: String) {
         createTopic(title: $title, description: $description) {
+            ...TopicDisplay
+        }
+    }
+    ${TOPIC_DISPLAY_FRAGMENT}
+`;
+
+const UPDATE_TOPIC_MUTATION = gql`
+    mutation UpdateTopic($id: ID!, $title: String!, $description: String, $begin: DateTime, $locationId: ID) {
+        updateTopic(id: $id, title: $title, description: $description, begin: $begin, locationId: $locationId) {
             ...TopicDisplay
         }
     }
@@ -109,23 +135,9 @@ const LEAVE_AS_NEWBIE_MUTATION = gql`
     ${TOPIC_DISPLAY_FRAGMENT}
 `;
 
-const CONNECT_LOCATION_MUTATION = gql`
-    mutation ConnectLocation($topicId: ID!, $locationId: ID!) {
-        addToTopicsInLocation(
-            topicsTopicId: $topicId
-            locationLocationId: $locationId
-        ) {
-            topicsTopic {
-                ...TopicDisplay
-            }
-        }
-    }
-    ${TOPIC_DISPLAY_FRAGMENT}
-`;
-
 const ALL_TOPICS_QUERY = gql`
     query AllTopics {
-        allTopics {
+        allTopics(orderBy: begin_ASC) {
             ...TopicDisplay
         }
     }
@@ -148,12 +160,53 @@ const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
                     });
                     // Add our todo from the mutation to the end.
                     data.allTopics.push(createTopic);
+                    data.allTopics.sort(orderTopicByBeginAsc);
                     // Write our data back to the cache.
                     proxy.writeQuery({ query: ALL_TOPICS_QUERY, data });
                 }
             })
     })
 });
+
+const updateTopic = graphql<UpdateTopicMutation>(UPDATE_TOPIC_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        updateTopic: (update: TopicUpdate) =>
+            mutate({
+                variables: {
+                    id: update.id,
+                    title: update.title,
+                    description: update.description,
+                    begin: update.begin ? update.begin.toISOString() : null,
+                    locationId: update.locationId
+                },
+                update: (
+                    proxy,
+                    { data: { createTopic } }: { data: AddTopicMutation }
+                ) => {
+                    // Read the data from our cache for this query.
+                    const data = proxy.readQuery<AllTopicsQuery>({
+                        query: ALL_TOPICS_QUERY
+                    });
+                    data.allTopics.sort(orderTopicByBeginAsc);
+                    // Write our data back to the cache.
+                    proxy.writeQuery({ query: ALL_TOPICS_QUERY, data });
+                }
+            })
+    })
+});
+
+function orderTopicByBeginAsc(
+    a: TopicDisplayFragment,
+    b: TopicDisplayFragment
+): number {
+    if (a.begin === b.begin) return 0;
+    if (a.begin === null) return -1;
+    if (b.begin === null) return 1;
+    if (Moment(a.begin).isBefore(b.begin)) return -1;
+    if (Moment(b.begin).isBefore(a.begin)) return 1;
+    return 0;
+}
 
 const deleteTopic = graphql<DeleteTopicMutation>(DELETE_TOPIC_MUTATION, {
     props: ({ mutate, ownProps }) => ({
@@ -225,17 +278,6 @@ const leaveTopicAsNewbie = graphql<JoinAsExpertMutation>(
     }
 );
 
-const connectLocation = graphql<ConnectLocationMutation>(
-    CONNECT_LOCATION_MUTATION,
-    {
-        props: ({ mutate, ownProps }) => ({
-            ...ownProps,
-            connectLocation: (topicId: string, locationId: string) =>
-                mutate({ variables: { topicId, locationId } })
-        })
-    }
-);
-
 const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     props: ({ data, ownProps }) => ({
         ...ownProps,
@@ -245,11 +287,6 @@ const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     })
 });
 
-export interface TopicViewModel extends TopicDisplayFragment {
-    userIsExpert: boolean;
-    userIsNewbie: boolean;
-    canManage: boolean;
-}
 interface TopicProps {
     allTopics: TopicDisplayFragment[];
 }
@@ -296,12 +333,12 @@ function topicConverter<Props extends TopicViewModelProps, State>(
 
 export const TopicConnector = compose(
     addTopic,
+    updateTopic,
     deleteTopic,
     joinTopicAsExpert,
     joinTopicAsNewbie,
     leaveTopicAsExpert,
     leaveTopicAsNewbie,
-    connectLocation,
     loadTopic,
     topicConverter
 );

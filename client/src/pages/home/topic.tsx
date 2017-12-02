@@ -11,11 +11,12 @@ import {
 } from "material-ui/Card";
 import FlatButton from "material-ui/FlatButton";
 import IconButton from "material-ui/IconButton";
-import ActionDeleteForeverIcon from "material-ui/svg-icons/action/delete-forever";
-import ActionQueryBuilderIcon from "material-ui/svg-icons/action/query-builder";
-import { TopicViewModel } from "../../business/topics";
+import DeleteIcon from "material-ui/svg-icons/action/delete-forever";
+import EditIcon from "material-ui/svg-icons/editor/mode-edit";
+import { TopicViewModel, TopicUpdate } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
-import TopicScheduleDialog from "./topicScheduleDialog";
+import TopicEditDialog from "./topicEditDialog";
+import TopicDeleteDialog from "./topicDeleteDialog";
 
 interface PublicProps {
     topic: TopicViewModel;
@@ -24,7 +25,7 @@ interface PublicProps {
         as: ParticipationType,
         action: ParticipationChange
     );
-    onSchedule?(topicId: string, locationId: string, begin: Date);
+    onUpdate?(update: TopicUpdate);
     onDelete?(topicId: string);
 }
 
@@ -33,8 +34,15 @@ interface IntlProps {
 }
 
 interface TopicState {
-    scheduleDialogOpen: boolean;
+    editDialogOpen: boolean;
+    deleteDialogOpen: boolean;
 }
+
+const topicLabelStyle: React.CSSProperties = {
+    display: "inline-block",
+    width: 90,
+    fontWeight: "bold"
+};
 
 export class DisconnectedTopic extends React.Component<
     PublicProps & IntlProps,
@@ -43,7 +51,8 @@ export class DisconnectedTopic extends React.Component<
     constructor(props) {
         super(props);
         this.state = {
-            scheduleDialogOpen: false
+            editDialogOpen: false,
+            deleteDialogOpen: false
         };
     }
     public render() {
@@ -51,32 +60,62 @@ export class DisconnectedTopic extends React.Component<
             onChangeParticipation,
             intl,
             topic,
-            onSchedule,
+            onUpdate,
             onDelete
         } = this.props;
-        const { scheduleDialogOpen } = this.state;
+        const { editDialogOpen, deleteDialogOpen } = this.state;
 
         return (
             <Card className="topic card">
                 <TopicActionIcons
                     show={topic.canManage}
                     onScheduleClick={() =>
-                        this.setState({ scheduleDialogOpen: true })
+                        this.setState({ editDialogOpen: true })
                     }
-                    onDeleteClick={() => onDelete(topic.id)}
+                    onDeleteClick={() =>
+                        this.setState({ deleteDialogOpen: true })
+                    }
                 />
                 <CardTitle
                     title={topic.title}
-                    subtitle={this.getDescriptionText(topic)}
+                    subtitle={topic.description || ""}
                     style={{ pointerEvents: "none" }}
                 />
                 <CardText>
-                    <div>
-                        <FormattedMessage id="topic.label.expert" />:{" "}
+                    {topic.location ? (
+                        <div>
+                            <span style={topicLabelStyle}>
+                                <FormattedMessage id="topic.label.location" />:{" "}
+                            </span>
+                            {topic.location.name}
+                        </div>
+                    ) : (
+                        ""
+                    )}
+                    {topic.begin ? (
+                        <div>
+                            <span style={topicLabelStyle}>
+                                <FormattedMessage id="topic.label.begin" />:{" "}
+                            </span>
+                            {Moment(topic.begin).format("dddd h:mma")}
+                        </div>
+                    ) : (
+                        ""
+                    )}
+                    <div
+                        style={{
+                            marginTop: topic.location || topic.begin ? 8 : 0
+                        }}
+                    >
+                        <span style={topicLabelStyle}>
+                            <FormattedMessage id="topic.label.expert" />:{" "}
+                        </span>
                         {topic.experts.map(u => u.name).join(", ")}
                     </div>
                     <div>
-                        <FormattedMessage id="topic.label.newbie" />:{" "}
+                        <span style={topicLabelStyle}>
+                            <FormattedMessage id="topic.label.newbie" />:{" "}
+                        </span>
                         {topic.newbies.map(u => u.name).join(", ")}
                     </div>
                 </CardText>
@@ -87,15 +126,23 @@ export class DisconnectedTopic extends React.Component<
                         intl={intl}
                     />
                 </CardActions>
-                <TopicScheduleDialog
-                    open={scheduleDialogOpen}
-                    onSubmit={(locId, begin) => {
-                        onSchedule(topic.id, locId, begin);
-                        this.setState({ scheduleDialogOpen: false });
+                <TopicEditDialog
+                    open={editDialogOpen}
+                    topic={topic}
+                    onSubmit={update => {
+                        this.setState({ editDialogOpen: false });
+                        onUpdate && onUpdate(update);
                     }}
-                    onCancel={() =>
-                        this.setState({ scheduleDialogOpen: false })
-                    }
+                    onCancel={() => this.setState({ editDialogOpen: false })}
+                />
+                <TopicDeleteDialog
+                    open={deleteDialogOpen}
+                    topic={topic}
+                    onConfirm={() => {
+                        this.setState({ deleteDialogOpen: false });
+                        onDelete && onDelete(topic.id);
+                    }}
+                    onCancel={() => this.setState({ deleteDialogOpen: false })}
                 />
             </Card>
         );
@@ -140,14 +187,14 @@ function TopicActionIcons({
                 iconStyle={iconInnerStyle}
                 onClick={onScheduleClick}
             >
-                <ActionQueryBuilderIcon />
+                <EditIcon />
             </IconButton>
             <IconButton
                 style={iconOuterStyle}
                 iconStyle={iconInnerStyle}
                 onClick={onDeleteClick}
             >
-                <ActionDeleteForeverIcon />
+                <DeleteIcon />
             </IconButton>
         </div>
     );

@@ -10,7 +10,7 @@ import {
 import FlatButton from "material-ui/FlatButton";
 import Topic from "./topic";
 import { FormattedMessage, injectIntl } from "react-intl";
-import { TopicViewModel } from "../../business/topics";
+import { TopicViewModel, TopicUpdate } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
@@ -20,7 +20,7 @@ interface PublicProps {
         as: ParticipationType,
         action: ParticipationChange
     );
-    onScheduleTopic?(topicId: string, locationId: string, begin: Date);
+    onUpdateTopic?(update: TopicUpdate);
     onDeleteTopic?(topicId: string);
 }
 
@@ -28,7 +28,7 @@ export default class TopicList extends React.Component<PublicProps> {
     public render() {
         const {
             onChangeParticipation,
-            onScheduleTopic,
+            onUpdateTopic,
             onDeleteTopic
         } = this.props;
         return (
@@ -38,7 +38,7 @@ export default class TopicList extends React.Component<PublicProps> {
                         key={topic.id}
                         topic={topic}
                         onChangeParticipation={onChangeParticipation}
-                        onSchedule={onScheduleTopic}
+                        onUpdate={onUpdateTopic}
                         onDelete={onDeleteTopic}
                     />
                 ))}

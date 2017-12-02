@@ -6,7 +6,11 @@ import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
 import { ISessionStore, LocalSessionStore } from "../../business/auth";
 import { ParticipationType, ParticipationChange } from "../../business/types";
-import { TopicConnector, TopicViewModel } from "../../business/topics";
+import {
+    TopicConnector,
+    TopicViewModel,
+    TopicUpdate
+} from "../../business/topics";
 
 interface PublicProps {}
 interface HomeProps {
@@ -14,12 +18,12 @@ interface HomeProps {
     loading: boolean;
     topics: TopicViewModel[];
     addTopic(title: string, description?: string);
+    updateTopic(update: TopicUpdate);
+    deleteTopic(topicId: string);
     joinAsExpert(userId: string, topicId: string);
     joinAsNewbie(userId: string, topicId: string);
     leaveAsExpert(userId: string, topicId: string);
     leaveAsNewbie(userId: string, topicId: string);
-    connectLocation(topicId: string, locationId: string);
-    deleteTopic(topicId: string);
 }
 type Props = PublicProps & HomeProps;
 interface State {
@@ -41,7 +45,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
         this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
         this.onChangeParticipation = this.onChangeParticipation.bind(this);
-        this.onScheduleTopic = this.onScheduleTopic.bind(this);
+        this.onUpdateTopic = this.onUpdateTopic.bind(this);
         this.onDeleteTopic = this.onDeleteTopic.bind(this);
         this.onFilterChange = this.onFilterChange.bind(this);
         this.actionMap = {
@@ -68,7 +72,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
                 <TopicList
                     topics={this.getFilteredTopics()}
                     onChangeParticipation={this.onChangeParticipation}
-                    onScheduleTopic={this.onScheduleTopic}
+                    onUpdateTopic={this.onUpdateTopic}
                     onDeleteTopic={this.onDeleteTopic}
                 />
                 <TopicAdd onTopicAdd={this.onTopicAdd} />
@@ -88,8 +92,8 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
         this.setState({ filterUserTopics: value });
     }
 
-    private onTopicAdd(title: string): void {
-        this.props.addTopic(title);
+    private onTopicAdd(title: string, description: string): void {
+        this.props.addTopic(title, description);
     }
 
     private onChangeParticipation(
@@ -104,8 +108,8 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
         this.actionMap[actionString](this.sessionStore.userId, topicId);
     }
 
-    private onScheduleTopic(topicId: string, locationId: string, begin: Date) {
-        console.log("Schedule", topicId, locationId, begin);
+    private onUpdateTopic(update: TopicUpdate) {
+        this.props.updateTopic(update);
     }
 
     private onDeleteTopic(topicId: string) {

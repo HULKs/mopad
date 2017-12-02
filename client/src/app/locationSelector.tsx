@@ -34,7 +34,7 @@ function DisconnectedLocationSelector(props: LocationSelectorProps) {
 
 const ALL_LOCATIONS_QUERY = gql`
     query AllLocations {
-        allLocations {
+        allLocations(orderBy: name_ASC) {
             id
             name
         }

@@ -96,6 +96,7 @@ export class DisconnectedTopicAdd extends React.Component<
                     />
                     <TextField
                         fullWidth
+                        multiLine
                         hintText={this.props.intl.formatMessage({
                             id: "topics.add.dialog.descriptionInput.hint"
                         })}

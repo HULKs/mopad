@@ -110,6 +110,7 @@ export class DisconnectedEditDialog extends React.Component<
                     <div>
                         <TextField
                             fullWidth
+                            multiLine
                             value={data.description}
                             onChange={(e, val) => {
                                 this.setState({

@@ -17,7 +17,8 @@ import { FormattedMessage, InjectedIntl, injectIntl } from "react-intl";
 const floatStyle = {
     position: "fixed",
     bottom: "5%",
-    right: "5%"
+    right: "5%",
+    zIndex: 100
 };
 
 interface TopicAddProps {

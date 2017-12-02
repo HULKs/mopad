@@ -43,4 +43,5 @@ type Topic @model {
     newbies: [User!]! @relation(name: "NewbieParticipation")
     begin: DateTime
     location: Location @relation(name: "TopicsInLocation")
+    isTalk: Boolean!
 }

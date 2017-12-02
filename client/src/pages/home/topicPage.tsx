@@ -4,7 +4,7 @@ import { ApolloError } from "apollo-client";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
-import { ISessionStore, LocalSessionStore } from "../../business/auth";
+import { withUser, User } from "../../business/withUser";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 import {
     TopicConnector,
@@ -17,6 +17,7 @@ interface HomeProps {
     error: ApolloError;
     loading: boolean;
     topics: TopicViewModel[];
+    user: User;
     addTopic(title: string, description?: string);
     updateTopic(update: TopicUpdate);
     deleteTopic(topicId: string);
@@ -31,7 +32,6 @@ interface State {
 }
 
 export class DisconnectedTopicsPage extends React.Component<Props, State> {
-    private sessionStore: ISessionStore;
     private actionMap: {
         [action: string]: (userId: string, topicId: string) => any;
     };
@@ -42,7 +42,6 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
             filterUserTopics: false
         };
 
-        this.sessionStore = new LocalSessionStore();
         this.onTopicAdd = this.onTopicAdd.bind(this);
         this.onChangeParticipation = this.onChangeParticipation.bind(this);
         this.onUpdateTopic = this.onUpdateTopic.bind(this);
@@ -105,7 +104,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
         if (!this.actionMap.hasOwnProperty(actionString)) {
             throw new Error("invalid change of participation");
         }
-        this.actionMap[actionString](this.sessionStore.userId, topicId);
+        this.actionMap[actionString](this.props.user.id, topicId);
     }
 
     private onUpdateTopic(update: TopicUpdate) {
@@ -117,4 +116,4 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
     }
 }
 
-export default TopicConnector(DisconnectedTopicsPage);
+export default TopicConnector(withUser(DisconnectedTopicsPage));

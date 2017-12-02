@@ -13,7 +13,7 @@ import {
     AllTopicsQuery,
     TopicDisplayFragment
 } from "../../mopad-graphql";
-import { ISessionStore, LocalSessionStore } from "./auth";
+import { withUser, User } from "./withUser";
 import * as Moment from "moment";
 
 export interface TopicViewModel extends TopicDisplayFragment {
@@ -287,46 +287,36 @@ const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     })
 });
 
-interface TopicProps {
+interface ExternalProps {
     allTopics: TopicDisplayFragment[];
+    user: User;
 }
-interface TopicViewModelProps {
+interface InjectedProps {
     topics: TopicViewModel[];
 }
-function topicConverter<Props extends TopicViewModelProps, State>(
-    Comp: new () => React.Component<Props, State>
+function topicConverter<Props extends {}>(
+    Comp:
+        | React.ComponentClass<Props & InjectedProps>
+        | React.StatelessComponent<Props & InjectedProps>
 ) {
-    return class ConvertedTopicComponent extends React.Component<
-        Props & TopicProps,
-        State
-    > {
-        private sessionStore: ISessionStore;
-        constructor(props) {
+    return class extends React.Component<Props & ExternalProps> {
+        constructor(props: Props & ExternalProps) {
             super(props);
-            this.sessionStore = new LocalSessionStore();
-            this.convertTopic = this.convertTopic.bind(this);
+            this.props;
         }
 
-        private convertTopic(topic: TopicDisplayFragment): TopicViewModel {
-            return {
+        private convertTopics(props: ExternalProps): TopicViewModel[] {
+            return (props.allTopics || []).map(topic => ({
                 ...topic,
-                userIsExpert: topic.experts.some(
-                    u => u.id == this.sessionStore.userId
-                ),
-                userIsNewbie: topic.newbies.some(
-                    u => u.id == this.sessionStore.userId
-                ),
-                canManage: this.sessionStore.userIsAdmin
-            };
+                userIsExpert: topic.experts.some(u => u.id == props.user.id),
+                userIsNewbie: topic.newbies.some(u => u.id == props.user.id),
+                canManage: props.user.isAdmin
+            }));
         }
 
         render() {
-            return (
-                <Comp
-                    {...this.props}
-                    topics={(this.props.allTopics || []).map(this.convertTopic)}
-                />
-            );
+            const topics = this.convertTopics(this.props);
+            return <Comp topics={topics} {...this.props} />;
         }
     };
 }
@@ -340,5 +330,6 @@ export const TopicConnector = compose(
     leaveTopicAsExpert,
     leaveTopicAsNewbie,
     loadTopic,
+    withUser,
     topicConverter
 );

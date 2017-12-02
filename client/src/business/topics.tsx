@@ -26,9 +26,9 @@ export interface TopicUpdate {
     id: string;
     title: string;
     description: string | null;
+    isTalk: boolean;
     begin: Date | null;
     locationId: string | null;
-    oldLocationId: string | null;
 }
 
 const TOPIC_DISPLAY_FRAGMENT = gql`
@@ -36,6 +36,7 @@ const TOPIC_DISPLAY_FRAGMENT = gql`
         id
         title
         description
+        isTalk
         begin
         location {
             id
@@ -54,7 +55,7 @@ const TOPIC_DISPLAY_FRAGMENT = gql`
 
 const ADD_TOPIC_MUTATION = gql`
     mutation AddTopic($title: String!, $description: String) {
-        createTopic(title: $title, description: $description) {
+        createTopic(title: $title, description: $description, isTalk: false) {
             ...TopicDisplay
         }
     }
@@ -62,8 +63,8 @@ const ADD_TOPIC_MUTATION = gql`
 `;
 
 const UPDATE_TOPIC_MUTATION = gql`
-    mutation UpdateTopic($id: ID!, $title: String!, $description: String, $begin: DateTime, $locationId: ID) {
-        updateTopic(id: $id, title: $title, description: $description, begin: $begin, locationId: $locationId) {
+    mutation UpdateTopic($id: ID!, $title: String!, $description: String, $isTalk: Boolean!, $begin: DateTime, $locationId: ID) {
+        updateTopic(id: $id, title: $title, description: $description, isTalk: $isTalk, begin: $begin, locationId: $locationId) {
             ...TopicDisplay
         }
     }
@@ -177,6 +178,7 @@ const updateTopic = graphql<UpdateTopicMutation>(UPDATE_TOPIC_MUTATION, {
                     id: update.id,
                     title: update.title,
                     description: update.description,
+                    isTalk: update.isTalk,
                     begin: update.begin ? update.begin.toISOString() : null,
                     locationId: update.locationId
                 },

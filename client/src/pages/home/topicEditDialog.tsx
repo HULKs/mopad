@@ -5,6 +5,7 @@ import * as Moment from "moment";
 import FlatButton from "material-ui/FlatButton";
 import Dialog from "material-ui/Dialog";
 import TextField from "material-ui/TextField";
+import Checkbox from "material-ui/Checkbox";
 import DatePicker from "material-ui/DatePicker";
 import TimePicker from "material-ui/TimePicker";
 import LocationSelector from "../../app/locationSelector";
@@ -39,9 +40,9 @@ export class DisconnectedEditDialog extends React.Component<
                 id: topic.id,
                 title: topic.title,
                 description: topic.description || "",
+                isTalk: topic.isTalk,
                 begin: begin,
-                locationId: topic.location ? topic.location.id : null,
-                oldLocationId: topic.location ? topic.location.id : null
+                locationId: topic.location ? topic.location.id : null
             },
             date: begin,
             time: begin
@@ -79,6 +80,17 @@ export class DisconnectedEditDialog extends React.Component<
                 onRequestClose={onCancel}
                 autoScrollBodyContent
             >
+                <div>
+                    <Checkbox
+                        label="Is Talk?"
+                        checked={data.isTalk}
+                        onCheck={(e, val) => {
+                            this.setState({
+                                data: { ...data, isTalk: val }
+                            });
+                        }}
+                    />
+                </div>
                 <div>
                     <label>Title:</label>
                     <div>

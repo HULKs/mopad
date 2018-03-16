@@ -2,6 +2,7 @@ import * as React from "react";
 import { FormattedMessage } from "react-intl";
 import { ApolloError } from "apollo-client";
 import * as Moment from "moment";
+import muiThemeable from 'material-ui/styles/muiThemeable';
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
@@ -28,7 +29,7 @@ interface HomeProps {
     leaveAsExpert(userId: string, topicId: string);
     leaveAsNewbie(userId: string, topicId: string);
 }
-type Props = PublicProps & HomeProps;
+type Props = PublicProps & HomeProps & { muiTheme: any };
 interface State {
     filterUserTopics: TopicFilterValue;
 }
@@ -59,9 +60,11 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
 
     public render() {
         const { filterUserTopics } = this.state;
+        const { muiTheme } = this.props;
+
         return (
             <div className="page">
-                <div className="pageHeader">
+                <div className="pageHeader" style={{color: muiTheme.palette.textColor}}>
                     <h1>
                         <FormattedMessage id="topics.headline" />
                     </h1>
@@ -126,4 +129,4 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
     }
 }
 
-export default TopicConnector(withUser(DisconnectedTopicsPage));
+export default TopicConnector(withUser(muiThemeable()(DisconnectedTopicsPage)));

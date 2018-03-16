@@ -84,7 +84,7 @@ export class DisconnectedTopic extends React.Component<
                 <CardText>
                     {topic.location
                         ? [
-                              <div>
+                              <div key="location">
                                   <span style={topicLabelStyle}>
                                       <FormattedMessage id="topic.label.location" />:{" "}
                                   </span>
@@ -94,7 +94,7 @@ export class DisconnectedTopic extends React.Component<
                         : []}
                     {topic.begin
                         ? [
-                              <div>
+                              <div key="begin">
                                   <span style={topicLabelStyle}>
                                       <FormattedMessage id="topic.label.begin" />:{" "}
                                   </span>
@@ -103,18 +103,18 @@ export class DisconnectedTopic extends React.Component<
                           ]
                         : []}
                     {(topic.location || topic.begin) && !topic.isTalk
-                        ? [<div style={{ marginTop: 8 }} />]
+                        ? [<div key="spacer" style={{ marginTop: 8 }} />]
                         : []}
                     {topic.isTalk
                         ? []
                         : [
-                              <div>
+                              <div key="listOfExperts">
                                   <span style={topicLabelStyle}>
                                       <FormattedMessage id="topic.label.expert" />:{" "}
                                   </span>
                                   {topic.experts.map(u => u.name).join(", ")}
                               </div>,
-                              <div>
+                              <div key="listOfNewbies">
                                   <span style={topicLabelStyle}>
                                       <FormattedMessage id="topic.label.newbie" />:{" "}
                                   </span>

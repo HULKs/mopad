@@ -83,44 +83,40 @@ export class DisconnectedTopic extends React.Component<
                 />
                 <CardText>
                     {topic.location
-                        ? [
-                              <div key="location">
-                                  <span style={topicLabelStyle}>
-                                      <FormattedMessage id="topic.label.location" />:{" "}
-                                  </span>
-                                  {topic.location.name}
-                              </div>
-                          ]
+                        ? <div>
+                              <span style={topicLabelStyle}>
+                                  <FormattedMessage id="topic.label.location" />:{" "}
+                              </span>
+                              {topic.location.name}
+                          </div>
                         : []}
                     {topic.begin
-                        ? [
-                              <div key="begin">
-                                  <span style={topicLabelStyle}>
-                                      <FormattedMessage id="topic.label.begin" />:{" "}
-                                  </span>
-                                  {Moment(topic.begin).format("dddd h:mma")}
-                              </div>
-                          ]
+                        ? <div>
+                              <span style={topicLabelStyle}>
+                                  <FormattedMessage id="topic.label.begin" />:{" "}
+                              </span>
+                              {Moment(topic.begin).format("dddd h:mma")}
+                          </div>
                         : []}
                     {(topic.location || topic.begin) && !topic.isTalk
-                        ? [<div key="spacer" style={{ marginTop: 8 }} />]
+                        ? <div style={{ marginTop: 8 }} />
                         : []}
                     {topic.isTalk
                         ? []
-                        : [
-                              <div key="listOfExperts">
+                        : <>
+                              <div>
                                   <span style={topicLabelStyle}>
                                       <FormattedMessage id="topic.label.expert" />:{" "}
                                   </span>
                                   {topic.experts.map(u => u.name).join(", ")}
-                              </div>,
-                              <div key="listOfNewbies">
+                              </div>
+                              <div>
                                   <span style={topicLabelStyle}>
                                       <FormattedMessage id="topic.label.newbie" />:{" "}
                                   </span>
                                   {topic.newbies.map(u => u.name).join(", ")}
                               </div>
-                          ]}
+                          </>}
                 </CardText>
                 <CardActions>
                     <TopicActions

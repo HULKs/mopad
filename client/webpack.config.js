@@ -1,5 +1,6 @@
 const path = require("path");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 const extractLess = new ExtractTextPlugin({
     filename: 'mopad.css'
@@ -30,7 +31,8 @@ module.exports = {
         ]
     },
     plugins: [
-        extractLess
+        extractLess,
+        new UglifyJsPlugin()
     ],
     devServer: {
         contentBase: path.join(__dirname, "public"),

@@ -13,6 +13,10 @@ import { ParticipationType, ParticipationChange } from "../../business/types";
 import TopicEditDialog from "./topicEditDialog";
 import TopicDeleteDialog from "./topicDeleteDialog";
 import Typography from "@material-ui/core/Typography/Typography";
+import Dialog from "@material-ui/core/Dialog/Dialog";
+import DialogContent from "@material-ui/core/DialogContent/DialogContent";
+import DialogActions from "@material-ui/core/DialogActions/DialogActions";
+import OpenIcon from "@material-ui/icons/Visibility";
 
 interface PublicProps {
     topic: TopicViewModel;
@@ -29,6 +33,7 @@ interface IntlProps {
 interface TopicState {
     editDialogOpen: boolean;
     deleteDialogOpen: boolean;
+    participantDialogOpen: boolean;
 }
 
 const topicLabelStyle: React.CSSProperties = {
@@ -42,12 +47,13 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
         super(props);
         this.state = {
             editDialogOpen: false,
-            deleteDialogOpen: false
+            deleteDialogOpen: false,
+            participantDialogOpen: false
         };
     }
     public render() {
         const { onChangeParticipation, intl, topic, onUpdate, onDelete, isFullscreen } = this.props;
-        const { editDialogOpen, deleteDialogOpen } = this.state;
+        const { editDialogOpen, deleteDialogOpen, participantDialogOpen } = this.state;
 
         return (
             <Card className="topic card">
@@ -59,13 +65,14 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                             onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
                         />
                     )}
-                    <Typography component="h5" variant="h5">
+                    <Typography variant="h5">
                         {topic.title}
                     </Typography>
                     <Typography variant="subtitle1" color="textSecondary">
                         {topic.description || ""}
                     </Typography>
-                    <Typography variant="body1">
+                    <div style={{ marginTop: 8 }} />
+                    <Typography variant="body2" component="div">
                         {topic.location && (
                             <div>
                                 <span style={topicLabelStyle}>
@@ -88,18 +95,33 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                         )}
                         {!isFullscreen && !topic.isTalk && (
                             <>
-                                <div>
+                                <Typography component="div" onClick={() => this.setState({ participantDialogOpen: true })}>
                                     <span style={topicLabelStyle}>
-                                        <FormattedMessage id="topic.label.expert" />:{" "}
+                                        Participants:{" "}
                                     </span>
-                                    {topic.experts.map(u => u.name).join(", ")}
-                                </div>
-                                <div>
-                                    <span style={topicLabelStyle}>
-                                        <FormattedMessage id="topic.label.newbie" />:{" "}
-                                    </span>
-                                    {topic.newbies.map(u => u.name).join(", ")}
-                                </div>
+                                    {topic.experts.length + topic.newbies.length}
+                                    <Button size="small">
+                                        <OpenIcon style={{ marginRight: "4px", fontSize: "16px" }}/>
+                                        Show
+                                    </Button>
+                                </Typography>
+                                <Dialog fullWidth open={participantDialogOpen} onClose={() => this.setState({ participantDialogOpen: false })}>
+                                    <DialogContent>
+                                        <Typography variant="h6">
+                                            <FormattedMessage id="topic.label.expert" />:{" "}
+                                        </Typography>
+                                        {topic.experts.map(u => <div key={u.id}>{u.team ? `${u.name} (${u.team.name})` : u.name}</div>)}
+                                        <Typography variant="h6" style={{ marginTop: "0.5em" }}>
+                                            <FormattedMessage id="topic.label.newbie" />:{" "}
+                                        </Typography>
+                                        {topic.newbies.map(u => <div key={u.id}>{u.team ? `${u.name} (${u.team.name})` : u.name}</div>)}
+                                    </DialogContent>
+                                    <DialogActions>
+                                        <Button onClick={() => this.setState({ participantDialogOpen: false })}>
+                                            Close
+                                        </Button>
+                                    </DialogActions>
+                                </Dialog>
                             </>
                         )}
                     </Typography>

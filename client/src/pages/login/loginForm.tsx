@@ -4,10 +4,9 @@ import { ApolloError } from "apollo-client";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import { Typography, Card, CardContent, CardActions } from "@material-ui/core";
-import TeamSelector from "../../app/teamSelector";
 
 interface LoginFormProps {
-    error?: ApolloError;
+    errors?: string[];
     intl: InjectedIntl;
 
     onLogin(email: string, password: string): void;
@@ -36,7 +35,6 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                         <FormattedMessage id="app.login.headline" />
                     </Typography>
                     <TextField
-                        id="email"
                         fullWidth
                         margin="normal"
                         placeholder={this.props.intl.formatMessage({
@@ -48,7 +46,6 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                         onChange={event => this.setState({ email: event.target.value })}
                     />
                     <TextField
-                        id="password"
                         fullWidth
                         margin="normal"
                         label={this.props.intl.formatMessage({
@@ -75,21 +72,16 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
     }
 
     private renderError() {
-        if (!this.props.error) {
-            return null;
-        }
+        const {errors} = this.props;
 
-        const errorKeys = new Set();
-        if (this.props.error.graphQLErrors) {
-            errorKeys.add(
-                this.props.error.graphQLErrors.map(err => err.functionError || "general")
-            );
+        if (!errors || errors.length == 0) {
+            return null;
         }
 
         return (
             <Typography component="p" className="error">
-                {[...errorKeys.values()].map(key => (
-                    <FormattedMessage key={key} id={"app.login.error." + key} />
+                {errors.map(key => (
+                    <FormattedMessage key={key} id={key} />
                 ))}
             </Typography>
         );

@@ -7,7 +7,7 @@ import { Typography, Card, CardContent, CardActions } from "@material-ui/core";
 import TeamSelector from "../../app/teamSelector";
 
 interface LoginFormProps {
-    error?: ApolloError;
+    errors?: string[];
     intl: InjectedIntl;
 
     onSignUp(name: string, email: string, password: string, teamId: string): void;
@@ -40,7 +40,6 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                         <FormattedMessage id="app.signup.headline" />
                     </Typography>
                     <TextField
-                        id="name"
                         fullWidth
                         margin="normal"
                         placeholder={this.props.intl.formatMessage({
@@ -59,7 +58,6 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                         onChange={id => this.setState({ teamId: id })}
                     />
                     <TextField
-                        id="email"
                         fullWidth
                         margin="normal"
                         placeholder={this.props.intl.formatMessage({
@@ -71,7 +69,6 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                         onChange={event => this.setState({ email: event.target.value })}
                     />
                     <TextField
-                        id="password"
                         fullWidth
                         margin="normal"
                         label={this.props.intl.formatMessage({
@@ -103,21 +100,16 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
     }
 
     private renderError() {
-        if (!this.props.error) {
-            return null;
-        }
+        const {errors} = this.props;
 
-        const errorKeys = new Set();
-        if (this.props.error.graphQLErrors) {
-            errorKeys.add(
-                this.props.error.graphQLErrors.map(err => err.functionError || "general")
-            );
+        if (!errors || errors.length == 0) {
+            return null;
         }
 
         return (
             <Typography component="p" className="error">
-                {[...errorKeys.values()].map(key => (
-                    <FormattedMessage key={key} id={"app.signup.error." + key} />
+                {errors.map(key => (
+                    <FormattedMessage key={key} id={key} />
                 ))}
             </Typography>
         );

@@ -22,8 +22,8 @@ export interface LoginPageProps extends RouterProps {
 }
 
 export interface LoginPageState {
-    loginError: ApolloError | string;
-    signupError: ApolloError | string;
+    loginErrors: string[];
+    signupErrors: string[];
 }
 
 export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
@@ -38,8 +38,8 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
         this.sessionStore = new LocalSessionStore();
 
         this.state = {
-            loginError: null,
-            signupError: null
+            loginErrors: [],
+            signupErrors: []
         };
     }
 
@@ -48,10 +48,10 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             <div className="page">
                 <Grid container spacing={24}>
                     <Grid item xs={12} sm={6}>
-                        <LoginForm onLogin={this.handleLogin} error={this.state.loginError} />
+                        <LoginForm onLogin={this.handleLogin} errors={this.state.loginErrors} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <SignupForm onSignup={this.handleSignUp} error={this.state.signupError} />
+                        <SignupForm onSignUp={this.handleSignUp} errors={this.state.signupErrors} />
                     </Grid>
                 </Grid>
             </div>
@@ -59,6 +59,10 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
     }
 
     private async handleLogin(email: string, password: string) {
+        if (!email || !password) {
+            this.setState({ loginErrors: ["app.login.error.missingFields"] });
+            return;
+        }
         try {
             const response = await this.props.doLogin(email, password);
             this.sessionStore.token = response.data.authenticateUser.token;
@@ -66,11 +70,23 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             this.sessionStore.userIsAdmin = response.data.authenticateUser.isAdmin;
             this.props.history.push("/");
         } catch (err) {
-            this.setState({ loginError: err });
+            const errorKeys: string[] = [];
+            if (err.graphQLErrors) {
+                err.graphQLErrors.map(err =>
+                    errorKeys.push("app.login.error." + (err.functionError || "general"))
+                );
+            } else {
+                errorKeys.push("app.login.error.general");
+            }
+            this.setState({ loginErrors: errorKeys });
         }
     }
 
     private async handleSignUp(name: string, email: string, password: string, teamId: string) {
+        if (!name || !email || !password) {
+            this.setState({ signupErrors: ["app.signup.error.missingFields"] });
+            return;
+        }
         try {
             const response = await this.props.doSignUp(name, email, password, teamId);
             this.sessionStore.token = response.data.signupUser.token;
@@ -78,7 +94,15 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             this.sessionStore.userIsAdmin = false;
             this.props.history.push("/");
         } catch (err) {
-            this.setState({ signupError: err });
+            const errorKeys: string[] = [];
+            if (err.graphQLErrors) {
+                err.graphQLErrors.map(err =>
+                    errorKeys.push("app.login.error." + (err.functionError || "general"))
+                );
+            } else {
+                errorKeys.push("app.login.error.general");
+            }
+            this.setState({ signupErrors: errorKeys });
         }
     }
 }

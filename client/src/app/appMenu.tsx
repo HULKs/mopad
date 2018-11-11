@@ -2,13 +2,13 @@ import * as React from "react";
 import { RouterProps, withRouter } from "react-router";
 import { injectIntl, InjectedIntl } from "react-intl";
 import { compose } from "react-apollo";
-import Paper from "material-ui/Paper";
-import Menu from "material-ui/Menu";
-import MenuItem from "material-ui/MenuItem";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
 
 interface AppMenuProps extends RouterProps {
     onClick?();
     open: boolean;
+    anchorEl: HTMLElement;
     intl: InjectedIntl;
 }
 class DisconnectedAppMenu extends React.Component<AppMenuProps> {
@@ -18,18 +18,26 @@ class DisconnectedAppMenu extends React.Component<AppMenuProps> {
     }
 
     public render() {
-        const { open, intl } = this.props;
+        const { open, intl, anchorEl } = this.props;
         return (
-            <Paper style={{ position: "absolute", zIndex: 100 }}>
-                <Menu style={{ display: open ? "block" : "none" }} width={200} autoWidth={false}>
-                    <MenuItem
-                        primaryText={intl.formatMessage({
-                            id: "app.menu.signOut"
-                        })}
-                        onClick={this.onSignOutClick}
-                    />
-                </Menu>
-            </Paper>
+            <Menu
+                open={open}
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "left"
+                }}
+                transformOrigin={{
+                    vertical: "bottom",
+                    horizontal: "left"
+                }}
+            >
+                <MenuItem onClick={this.onSignOutClick}>
+                    {intl.formatMessage({
+                        id: "app.menu.signOut"
+                    })}
+                </MenuItem>
+            </Menu>
         );
     }
 

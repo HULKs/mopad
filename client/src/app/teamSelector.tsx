@@ -3,13 +3,16 @@ import gql from "graphql-tag";
 import graphql from "react-apollo/graphql";
 import { compose } from "react-apollo";
 import { ApolloError } from "apollo-client";
-import DropDownMenu from "material-ui/DropDownMenu";
-import MenuItem from "material-ui/MenuItem";
+import Select from "@material-ui/core/Select";
+import MenuItem from "@material-ui/core/MenuItem";
+import FormControl from "@material-ui/core/FormControl";
+import InputLabel from "@material-ui/core/InputLabel";
 import { AllTeamsQuery } from "../../mopad-graphql";
 
 type Team = AllTeamsQuery["allTeams"][0];
 
 interface TeamSelectorOwnProps {
+    label: string;
     value: string;
     onChange: (v: string) => void;
 }
@@ -20,20 +23,27 @@ interface TeamSelectorProps extends TeamSelectorOwnProps {
 }
 
 function DisconnectedTeamSelector(props: TeamSelectorProps) {
-    const { value, onChange, teams } = props;
+    const { label, value, onChange, teams } = props;
     return (
-        <DropDownMenu
-            style={{ minWidth: 200 }}
-            value={value}
-            onChange={(e, i, v) => {
-                onChange(v);
-            }}
-        >
-            <MenuItem key="none" value={null} primaryText="---" />
-            {(teams || []).map(l => (
-                <MenuItem key={l.id} value={l.id} primaryText={l.name} />
-            ))}
-        </DropDownMenu>
+        <FormControl fullWidth margin="normal">
+            <InputLabel>{label}</InputLabel>
+            <Select
+                fullWidth
+                value={value || ""}
+                onChange={e => {
+                    onChange(e.target.value || null);
+                }}
+            >
+                <MenuItem key="none" value="">
+                    ---
+                </MenuItem>
+                {(teams || []).map(l => (
+                    <MenuItem key={l.id} value={l.id}>
+                        {l.name}
+                    </MenuItem>
+                ))}
+            </Select>
+        </FormControl>
     );
 }
 

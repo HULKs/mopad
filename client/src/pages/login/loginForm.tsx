@@ -1,9 +1,9 @@
 import * as React from "react";
 import { FormattedMessage, InjectedIntl, injectIntl } from "react-intl";
 import { ApolloError } from "apollo-client";
-import TextField from "material-ui/TextField";
-import RaisedButton from "material-ui/RaisedButton";
-import { Card, CardText, CardTitle, CardActions } from "material-ui/Card";
+import TextField from "@material-ui/core/TextField";
+import Button from "@material-ui/core/Button";
+import { Typography, Card, CardContent, CardActions } from "@material-ui/core";
 import TeamSelector from "../../app/teamSelector";
 
 interface LoginFormProps {
@@ -37,66 +37,64 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
     public render() {
         return (
             <Card className="card login">
-                <CardTitle>
-                    <h1>
+                <CardContent>
+                    <Typography component="h5" variant="h5">
                         <FormattedMessage id="app.login.headline" />
-                    </h1>
-                </CardTitle>
-                <CardText>
+                    </Typography>
                     <TextField
                         id="name"
                         fullWidth
-                        hintText={this.props.intl.formatMessage({
+                        margin="normal"
+                        placeholder={this.props.intl.formatMessage({
                             id: "app.login.name.hint"
                         })}
-                        floatingLabelText={this.props.intl.formatMessage({
+                        label={this.props.intl.formatMessage({
                             id: "app.login.name"
                         })}
-                        onChange={(event, name) => this.setState({ name })}
+                        onChange={event => this.setState({ name: event.target.value })}
                     />
-                    <br />
                     <TeamSelector
+                        label={this.props.intl.formatMessage({
+                            id: "app.login.team"
+                        })}
                         value={this.state.teamId}
-                        onChange={(id) => this.setState({ teamId: id })}
+                        onChange={id => this.setState({ teamId: id })}
                     />
-                    <br />
                     <TextField
                         id="email"
                         fullWidth
-                        hintText={this.props.intl.formatMessage({
+                        margin="normal"
+                        placeholder={this.props.intl.formatMessage({
                             id: "app.login.email.hint"
                         })}
-                        floatingLabelText={this.props.intl.formatMessage({
+                        label={this.props.intl.formatMessage({
                             id: "app.login.email"
                         })}
-                        onChange={(event, email) => this.setState({ email })}
+                        onChange={event => this.setState({ email: event.target.value })}
                     />
-                    <br />
                     <TextField
                         id="password"
                         fullWidth
-                        floatingLabelText={this.props.intl.formatMessage({
+                        margin="normal"
+                        label={this.props.intl.formatMessage({
                             id: "app.login.password"
                         })}
-                        onChange={(event, password) => this.setState({ password })}
+                        onChange={event => this.setState({ password: event.target.value })}
                         type="password"
                     />
-                </CardText>
-                {this.renderError()}
+                    {this.renderError()}
+                </CardContent>
                 <CardActions>
-                    <RaisedButton
-                        primary
-                        onClick={this.handleLogin}
-                        label={this.props.intl.formatMessage({
+                    <Button color="primary" variant="contained" onClick={this.handleLogin}>
+                        {this.props.intl.formatMessage({
                             id: "app.login.login_cta"
                         })}
-                    />
-                    <RaisedButton
-                        onClick={this.handleSignUp}
-                        label={this.props.intl.formatMessage({
+                    </Button>
+                    <Button variant="contained" onClick={this.handleSignUp}>
+                        {this.props.intl.formatMessage({
                             id: "app.login.signup_cta"
                         })}
-                    />
+                    </Button>
                 </CardActions>
             </Card>
         );
@@ -107,7 +105,12 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
     }
 
     private handleSignUp() {
-        this.props.onSignUp(this.state.name, this.state.email, this.state.password, this.state.teamId);
+        this.props.onSignUp(
+            this.state.name,
+            this.state.email,
+            this.state.password,
+            this.state.teamId
+        );
     }
 
     private renderError() {
@@ -123,11 +126,11 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
         }
 
         return (
-            <CardText className="error">
+            <Typography component="p" className="error">
                 {[...errorKeys.values()].map(key => (
                     <FormattedMessage key={key} id={"app.login.error." + key} />
                 ))}
-            </CardText>
+            </Typography>
         );
     }
 }

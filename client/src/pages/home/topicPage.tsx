@@ -2,7 +2,7 @@ import * as React from "react";
 import { FormattedMessage } from "react-intl";
 import { ApolloError } from "apollo-client";
 import * as Moment from "moment";
-import muiThemeable from "material-ui/styles/muiThemeable";
+import { WithTheme, withTheme } from "@material-ui/core/styles";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
@@ -12,11 +12,13 @@ import { ParticipationType, ParticipationChange } from "../../business/types";
 import { TopicConnector, TopicViewModel, TopicUpdate } from "../../business/topics";
 
 interface PublicProps {}
+interface WithUser {
+    user: User;
+}
 interface HomeProps {
     error: ApolloError;
     loading: boolean;
     topics: TopicViewModel[];
-    user: User;
     addTopic(title: string, description?: string);
     updateTopic(update: TopicUpdate);
     deleteTopic(topicId: string);
@@ -25,7 +27,7 @@ interface HomeProps {
     leaveAsExpert(userId: string, topicId: string);
     leaveAsNewbie(userId: string, topicId: string);
 }
-type Props = PublicProps & HomeProps & { muiTheme: any };
+type Props = PublicProps & WithUser & HomeProps & WithTheme;
 interface State {
     filterUserTopics: TopicFilterValue;
 }
@@ -56,11 +58,11 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
 
     public render() {
         const { filterUserTopics } = this.state;
-        const { muiTheme } = this.props;
+        const { theme } = this.props;
 
         return (
             <div className="page">
-                <div className="pageHeader" style={{ color: muiTheme.palette.textColor }}>
+                <div className="pageHeader" style={{ color: theme.palette.text.primary }}>
                     <h1>
                         <FormattedMessage id="topics.headline" />
                     </h1>
@@ -121,4 +123,4 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
     }
 }
 
-export default TopicConnector(withUser(muiThemeable()(DisconnectedTopicsPage)));
+export default TopicConnector(withTheme()(DisconnectedTopicsPage));

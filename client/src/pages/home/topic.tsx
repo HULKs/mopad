@@ -1,15 +1,18 @@
 import * as React from "react";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
 import * as Moment from "moment";
-import { Card, CardActions, CardHeader, CardMedia, CardTitle, CardText } from "material-ui/Card";
-import FlatButton from "material-ui/FlatButton";
-import IconButton from "material-ui/IconButton";
-import DeleteIcon from "material-ui/svg-icons/action/delete-forever";
-import EditIcon from "material-ui/svg-icons/editor/mode-edit";
+import Card from "@material-ui/core/Card";
+import CardActions from "@material-ui/core/CardActions";
+import CardContent from "@material-ui/core/CardContent";
+import Button from "@material-ui/core/Button";
+import IconButton from "@material-ui/core/IconButton";
+import DeleteIcon from "@material-ui/icons/DeleteForever";
+import EditIcon from "@material-ui/icons/Edit";
 import { TopicViewModel, TopicUpdate } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 import TopicEditDialog from "./topicEditDialog";
 import TopicDeleteDialog from "./topicDeleteDialog";
+import Typography from "@material-ui/core/Typography/Typography";
 
 interface PublicProps {
     topic: TopicViewModel;
@@ -47,17 +50,18 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
 
         return (
             <Card className="topic card">
-                <TopicActionIcons
-                    show={topic.canManage}
-                    onScheduleClick={() => this.setState({ editDialogOpen: true })}
-                    onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
-                />
-                <CardTitle
-                    title={topic.title}
-                    subtitle={topic.description || ""}
-                    style={{ pointerEvents: "none" }}
-                />
-                <CardText>
+                <CardContent>
+                    <TopicActionIcons
+                        show={topic.canManage}
+                        onScheduleClick={() => this.setState({ editDialogOpen: true })}
+                        onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
+                    />
+                    <Typography component="h5" variant="h5">
+                        {topic.title}
+                    </Typography>
+                    <Typography variant="subtitle1" color="textSecondary">
+                        {topic.description || ""}
+                    </Typography>
                     {topic.location ? (
                         <div>
                             <span style={topicLabelStyle}>
@@ -101,7 +105,7 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                             </div>
                         </>
                     )}
-                </CardText>
+                </CardContent>
                 <CardActions>
                     <TopicActions
                         topic={topic}
@@ -152,23 +156,21 @@ function TopicActionIcons({
     onDeleteClick
 }: {
     show: boolean;
-    onScheduleClick?: Function;
-    onDeleteClick?: Function;
+    onScheduleClick?: (event: any) => void;
+    onDeleteClick?: (event: any) => void;
 }) {
     if (!show) return <div />;
 
     const divStyle: React.CSSProperties = {
-        float: "right",
-        padding: 16
+        float: "right"
     };
     const iconOuterStyle = { padding: 0, width: 36, height: 36 };
-    const iconInnerStyle = { width: 24, height: 24 };
     return (
         <div style={divStyle}>
-            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle} onClick={onScheduleClick}>
+            <IconButton style={iconOuterStyle} onClick={onScheduleClick}>
                 <EditIcon />
             </IconButton>
-            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle} onClick={onDeleteClick}>
+            <IconButton style={iconOuterStyle} onClick={onDeleteClick}>
                 <DeleteIcon />
             </IconButton>
         </div>
@@ -184,43 +186,51 @@ function TopicActions(props: {
 
     if (topic.userIsExpert) {
         return (
-            <FlatButton
-                primary={true}
+            <Button
+                color="primary"
                 onClick={() => onChangeParticipation(topic.id, "expert", "leave")}
-                label={intl.formatMessage({ id: "topic.leave.expert" })}
-            />
+            >
+                {intl.formatMessage({ id: "topic.leave.expert" })}
+            </Button>
         );
     }
 
     if (topic.userIsNewbie) {
         return (
-            <FlatButton
-                primary={true}
+            <Button
+                color="primary"
                 onClick={() => onChangeParticipation(topic.id, "newbie", "leave")}
-                label={intl.formatMessage({ id: "topic.leave.newbie" })}
-            />
+            >
+                {intl.formatMessage({ id: "topic.leave.newbie" })}
+            </Button>
         );
     }
 
     if (topic.isTalk) {
         return (
-            <FlatButton
+            <Button
+                color="primary"
                 onClick={() => onChangeParticipation(topic.id, "newbie", "join")}
-                label={intl.formatMessage({ id: "topic.join.talk" })}
-            />
+            >
+                {intl.formatMessage({ id: "topic.join.talk" })}
+            </Button>
         );
     }
 
     return (
         <div>
-            <FlatButton
+            <Button
+                color="primary"
                 onClick={() => onChangeParticipation(topic.id, "expert", "join")}
-                label={intl.formatMessage({ id: "topic.join.expert" })}
-            />
-            <FlatButton
+            >
+                {intl.formatMessage({ id: "topic.join.expert" })}
+            </Button>
+            <Button
+                color="primary"
                 onClick={() => onChangeParticipation(topic.id, "newbie", "join")}
-                label={intl.formatMessage({ id: "topic.join.newbie" })}
-            />
+            >
+                {intl.formatMessage({ id: "topic.join.newbie" })}
+            </Button>
         </div>
     );
 }

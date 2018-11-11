@@ -43,4 +43,7 @@ class DisconnectedAppMenu extends React.Component<AppMenuProps> {
     }
 }
 
-export default compose(withRouter, injectIntl)(DisconnectedAppMenu);
+export default compose(
+    withRouter,
+    injectIntl
+)(DisconnectedAppMenu);

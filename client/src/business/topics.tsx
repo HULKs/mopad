@@ -63,8 +63,22 @@ const ADD_TOPIC_MUTATION = gql`
 `;
 
 const UPDATE_TOPIC_MUTATION = gql`
-    mutation UpdateTopic($id: ID!, $title: String!, $description: String, $isTalk: Boolean!, $begin: DateTime, $locationId: ID) {
-        updateTopic(id: $id, title: $title, description: $description, isTalk: $isTalk, begin: $begin, locationId: $locationId) {
+    mutation UpdateTopic(
+        $id: ID!
+        $title: String!
+        $description: String
+        $isTalk: Boolean!
+        $begin: DateTime
+        $locationId: ID
+    ) {
+        updateTopic(
+            id: $id
+            title: $title
+            description: $description
+            isTalk: $isTalk
+            begin: $begin
+            locationId: $locationId
+        ) {
             ...TopicDisplay
         }
     }

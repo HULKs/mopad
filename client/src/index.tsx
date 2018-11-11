@@ -17,7 +17,7 @@ document.getElementsByTagName('body')[0].style.backgroundColor = "#f5f5f5";
 /*/
 import theme from "./style/mui/arwo";
 const graphCoolUri = "https://api.graph.cool/simple/v1/arwo";
-document.getElementsByTagName('body')[0].style.backgroundColor = "#353942";
+document.getElementsByTagName("body")[0].style.backgroundColor = "#353942";
 /**/
 
 const client = new ApolloClient({

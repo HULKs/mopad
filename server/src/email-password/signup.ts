@@ -49,7 +49,10 @@ export default async (event: FunctionEvent<EventData>) => {
     }
 };
 
-async function getUser(api: GraphQLClient, email: string): Promise<{ User }> {
+async function getUser(
+    api: GraphQLClient,
+    email: string
+): Promise<{ User: User }> {
     const query = `
     query getUser($email: String!) {
       User(email: $email) {
@@ -62,7 +65,7 @@ async function getUser(api: GraphQLClient, email: string): Promise<{ User }> {
         email
     };
 
-    return api.request<{ User }>(query, variables);
+    return api.request<{ User: User }>(query, variables);
 }
 
 async function createGraphcoolUser(

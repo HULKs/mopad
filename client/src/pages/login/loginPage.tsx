@@ -114,4 +114,8 @@ const signupUser = graphql(SIGNUP_MUTATION, {
     })
 });
 
-export default compose(loginUser, signupUser, withRouter)(LoginPage);
+export default compose(
+    loginUser,
+    signupUser,
+    withRouter
+)(LoginPage);

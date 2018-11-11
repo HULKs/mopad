@@ -18,9 +18,11 @@ type User @model {
     email: String! @isUnique
     password: String!
     name: String!
+    team: Team @relation(name: "TeamMember")
     isAdmin: Boolean!
     topicsAsExpert: [Topic!]! @relation(name: "ExpertParticipation")
     topicsAsNewbie: [Topic!]! @relation(name: "NewbieParticipation")
+    topicsAsAuthor: [Topic!]! @relation(name: "TopicAuthor")
 }
 
 type Location @model {
@@ -39,9 +41,19 @@ type Topic @model {
 
     title: String!
     description: String
+    author: User! @relation(name: "TopicAuthor")
     experts: [User!]! @relation(name: "ExpertParticipation")
     newbies: [User!]! @relation(name: "NewbieParticipation")
     begin: DateTime
     location: Location @relation(name: "TopicsInLocation")
     isTalk: Boolean!
+}
+
+type Team @model {
+    id: ID! @isUnique # read-only (managed by Graphcool)
+    createdAt: DateTime! # read-only (managed by Graphcool)
+    updatedAt: DateTime! # read-only (managed by Graphcool)
+
+    name: String!
+    members: [User!]! @relation(name: "TeamMember")
 }

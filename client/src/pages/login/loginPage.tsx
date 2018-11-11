@@ -14,7 +14,8 @@ export interface LoginPageProps extends RouterProps {
     doSignUp(
         name: string,
         email: string,
-        password: string
+        password: string,
+        teamId: string
     ): Promise<ApolloQueryResult<SignupMutation>>;
 }
 
@@ -62,9 +63,9 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
         }
     }
 
-    private async handleSignUp(name: string, email: string, password: string) {
+    private async handleSignUp(name: string, email: string, password: string, teamId: string) {
         try {
-            const response = await this.props.doSignUp(name, email, password);
+            const response = await this.props.doSignUp(name, email, password, teamId);
             this.sessionStore.token = response.data.signupUser.token;
             this.sessionStore.userId = response.data.signupUser.id;
             this.sessionStore.userIsAdmin = false;
@@ -86,8 +87,8 @@ const LOGIN_MUTATION = gql`
 `;
 
 const SIGNUP_MUTATION = gql`
-    mutation Signup($name: String!, $email: String!, $password: String!) {
-        signupUser(name: $name, email: $email, password: $password) {
+    mutation Signup($name: String!, $email: String!, $password: String!, $teamId: ID!) {
+        signupUser(name: $name, email: $email, password: $password, teamId: $teamId) {
             id
             token
         }
@@ -104,8 +105,8 @@ const loginUser = graphql(LOGIN_MUTATION, {
 const signupUser = graphql(SIGNUP_MUTATION, {
     props: ({ mutate, ownProps }) => ({
         ...ownProps,
-        doSignUp: (name: string, email: string, password: string) =>
-            mutate({ variables: { name, password, email } })
+        doSignUp: (name: string, email: string, password: string, teamId: string) =>
+            mutate({ variables: { name, password, email, teamId } })
     })
 });
 

@@ -11,6 +11,7 @@ interface EventData {
     email: string;
     password: string;
     name: string;
+    teamId: string;
 }
 
 const SALT_ROUNDS = 10;
@@ -20,7 +21,7 @@ export default async (event: FunctionEvent<EventData>) => {
         const graphcool = fromEvent(event);
         const api = graphcool.api("simple/v1");
 
-        const { name, email, password } = event.data;
+        const { name, email, password, teamId } = event.data;
 
         if (!validator.isEmail(email)) {
             return { error: "Not a valid email" };
@@ -36,14 +37,14 @@ export default async (event: FunctionEvent<EventData>) => {
         const hash = await bcrypt.hash(password, SALT_ROUNDS);
 
         // create new user
-        const userId = await createGraphcoolUser(api, name, email, hash, false);
+        const userId = await createGraphcoolUser(api, name, email, hash, teamId, false);
 
         // generate node token for new User node
         const token = await graphcool.generateNodeToken(userId, "User");
 
         return { data: { id: userId, token } };
     } catch (e) {
-        return { error: "UNEXPECTED_ERROR" };
+        return { error: "UNEXPECTED_ERROR" + e.message };
     }
 };
 
@@ -68,14 +69,16 @@ async function createGraphcoolUser(
     name: string,
     email: string,
     password: string,
+    teamId: string,
     isAdmin: boolean
 ): Promise<string> {
     const mutation = `
-    mutation createGraphcoolUser($name: String!, $email: String!, $password: String!, $isAdmin: Boolean!) {
+    mutation createGraphcoolUser($name: String!, $email: String!, $password: String!, $teamId: ID, $isAdmin: Boolean!) {
       createUser(
         email: $email,
         password: $password,
         name: $name,
+        teamId: $teamId,
         isAdmin: $isAdmin
       ) {
         id
@@ -87,6 +90,7 @@ async function createGraphcoolUser(
         name,
         email,
         password,
+        teamId,
         isAdmin
     };
 

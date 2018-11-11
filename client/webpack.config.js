@@ -1,42 +1,55 @@
 const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 const extractLess = new ExtractTextPlugin({
-    filename: 'mopad.css'
+    filename: "mopad.css",
+    disable: process.env.NODE_ENV === "development"
 });
 
 module.exports = {
-    devtool: 'inline-source-map',
-    entry: [
-        path.join(__dirname, "./src/index.tsx"),
-        path.join(__dirname, "./src/style/main.less")
-    ],
-    output: {
-        path: path.join(__dirname, "public"),
-        filename: "index.js"
+    mode: "development",
+    entry: {
+        bundle: "./src/index.tsx",
     },
-    resolve: {
-        // Add `.ts` and `.tsx` as a resolvable extension.
-        extensions: ['.ts', '.tsx', '.js']
-    },
+    context: __dirname,
     module: {
         rules: [
-            // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
-            { test: /\.tsx?$/, loader: 'ts-loader' },
+            { test: /\.tsx?$/, loader: "ts-loader", exclude: /node_modules/ },
             {
                 test: /\.less$/,
-                use: extractLess.extract([ 'css-loader','less-loader' ])
+                use: extractLess.extract({
+                    use: [
+                        { loader: "css-loader" },
+                        {
+                            loader: "less-loader",
+                            options: {
+                                includePaths: ["./node_modules"]
+                            }
+                        }
+                    ],
+                    fallback: "style-loader"
+                })
             }
         ]
     },
-    plugins: [
-        extractLess,
-        new UglifyJsPlugin()
-    ],
+    resolve: {
+        modules: ["node_modules"],
+        extensions: [".ts", ".tsx", ".js"]
+    },
+    output: {
+        path: path.join(__dirname, "./public"),
+        filename: "[name].js"
+    },
     devServer: {
-        contentBase: path.join(__dirname, "public"),
-        compress: true,
+        contentBase: './public',
         port: 3010
-    }
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: "./index.htm",
+            filename: "index.htm"
+        }),
+        extractLess
+    ]
 };

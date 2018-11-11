@@ -8,3 +8,4 @@ client/public/mopad.css
 mopad-graphql.ts
 schema.json
 coverage
+.DS_Store

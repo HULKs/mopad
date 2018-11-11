@@ -34,10 +34,7 @@ export class App extends React.Component<{}, AppState> {
                             this.setState({ menuOpen: !this.state.menuOpen })
                         }
                     />
-                    <AppMenu
-                        open={menuOpen}
-                        onClick={() => this.setState({ menuOpen: false })}
-                    />
+                    <AppMenu open={menuOpen} onClick={() => this.setState({ menuOpen: false })} />
                     <Route exact path="/login" component={LoginPage} />
                     <PrivateRoute
                         sessionStore={this.sessionStore}

@@ -6,21 +6,13 @@ export interface PrivateRouteProps {
     sessionStore: ISessionStore;
 }
 
-export function PrivateRoute({
-    sessionStore,
-    component,
-    ...rest
-}: PrivateRouteProps & RouteProps) {
+export function PrivateRoute({ sessionStore, component, ...rest }: PrivateRouteProps & RouteProps) {
     const Comp = component;
     return (
         <Route
             {...rest}
             render={props =>
-                sessionStore.token ? (
-                    <Comp {...props} />
-                ) : (
-                    <Redirect to={{ pathname: "/login" }} />
-                )
+                sessionStore.token ? <Comp {...props} /> : <Redirect to={{ pathname: "/login" }} />
             }
         />
     );

@@ -1,12 +1,5 @@
 import * as React from "react";
-import {
-    Card,
-    CardActions,
-    CardHeader,
-    CardMedia,
-    CardTitle,
-    CardText
-} from "material-ui/Card";
+import { Card, CardActions, CardHeader, CardMedia, CardTitle, CardText } from "material-ui/Card";
 import FloatingActionButton from "material-ui/FloatingActionButton";
 import FlatButton from "material-ui/FlatButton";
 import Dialog from "material-ui/Dialog";
@@ -32,10 +25,7 @@ interface State {
     topicDescription: string;
 }
 
-export class DisconnectedTopicAdd extends React.Component<
-    TopicAddProps,
-    State
-> {
+export class DisconnectedTopicAdd extends React.Component<TopicAddProps, State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -122,10 +112,7 @@ export class DisconnectedTopicAdd extends React.Component<
     }
 
     private handleSubmit() {
-        this.props.onTopicAdd(
-            this.state.topicTitle,
-            this.state.topicDescription
-        );
+        this.props.onTopicAdd(this.state.topicTitle, this.state.topicDescription);
         this.setState({
             dialogOpen: false,
             topicTitle: "",

@@ -139,9 +139,7 @@ export class DisconnectedEditDialog extends React.Component<
                         <DatePicker
                             autoOk
                             value={date}
-                            onChange={(e, date) =>
-                                this.setState({ date: date })
-                            }
+                            onChange={(e, date) => this.setState({ date: date })}
                         />
                     </div>
                 </div>

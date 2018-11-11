@@ -9,11 +9,7 @@ import TopicFilterSelector from "./topicFilterSelector";
 import { TopicFilterValue } from "./topicFilterSelector";
 import { withUser, User } from "../../business/withUser";
 import { ParticipationType, ParticipationChange } from "../../business/types";
-import {
-    TopicConnector,
-    TopicViewModel,
-    TopicUpdate
-} from "../../business/topics";
+import { TopicConnector, TopicViewModel, TopicUpdate } from "../../business/topics";
 
 interface PublicProps {}
 interface HomeProps {
@@ -64,17 +60,11 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
 
         return (
             <div className="page">
-                <div
-                    className="pageHeader"
-                    style={{ color: muiTheme.palette.textColor }}
-                >
+                <div className="pageHeader" style={{ color: muiTheme.palette.textColor }}>
                     <h1>
                         <FormattedMessage id="topics.headline" />
                     </h1>
-                    <TopicFilterSelector
-                        value={filterUserTopics}
-                        onChange={this.onFilterChange}
-                    />
+                    <TopicFilterSelector value={filterUserTopics} onChange={this.onFilterChange} />
                 </div>
                 <TopicList
                     topics={this.getFilteredTopics()}
@@ -96,8 +86,7 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
                 .isBefore(Moment());
             const isMy = t.userIsExpert || t.userIsNewbie;
             if (filterUserTopics === "past" && isPast) return true;
-            if (filterUserTopics === "my-upcoming" && !isPast && isMy)
-                return true;
+            if (filterUserTopics === "my-upcoming" && !isPast && isMy) return true;
             if (filterUserTopics === "all-upcoming" && !isPast) return true;
             return false;
         });

@@ -21,11 +21,7 @@ class DisconnectedAppMenu extends React.Component<AppMenuProps> {
         const { open, intl } = this.props;
         return (
             <Paper style={{ position: "absolute", zIndex: 100 }}>
-                <Menu
-                    style={{ display: open ? "block" : "none" }}
-                    width={200}
-                    autoWidth={false}
-                >
+                <Menu style={{ display: open ? "block" : "none" }} width={200} autoWidth={false}>
                     <MenuItem
                         primaryText={intl.formatMessage({
                             id: "app.menu.signOut"

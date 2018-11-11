@@ -19,10 +19,7 @@ interface LoginFormState {
     name?: string;
 }
 
-export class DisconnectedLoginForm extends React.Component<
-    LoginFormProps,
-    LoginFormState
-> {
+export class DisconnectedLoginForm extends React.Component<LoginFormProps, LoginFormState> {
     constructor(props) {
         super(props);
         this.handleLogin = this.handleLogin.bind(this);
@@ -72,9 +69,7 @@ export class DisconnectedLoginForm extends React.Component<
                         floatingLabelText={this.props.intl.formatMessage({
                             id: "app.login.password"
                         })}
-                        onChange={(event, password) =>
-                            this.setState({ password })
-                        }
+                        onChange={(event, password) => this.setState({ password })}
                         type="password"
                     />
                 </CardText>
@@ -103,11 +98,7 @@ export class DisconnectedLoginForm extends React.Component<
     }
 
     private handleSignUp() {
-        this.props.onSignUp(
-            this.state.name,
-            this.state.email,
-            this.state.password
-        );
+        this.props.onSignUp(this.state.name, this.state.email, this.state.password);
     }
 
     private renderError() {
@@ -118,9 +109,7 @@ export class DisconnectedLoginForm extends React.Component<
         const errorKeys = new Set();
         if (this.props.error.graphQLErrors) {
             errorKeys.add(
-                this.props.error.graphQLErrors.map(
-                    err => err.functionError || "general"
-                )
+                this.props.error.graphQLErrors.map(err => err.functionError || "general")
             );
         }
 

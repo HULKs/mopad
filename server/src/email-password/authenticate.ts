@@ -43,10 +43,7 @@ export default async (event: FunctionEvent<EventData>) => {
     }
 };
 
-async function getUserByEmail(
-    api: GraphQLClient,
-    email: string
-): Promise<{ User }> {
+async function getUserByEmail(api: GraphQLClient, email: string): Promise<{ User }> {
     const query = `
     query getUserByEmail($email: String!) {
       User(email: $email) {

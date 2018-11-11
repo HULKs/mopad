@@ -27,9 +27,7 @@ export default async (event: FunctionEvent<EventData>) => {
         }
 
         // check if user exists already
-        const userExists: boolean = await getUser(api, email).then(
-            r => r.User !== null
-        );
+        const userExists: boolean = await getUser(api, email).then(r => r.User !== null);
         if (userExists) {
             return { error: "EMAIL_IN_USE" };
         }
@@ -49,10 +47,7 @@ export default async (event: FunctionEvent<EventData>) => {
     }
 };
 
-async function getUser(
-    api: GraphQLClient,
-    email: string
-): Promise<{ User: User }> {
+async function getUser(api: GraphQLClient, email: string): Promise<{ User: User }> {
     const query = `
     query getUser($email: String!) {
       User(email: $email) {
@@ -95,7 +90,5 @@ async function createGraphcoolUser(
         isAdmin
     };
 
-    return api
-        .request<{ createUser: User }>(mutation, variables)
-        .then(r => r.createUser.id);
+    return api.request<{ createUser: User }>(mutation, variables).then(r => r.createUser.id);
 }

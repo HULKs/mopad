@@ -53,10 +53,7 @@ describe("auth", () => {
             const storage = new LocalSessionStore();
             storage.userId = "USER_ID";
 
-            expect(localStorage.setItem).toHaveBeenCalledWith(
-                "userId",
-                "USER_ID"
-            );
+            expect(localStorage.setItem).toHaveBeenCalledWith("userId", "USER_ID");
 
             const uid = storage.userId;
             expect(localStorage.getItem).toHaveBeenCalled();

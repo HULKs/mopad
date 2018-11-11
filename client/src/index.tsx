@@ -8,11 +8,10 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { from } from "apollo-link";
 import { AuthenticationLink, LocalSessionStore } from "./business/auth";
 import { IntlProvider } from "react-intl";
-import MuiThemeProvider from "material-ui/styles/MuiThemeProvider"; // <- Toggle Project here: * for ARWo, ** for RoHOW
-import "./style/main.less";
+import MuiThemeProvider from "@material-ui/core/styles/MuiThemeProvider";
+import "./style/main.less"; // <- Toggle Project here: * for ARWo, ** for RoHOW
 
-/**/ // <- Toggle Project here: * for ARWo, ** for RoHOW
-import theme from "./style/mui/rohow";
+/**/ import theme from "./style/mui/rohow";
 const graphCoolUri = "https://api.graph.cool/simple/v1/mopad";
 document.getElementsByTagName("body")[0].style.backgroundColor = "#f5f5f5";
 /*/
@@ -32,7 +31,7 @@ const client = new ApolloClient({
 ReactDOM.render(
     <IntlProvider locale="en" messages={require("./i18n/en-US.json")}>
         <ApolloProvider client={client}>
-            <MuiThemeProvider muiTheme={theme}>
+            <MuiThemeProvider theme={theme}>
                 <App />
             </MuiThemeProvider>
         </ApolloProvider>

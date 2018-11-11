@@ -2,14 +2,16 @@ import * as React from "react";
 import { injectIntl, InjectedIntl } from "react-intl";
 import * as Moment from "moment";
 
-import FlatButton from "material-ui/FlatButton";
-import Dialog from "material-ui/Dialog";
-import TextField from "material-ui/TextField";
-import Checkbox from "material-ui/Checkbox";
-import DatePicker from "material-ui/DatePicker";
-import TimePicker from "material-ui/TimePicker";
+import Button from "@material-ui/core/Button";
+import Dialog from "@material-ui/core/Dialog";
+import TextField from "@material-ui/core/TextField";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Checkbox from "@material-ui/core/Checkbox";
 import LocationSelector from "../../app/locationSelector";
 import { TopicViewModel, TopicUpdate } from "../../business/topics";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogTitle from "@material-ui/core/DialogTitle";
 
 interface EditDialogProps {
     open: boolean;
@@ -22,8 +24,7 @@ interface IntlProps {
 }
 interface EditDialogState {
     data: TopicUpdate;
-    date: Date;
-    time: Date;
+    beginString: string;
 }
 
 export class DisconnectedEditDialog extends React.Component<
@@ -44,137 +45,119 @@ export class DisconnectedEditDialog extends React.Component<
                 begin: begin,
                 locationId: topic.location ? topic.location.id : null
             },
-            date: begin,
-            time: begin
+            beginString: begin ? begin.toISOString() : ""
         };
         this.onSubmit = this.onSubmit.bind(this);
     }
 
     render() {
         const { open, onCancel, intl } = this.props;
-        const { data, date, time } = this.state;
+        const { data, beginString } = this.state;
 
         const actions = [
-            <FlatButton
-                label={intl.formatMessage({
+            <Button color="primary" onClick={onCancel}>
+                {intl.formatMessage({
                     id: "topic.edit.dialog.cancel"
                 })}
-                primary
-                onClick={onCancel}
-            />,
-            <FlatButton
-                label={intl.formatMessage({
+            </Button>,
+            <Button color="primary" onClick={this.onSubmit}>
+                {intl.formatMessage({
                     id: "topic.edit.dialog.submit"
                 })}
-                primary
-                onClick={this.onSubmit}
-            />
+            </Button>
         ];
         return (
-            <Dialog
-                title={this.props.intl.formatMessage({
-                    id: "topic.edit.dialog.title"
-                })}
-                actions={actions}
-                open={open}
-                onRequestClose={onCancel}
-                autoScrollBodyContent
-            >
-                <div>
-                    <Checkbox
-                        label="Is Talk?"
-                        checked={data.isTalk}
-                        onCheck={(e, val) => {
+            <Dialog open={open} onClose={onCancel} fullScreen>
+                <DialogTitle>
+                    {this.props.intl.formatMessage({
+                        id: "topic.edit.dialog.title"
+                    })}
+                </DialogTitle>
+                <DialogContent>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={data.isTalk}
+                                onChange={(e, checked) => {
+                                    this.setState({
+                                        data: { ...data, isTalk: checked }
+                                    });
+                                }}
+                            />
+                        }
+                        label={this.props.intl.formatMessage({
+                            id: "topic.edit.dialog.isTalk"
+                        })}
+                    />
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Title"
+                        value={data.title}
+                        onChange={e => {
                             this.setState({
-                                data: { ...data, isTalk: val }
+                                data: { ...data, title: e.target.value }
                             });
                         }}
                     />
-                </div>
-                <div>
-                    <label>Title:</label>
-                    <div>
-                        <TextField
-                            fullWidth
-                            value={data.title}
-                            onChange={(e, val) => {
-                                this.setState({
-                                    data: { ...data, title: val }
-                                });
-                            }}
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label>Description:</label>
-                    <div>
-                        <TextField
-                            fullWidth
-                            multiLine
-                            value={data.description}
-                            onChange={(e, val) => {
-                                this.setState({
-                                    data: { ...data, description: val }
-                                });
-                            }}
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label>Select Location:</label>
-                    <div>
-                        <LocationSelector
-                            value={data.locationId}
-                            onChange={id =>
-                                this.setState({
-                                    data: { ...data, locationId: id }
-                                })
-                            }
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label>Select Date:</label>
-                    <div>
-                        <DatePicker
-                            autoOk
-                            value={date}
-                            onChange={(e, date) => this.setState({ date: date })}
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label>Select Time:</label>
-                    <div>
-                        <TimePicker
-                            format="24hr"
-                            minutesStep={5}
-                            value={time}
-                            onChange={(e, time) => {
-                                this.setState({ time: time });
-                            }}
-                        />
-                    </div>
-                </div>
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        multiline
+                        label={"Description"}
+                        value={data.description}
+                        onChange={e => {
+                            this.setState({
+                                data: { ...data, description: e.target.value }
+                            });
+                        }}
+                    />
+                    <LocationSelector
+                        label={"Select Location"}
+                        value={data.locationId}
+                        onChange={id =>
+                            this.setState({
+                                data: { ...data, locationId: id }
+                            })
+                        }
+                    />
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        type="datetime-local"
+                        label={"Select Date"}
+                        InputLabelProps={{
+                            shrink: true
+                        }}
+                        value={beginString}
+                        onChange={e =>
+                            this.setState({
+                                beginString: e.target.value
+                            })
+                        }
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button color="primary" onClick={onCancel}>
+                        {intl.formatMessage({
+                            id: "topic.edit.dialog.cancel"
+                        })}
+                    </Button>
+                    <Button color="primary" onClick={this.onSubmit}>
+                        {intl.formatMessage({
+                            id: "topic.edit.dialog.submit"
+                        })}
+                    </Button>
+                </DialogActions>
             </Dialog>
         );
     }
 
     private onSubmit() {
-        const { date, time, data } = this.state;
-
-        if (date === null || time === null) {
-            data.begin = null;
-        } else {
-            data.begin = new Date();
-            data.begin.setFullYear(date.getFullYear());
-            data.begin.setMonth(date.getMonth());
-            data.begin.setDate(date.getDate());
-            data.begin.setHours(time.getHours());
-            data.begin.setMinutes(time.getMinutes());
-            data.begin.setSeconds(0);
-        }
-        this.props.onSubmit(data);
+        this.props.onSubmit({
+            ...this.state.data,
+            begin: this.state.beginString ? new Date(this.state.beginString) : null
+        });
     }
 }
 

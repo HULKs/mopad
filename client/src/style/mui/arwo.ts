@@ -1,15 +1,21 @@
-import getMuiTheme from "material-ui/styles/getMuiTheme";
+import { createMuiTheme } from "@material-ui/core/styles";
 
-export default getMuiTheme({
+export default createMuiTheme({
     palette: {
-        canvasColor: "#474c55",
-        primary1Color: "#e7b142",
-        primary2Color: "#58beed",
-        primary3Color: "#606060",
-        accent1Color: "#58beed",
-        textColor: "#ffffff",
-        secondaryTextColor: "#e0e0e0",
-        alternateTextColor: "#303030",
-        disabledColor: "#a0a0a0"
+        background: {
+            default: "#474c55"
+        },
+        primary: {
+            main: "#e7b142",
+            light: "#58beed",
+            dark: "#606060",
+            contrastText: "#58beed"
+        },
+        text: {
+            primary: "#ffffff",
+            secondary: "#e0e0e0",
+            hint: "#303030",
+            disabled: "#a0a0a0"
+        }
     }
 });

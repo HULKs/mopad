@@ -1,8 +1,5 @@
 import * as React from "react";
-import { Card, CardActions, CardHeader, CardMedia, CardTitle, CardText } from "material-ui/Card";
-import FlatButton from "material-ui/FlatButton";
 import Topic from "./topic";
-import { FormattedMessage, injectIntl } from "react-intl";
 import { TopicViewModel, TopicUpdate } from "../../business/topics";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 

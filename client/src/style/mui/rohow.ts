@@ -1,3 +1,9 @@
-import getMuiTheme from "material-ui/styles/getMuiTheme";
+import { createMuiTheme } from "@material-ui/core/styles";
 
-export default getMuiTheme({});
+export default createMuiTheme({
+    palette: {
+        primary: {
+            main: "#7ebed1"
+        }
+    }
+});

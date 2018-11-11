@@ -45,10 +45,16 @@ const TOPIC_DISPLAY_FRAGMENT = gql`
         experts {
             id
             name
+            team {
+                name
+            }
         }
         newbies {
             id
             name
+            team {
+                name
+            }
         }
     }
 `;

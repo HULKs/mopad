@@ -5,6 +5,7 @@ import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
     topics: TopicViewModel[];
+    isFullscreen: boolean;
     onChangeParticipation?(topicId: string, as: ParticipationType, action: ParticipationChange);
     onUpdateTopic?(update: TopicUpdate);
     onDeleteTopic?(topicId: string);
@@ -12,9 +13,10 @@ interface PublicProps {
 
 export default class TopicList extends React.Component<PublicProps> {
     public render() {
-        const { onChangeParticipation, onUpdateTopic, onDeleteTopic } = this.props;
+        const { onChangeParticipation, onUpdateTopic, onDeleteTopic, isFullscreen } = this.props;
+
         return (
-            <div className="topicList">
+            <div className={"topicList" + (isFullscreen ? " fullscreen" : "")}>
                 {this.props.topics.map(topic => (
                     <Topic
                         key={topic.id}
@@ -22,6 +24,7 @@ export default class TopicList extends React.Component<PublicProps> {
                         onChangeParticipation={onChangeParticipation}
                         onUpdate={onUpdateTopic}
                         onDelete={onDeleteTopic}
+                        isFullscreen={isFullscreen}
                     />
                 ))}
             </div>

@@ -7,9 +7,11 @@ import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
 import { TopicFilterValue } from "./topicFilterSelector";
-import { withUser, User } from "../../business/withUser";
+import { User } from "../../business/withUser";
 import { ParticipationType, ParticipationChange } from "../../business/types";
 import { TopicConnector, TopicViewModel, TopicUpdate } from "../../business/topics";
+import { RouteComponentProps } from "react-router";
+import { parse } from "query-string";
 
 interface PublicProps {}
 interface WithUser {
@@ -27,7 +29,7 @@ interface HomeProps {
     leaveAsExpert(userId: string, topicId: string);
     leaveAsNewbie(userId: string, topicId: string);
 }
-type Props = PublicProps & WithUser & HomeProps & WithTheme;
+type Props = RouteComponentProps<PublicProps> & WithUser & HomeProps & WithTheme;
 interface State {
     filterUserTopics: TopicFilterValue;
 }
@@ -58,7 +60,8 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
 
     public render() {
         const { filterUserTopics } = this.state;
-        const { theme } = this.props;
+        const { theme, location } = this.props;
+        const isFullscreen = { ...parse(location.search) }.hasOwnProperty("fullscreen");
 
         return (
             <div className="page">
@@ -73,8 +76,9 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
                     onChangeParticipation={this.onChangeParticipation}
                     onUpdateTopic={this.onUpdateTopic}
                     onDeleteTopic={this.onDeleteTopic}
+                    isFullscreen={isFullscreen}
                 />
-                <TopicAdd onTopicAdd={this.onTopicAdd} />
+                {!isFullscreen && <TopicAdd onTopicAdd={this.onTopicAdd} />}
             </div>
         );
     }

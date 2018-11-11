@@ -1,12 +1,5 @@
 import * as React from "react";
-import {
-    Card,
-    CardActions,
-    CardHeader,
-    CardMedia,
-    CardTitle,
-    CardText
-} from "material-ui/Card";
+import { Card, CardActions, CardHeader, CardMedia, CardTitle, CardText } from "material-ui/Card";
 import FlatButton from "material-ui/FlatButton";
 import Topic from "./topic";
 import { FormattedMessage, injectIntl } from "react-intl";
@@ -15,22 +8,14 @@ import { ParticipationType, ParticipationChange } from "../../business/types";
 
 interface PublicProps {
     topics: TopicViewModel[];
-    onChangeParticipation?(
-        topicId: string,
-        as: ParticipationType,
-        action: ParticipationChange
-    );
+    onChangeParticipation?(topicId: string, as: ParticipationType, action: ParticipationChange);
     onUpdateTopic?(update: TopicUpdate);
     onDeleteTopic?(topicId: string);
 }
 
 export default class TopicList extends React.Component<PublicProps> {
     public render() {
-        const {
-            onChangeParticipation,
-            onUpdateTopic,
-            onDeleteTopic
-        } = this.props;
+        const { onChangeParticipation, onUpdateTopic, onDeleteTopic } = this.props;
         return (
             <div className="topicList">
                 {this.props.topics.map(topic => (

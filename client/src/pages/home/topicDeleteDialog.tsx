@@ -40,10 +40,7 @@ export default injectIntl(function(props: Props & IntlProps) {
             })}
             actions={actions}
         >
-            <FormattedMessage
-                id="topic.delete.dialog.text"
-                values={{ title: topic.title }}
-            />
+            <FormattedMessage id="topic.delete.dialog.text" values={{ title: topic.title }} />
         </Dialog>
     );
 });

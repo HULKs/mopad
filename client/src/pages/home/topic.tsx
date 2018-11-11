@@ -1,14 +1,7 @@
 import * as React from "react";
 import { FormattedMessage, injectIntl, InjectedIntl } from "react-intl";
 import * as Moment from "moment";
-import {
-    Card,
-    CardActions,
-    CardHeader,
-    CardMedia,
-    CardTitle,
-    CardText
-} from "material-ui/Card";
+import { Card, CardActions, CardHeader, CardMedia, CardTitle, CardText } from "material-ui/Card";
 import FlatButton from "material-ui/FlatButton";
 import IconButton from "material-ui/IconButton";
 import DeleteIcon from "material-ui/svg-icons/action/delete-forever";
@@ -20,11 +13,7 @@ import TopicDeleteDialog from "./topicDeleteDialog";
 
 interface PublicProps {
     topic: TopicViewModel;
-    onChangeParticipation?(
-        topicId: string,
-        as: ParticipationType,
-        action: ParticipationChange
-    );
+    onChangeParticipation?(topicId: string, as: ParticipationType, action: ParticipationChange);
     onUpdate?(update: TopicUpdate);
     onDelete?(topicId: string);
 }
@@ -44,10 +33,7 @@ const topicLabelStyle: React.CSSProperties = {
     fontWeight: "bold"
 };
 
-export class DisconnectedTopic extends React.Component<
-    PublicProps & IntlProps,
-    TopicState
-> {
+export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, TopicState> {
     constructor(props) {
         super(props);
         this.state = {
@@ -56,25 +42,15 @@ export class DisconnectedTopic extends React.Component<
         };
     }
     public render() {
-        const {
-            onChangeParticipation,
-            intl,
-            topic,
-            onUpdate,
-            onDelete
-        } = this.props;
+        const { onChangeParticipation, intl, topic, onUpdate, onDelete } = this.props;
         const { editDialogOpen, deleteDialogOpen } = this.state;
 
         return (
             <Card className="topic card">
                 <TopicActionIcons
                     show={topic.canManage}
-                    onScheduleClick={() =>
-                        this.setState({ editDialogOpen: true })
-                    }
-                    onDeleteClick={() =>
-                        this.setState({ deleteDialogOpen: true })
-                    }
+                    onScheduleClick={() => this.setState({ editDialogOpen: true })}
+                    onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
                 />
                 <CardTitle
                     title={topic.title}
@@ -113,15 +89,13 @@ export class DisconnectedTopic extends React.Component<
                         <>
                             <div>
                                 <span style={topicLabelStyle}>
-                                    <FormattedMessage id="topic.label.expert" />
-                                    :{" "}
+                                    <FormattedMessage id="topic.label.expert" />:{" "}
                                 </span>
                                 {topic.experts.map(u => u.name).join(", ")}
                             </div>
                             <div>
                                 <span style={topicLabelStyle}>
-                                    <FormattedMessage id="topic.label.newbie" />
-                                    :{" "}
+                                    <FormattedMessage id="topic.label.newbie" />:{" "}
                                 </span>
                                 {topic.newbies.map(u => u.name).join(", ")}
                             </div>
@@ -191,18 +165,10 @@ function TopicActionIcons({
     const iconInnerStyle = { width: 24, height: 24 };
     return (
         <div style={divStyle}>
-            <IconButton
-                style={iconOuterStyle}
-                iconStyle={iconInnerStyle}
-                onClick={onScheduleClick}
-            >
+            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle} onClick={onScheduleClick}>
                 <EditIcon />
             </IconButton>
-            <IconButton
-                style={iconOuterStyle}
-                iconStyle={iconInnerStyle}
-                onClick={onDeleteClick}
-            >
+            <IconButton style={iconOuterStyle} iconStyle={iconInnerStyle} onClick={onDeleteClick}>
                 <DeleteIcon />
             </IconButton>
         </div>
@@ -220,9 +186,7 @@ function TopicActions(props: {
         return (
             <FlatButton
                 primary={true}
-                onClick={() =>
-                    onChangeParticipation(topic.id, "expert", "leave")
-                }
+                onClick={() => onChangeParticipation(topic.id, "expert", "leave")}
                 label={intl.formatMessage({ id: "topic.leave.expert" })}
             />
         );
@@ -232,9 +196,7 @@ function TopicActions(props: {
         return (
             <FlatButton
                 primary={true}
-                onClick={() =>
-                    onChangeParticipation(topic.id, "newbie", "leave")
-                }
+                onClick={() => onChangeParticipation(topic.id, "newbie", "leave")}
                 label={intl.formatMessage({ id: "topic.leave.newbie" })}
             />
         );
@@ -243,9 +205,7 @@ function TopicActions(props: {
     if (topic.isTalk) {
         return (
             <FlatButton
-                onClick={() =>
-                    onChangeParticipation(topic.id, "newbie", "join")
-                }
+                onClick={() => onChangeParticipation(topic.id, "newbie", "join")}
                 label={intl.formatMessage({ id: "topic.join.talk" })}
             />
         );
@@ -254,15 +214,11 @@ function TopicActions(props: {
     return (
         <div>
             <FlatButton
-                onClick={() =>
-                    onChangeParticipation(topic.id, "expert", "join")
-                }
+                onClick={() => onChangeParticipation(topic.id, "expert", "join")}
                 label={intl.formatMessage({ id: "topic.join.expert" })}
             />
             <FlatButton
-                onClick={() =>
-                    onChangeParticipation(topic.id, "newbie", "join")
-                }
+                onClick={() => onChangeParticipation(topic.id, "newbie", "join")}
                 label={intl.formatMessage({ id: "topic.join.newbie" })}
             />
         </div>

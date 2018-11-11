@@ -96,10 +96,7 @@ const DELETE_TOPIC_MUTATION = gql`
 /* TODO: maybe use factory and define types manually */
 const JOIN_AS_EXPERT_MUTATION = gql`
     mutation JoinAsExpert($userId: ID!, $topicId: ID!) {
-        addToExpertParticipation(
-            expertsUserId: $userId
-            topicsAsExpertTopicId: $topicId
-        ) {
+        addToExpertParticipation(expertsUserId: $userId, topicsAsExpertTopicId: $topicId) {
             topicsAsExpertTopic {
                 ...TopicDisplay
             }
@@ -110,10 +107,7 @@ const JOIN_AS_EXPERT_MUTATION = gql`
 
 const JOIN_AS_NEWBIE_MUTATION = gql`
     mutation JoinAsNewbie($userId: ID!, $topicId: ID!) {
-        addToNewbieParticipation(
-            newbiesUserId: $userId
-            topicsAsNewbieTopicId: $topicId
-        ) {
+        addToNewbieParticipation(newbiesUserId: $userId, topicsAsNewbieTopicId: $topicId) {
             topicsAsNewbieTopic {
                 ...TopicDisplay
             }
@@ -124,10 +118,7 @@ const JOIN_AS_NEWBIE_MUTATION = gql`
 
 const LEAVE_AS_EXPERT_MUTATION = gql`
     mutation LeaveAsExpert($userId: ID!, $topicId: ID!) {
-        removeFromExpertParticipation(
-            expertsUserId: $userId
-            topicsAsExpertTopicId: $topicId
-        ) {
+        removeFromExpertParticipation(expertsUserId: $userId, topicsAsExpertTopicId: $topicId) {
             topicsAsExpertTopic {
                 ...TopicDisplay
             }
@@ -138,10 +129,7 @@ const LEAVE_AS_EXPERT_MUTATION = gql`
 
 const LEAVE_AS_NEWBIE_MUTATION = gql`
     mutation LeaveAsNewbie($userId: ID!, $topicId: ID!) {
-        removeFromNewbieParticipation(
-            newbiesUserId: $userId
-            topicsAsNewbieTopicId: $topicId
-        ) {
+        removeFromNewbieParticipation(newbiesUserId: $userId, topicsAsNewbieTopicId: $topicId) {
             topicsAsNewbieTopic {
                 ...TopicDisplay
             }
@@ -165,10 +153,7 @@ const addTopic = graphql<AddTopicMutation>(ADD_TOPIC_MUTATION, {
         addTopic: (title: string, description?: string) =>
             mutate({
                 variables: { title, description },
-                update: (
-                    proxy,
-                    { data: { createTopic } }: { data: AddTopicMutation }
-                ) => {
+                update: (proxy, { data: { createTopic } }: { data: AddTopicMutation }) => {
                     // Read the data from our cache for this query.
                     const data = proxy.readQuery<AllTopicsQuery>({
                         query: ALL_TOPICS_QUERY
@@ -196,10 +181,7 @@ const updateTopic = graphql<UpdateTopicMutation>(UPDATE_TOPIC_MUTATION, {
                     begin: update.begin ? update.begin.toISOString() : null,
                     locationId: update.locationId
                 },
-                update: (
-                    proxy,
-                    { data: { createTopic } }: { data: AddTopicMutation }
-                ) => {
+                update: (proxy, { data: { createTopic } }: { data: AddTopicMutation }) => {
                     // Read the data from our cache for this query.
                     const data = proxy.readQuery<AllTopicsQuery>({
                         query: ALL_TOPICS_QUERY
@@ -212,10 +194,7 @@ const updateTopic = graphql<UpdateTopicMutation>(UPDATE_TOPIC_MUTATION, {
     })
 });
 
-function orderTopicByBeginAsc(
-    a: TopicDisplayFragment,
-    b: TopicDisplayFragment
-): number {
+function orderTopicByBeginAsc(a: TopicDisplayFragment, b: TopicDisplayFragment): number {
     if (a.begin === b.begin) return 0;
     if (a.begin === null) return -1;
     if (b.begin === null) return 1;
@@ -230,18 +209,13 @@ const deleteTopic = graphql<DeleteTopicMutation>(DELETE_TOPIC_MUTATION, {
         deleteTopic: (topicId: string) =>
             mutate({
                 variables: { topicId },
-                update: (
-                    proxy,
-                    { data: { deleteTopic } }: { data: DeleteTopicMutation }
-                ) => {
+                update: (proxy, { data: { deleteTopic } }: { data: DeleteTopicMutation }) => {
                     // Read the data from our cache for this query.
                     const data = proxy.readQuery<AllTopicsQuery>({
                         query: ALL_TOPICS_QUERY
                     });
                     // Remove our topic from the cached topics
-                    data.allTopics = data.allTopics.filter(
-                        t => t.id != deleteTopic.id
-                    );
+                    data.allTopics = data.allTopics.filter(t => t.id != deleteTopic.id);
                     // Write our data back to the cache.
                     proxy.writeQuery({ query: ALL_TOPICS_QUERY, data });
                 }
@@ -250,49 +224,37 @@ const deleteTopic = graphql<DeleteTopicMutation>(DELETE_TOPIC_MUTATION, {
 });
 
 /* TODO: maybe use factory pattern and define types manually */
-const joinTopicAsExpert = graphql<JoinAsExpertMutation>(
-    JOIN_AS_EXPERT_MUTATION,
-    {
-        props: ({ mutate, ownProps }) => ({
-            ...ownProps,
-            joinAsExpert: (userId: string, topicId: string) =>
-                mutate({ variables: { userId, topicId } })
-        })
-    }
-);
+const joinTopicAsExpert = graphql<JoinAsExpertMutation>(JOIN_AS_EXPERT_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        joinAsExpert: (userId: string, topicId: string) =>
+            mutate({ variables: { userId, topicId } })
+    })
+});
 
-const joinTopicAsNewbie = graphql<JoinAsExpertMutation>(
-    JOIN_AS_NEWBIE_MUTATION,
-    {
-        props: ({ mutate, ownProps }) => ({
-            ...ownProps,
-            joinAsNewbie: (userId: string, topicId: string) =>
-                mutate({ variables: { userId, topicId } })
-        })
-    }
-);
+const joinTopicAsNewbie = graphql<JoinAsExpertMutation>(JOIN_AS_NEWBIE_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        joinAsNewbie: (userId: string, topicId: string) =>
+            mutate({ variables: { userId, topicId } })
+    })
+});
 
-const leaveTopicAsExpert = graphql<JoinAsExpertMutation>(
-    LEAVE_AS_EXPERT_MUTATION,
-    {
-        props: ({ mutate, ownProps }) => ({
-            ...ownProps,
-            leaveAsExpert: (userId: string, topicId: string) =>
-                mutate({ variables: { userId, topicId } })
-        })
-    }
-);
+const leaveTopicAsExpert = graphql<JoinAsExpertMutation>(LEAVE_AS_EXPERT_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        leaveAsExpert: (userId: string, topicId: string) =>
+            mutate({ variables: { userId, topicId } })
+    })
+});
 
-const leaveTopicAsNewbie = graphql<JoinAsExpertMutation>(
-    LEAVE_AS_NEWBIE_MUTATION,
-    {
-        props: ({ mutate, ownProps }) => ({
-            ...ownProps,
-            leaveAsNewbie: (userId: string, topicId: string) =>
-                mutate({ variables: { userId, topicId } })
-        })
-    }
-);
+const leaveTopicAsNewbie = graphql<JoinAsExpertMutation>(LEAVE_AS_NEWBIE_MUTATION, {
+    props: ({ mutate, ownProps }) => ({
+        ...ownProps,
+        leaveAsNewbie: (userId: string, topicId: string) =>
+            mutate({ variables: { userId, topicId } })
+    })
+});
 
 const loadTopic = graphql<AllTopicsQuery>(ALL_TOPICS_QUERY, {
     props: ({ data, ownProps }) => ({

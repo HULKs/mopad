@@ -10,10 +10,7 @@ import { ApolloError, ApolloQueryResult } from "apollo-client";
 import { RouterProps, withRouter } from "react-router";
 
 export interface LoginPageProps extends RouterProps {
-    doLogin(
-        email: string,
-        password: string
-    ): Promise<ApolloQueryResult<LoginMutation>>;
+    doLogin(email: string, password: string): Promise<ApolloQueryResult<LoginMutation>>;
     doSignUp(
         name: string,
         email: string,
@@ -58,8 +55,7 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             const response = await this.props.doLogin(email, password);
             this.sessionStore.token = response.data.authenticateUser.token;
             this.sessionStore.userId = response.data.authenticateUser.id;
-            this.sessionStore.userIsAdmin =
-                response.data.authenticateUser.isAdmin;
+            this.sessionStore.userIsAdmin = response.data.authenticateUser.isAdmin;
             this.props.history.push("/");
         } catch (err) {
             this.setState({ error: err });
@@ -101,8 +97,7 @@ const SIGNUP_MUTATION = gql`
 const loginUser = graphql(LOGIN_MUTATION, {
     props: ({ mutate, ownProps }) => ({
         ...ownProps,
-        doLogin: (email: string, password: string) =>
-            mutate({ variables: { password, email } })
+        doLogin: (email: string, password: string) => mutate({ variables: { password, email } })
     })
 });
 

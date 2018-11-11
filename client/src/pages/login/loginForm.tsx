@@ -4,19 +4,21 @@ import { ApolloError } from "apollo-client";
 import TextField from "material-ui/TextField";
 import RaisedButton from "material-ui/RaisedButton";
 import { Card, CardText, CardTitle, CardActions } from "material-ui/Card";
+import TeamSelector from "../../app/teamSelector";
 
 interface LoginFormProps {
     error?: ApolloError;
     intl: InjectedIntl;
 
     onLogin(email: string, password: string): void;
-    onSignUp(name: string, email: string, password: string): void;
+    onSignUp(name: string, email: string, password: string, teamId: string): void;
 }
 
 interface LoginFormState {
     email: string;
     password: string;
-    name?: string;
+    name: string;
+    teamId: string;
 }
 
 export class DisconnectedLoginForm extends React.Component<LoginFormProps, LoginFormState> {
@@ -26,7 +28,9 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
         this.handleSignUp = this.handleSignUp.bind(this);
         this.state = {
             email: null,
-            password: null
+            password: null,
+            name: "",
+            teamId: null
         };
     }
 
@@ -49,6 +53,11 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                             id: "app.login.name"
                         })}
                         onChange={(event, name) => this.setState({ name })}
+                    />
+                    <br />
+                    <TeamSelector
+                        value={this.state.teamId}
+                        onChange={(id) => this.setState({ teamId: id })}
                     />
                     <br />
                     <TextField
@@ -98,7 +107,7 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
     }
 
     private handleSignUp() {
-        this.props.onSignUp(this.state.name, this.state.email, this.state.password);
+        this.props.onSignUp(this.state.name, this.state.email, this.state.password, this.state.teamId);
     }
 
     private renderError() {

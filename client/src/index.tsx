@@ -11,7 +11,8 @@ import { IntlProvider } from "react-intl";
 import MuiThemeProvider from "material-ui/styles/MuiThemeProvider"; // <- Toggle Project here: * for ARWo, ** for RoHOW
 import "./style/main.less";
 
-/**/ import theme from "./style/mui/rohow";
+/**/ // <- Toggle Project here: * for ARWo, ** for RoHOW
+import theme from "./style/mui/rohow";
 const graphCoolUri = "https://api.graph.cool/simple/v1/mopad";
 document.getElementsByTagName("body")[0].style.backgroundColor = "#f5f5f5";
 /*/

@@ -1,0 +1,18 @@
+query newbie($user_id: ID!, $newbiesUser_id: ID!) {
+    SomeUserExists(filter: {
+        AND: [{
+            id: $user_id
+        }, {
+            id: $newbiesUser_id
+        }]
+    })
+}
+query expert($user_id: ID!, $expertsUser_id: ID!) {
+    SomeUserExists(filter: {
+        AND: [{
+            id: $user_id
+        }, {
+            id: $expertsUser_id
+        }]
+    })
+}

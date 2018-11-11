@@ -41,7 +41,7 @@ type Topic @model {
 
     title: String!
     description: String
-    author: User! @relation(name: "TopicAuthor")
+    author: User @relation(name: "TopicAuthor")
     experts: [User!]! @relation(name: "ExpertParticipation")
     newbies: [User!]! @relation(name: "NewbieParticipation")
     begin: DateTime

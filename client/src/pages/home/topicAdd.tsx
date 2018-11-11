@@ -44,6 +44,7 @@ export class DisconnectedTopicAdd extends React.Component<TopicAddProps, State> 
             <div>
                 <Button
                     variant="fab"
+                    color="primary"
                     style={floatStyle}
                     onClick={() => this.setState({ dialogOpen: true })}
                 >

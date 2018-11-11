@@ -1,6 +1,7 @@
 import * as React from "react";
 import { FormattedMessage } from "react-intl";
 import LoginForm from "./loginForm";
+import SignupForm from "./signupForm";
 import { ISessionStore, LocalSessionStore } from "../../business/auth";
 import gql from "graphql-tag";
 import graphql from "react-apollo/graphql";
@@ -8,6 +9,7 @@ import { compose } from "react-apollo";
 import { LoginMutation, SignupMutation } from "../../../mopad-graphql";
 import { ApolloError, ApolloQueryResult } from "apollo-client";
 import { RouterProps, withRouter } from "react-router";
+import { Grid } from "@material-ui/core";
 
 export interface LoginPageProps extends RouterProps {
     doLogin(email: string, password: string): Promise<ApolloQueryResult<LoginMutation>>;
@@ -20,7 +22,8 @@ export interface LoginPageProps extends RouterProps {
 }
 
 export interface LoginPageState {
-    error: ApolloError | string;
+    loginError: ApolloError | string;
+    signupError: ApolloError | string;
 }
 
 export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
@@ -35,18 +38,22 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
         this.sessionStore = new LocalSessionStore();
 
         this.state = {
-            error: null
+            loginError: null,
+            signupError: null
         };
     }
 
     public render() {
         return (
             <div className="page">
-                <LoginForm
-                    onLogin={this.handleLogin}
-                    onSignUp={this.handleSignUp}
-                    error={this.state.error}
-                />
+                <Grid container spacing={24}>
+                    <Grid item xs={12} sm={6}>
+                        <LoginForm onLogin={this.handleLogin} error={this.state.loginError} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <SignupForm onSignup={this.handleSignUp} error={this.state.signupError} />
+                    </Grid>
+                </Grid>
             </div>
         );
     }
@@ -59,7 +66,7 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             this.sessionStore.userIsAdmin = response.data.authenticateUser.isAdmin;
             this.props.history.push("/");
         } catch (err) {
-            this.setState({ error: err });
+            this.setState({ loginError: err });
         }
     }
 
@@ -71,7 +78,7 @@ export class LoginPage extends React.Component<LoginPageProps, LoginPageState> {
             this.sessionStore.userIsAdmin = false;
             this.props.history.push("/");
         } catch (err) {
-            this.setState({ error: err });
+            this.setState({ signupError: err });
         }
     }
 }

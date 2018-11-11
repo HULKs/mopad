@@ -10,21 +10,25 @@ interface LoginFormProps {
     error?: ApolloError;
     intl: InjectedIntl;
 
-    onLogin(email: string, password: string): void;
+    onSignUp(name: string, email: string, password: string, teamId: string): void;
 }
 
 interface LoginFormState {
     email: string;
     password: string;
+    name: string;
+    teamId: string;
 }
 
 export class DisconnectedLoginForm extends React.Component<LoginFormProps, LoginFormState> {
     constructor(props) {
         super(props);
-        this.handleLogin = this.handleLogin.bind(this);
+        this.handleSignUp = this.handleSignUp.bind(this);
         this.state = {
             email: null,
-            password: null
+            password: null,
+            name: "",
+            teamId: null
         };
     }
 
@@ -33,17 +37,36 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
             <Card className="card login">
                 <CardContent>
                     <Typography component="h5" variant="h5">
-                        <FormattedMessage id="app.login.headline" />
+                        <FormattedMessage id="app.signup.headline" />
                     </Typography>
+                    <TextField
+                        id="name"
+                        fullWidth
+                        margin="normal"
+                        placeholder={this.props.intl.formatMessage({
+                            id: "app.signup.name.hint"
+                        })}
+                        label={this.props.intl.formatMessage({
+                            id: "app.signup.name"
+                        })}
+                        onChange={event => this.setState({ name: event.target.value })}
+                    />
+                    <TeamSelector
+                        label={this.props.intl.formatMessage({
+                            id: "app.signup.team"
+                        })}
+                        value={this.state.teamId}
+                        onChange={id => this.setState({ teamId: id })}
+                    />
                     <TextField
                         id="email"
                         fullWidth
                         margin="normal"
                         placeholder={this.props.intl.formatMessage({
-                            id: "app.login.email.hint"
+                            id: "app.signup.email.hint"
                         })}
                         label={this.props.intl.formatMessage({
-                            id: "app.login.email"
+                            id: "app.signup.email"
                         })}
                         onChange={event => this.setState({ email: event.target.value })}
                     />
@@ -52,7 +75,7 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                         fullWidth
                         margin="normal"
                         label={this.props.intl.formatMessage({
-                            id: "app.login.password"
+                            id: "app.signup.password"
                         })}
                         onChange={event => this.setState({ password: event.target.value })}
                         type="password"
@@ -60,9 +83,9 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
                     {this.renderError()}
                 </CardContent>
                 <CardActions>
-                    <Button color="primary" variant="contained" onClick={this.handleLogin}>
+                    <Button color="primary" variant="contained" onClick={this.handleSignUp}>
                         {this.props.intl.formatMessage({
-                            id: "app.login.cta"
+                            id: "app.signup.cta"
                         })}
                     </Button>
                 </CardActions>
@@ -70,8 +93,13 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
         );
     }
 
-    private handleLogin() {
-        this.props.onLogin(this.state.email, this.state.password);
+    private handleSignUp() {
+        this.props.onSignUp(
+            this.state.name,
+            this.state.email,
+            this.state.password,
+            this.state.teamId
+        );
     }
 
     private renderError() {
@@ -89,7 +117,7 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
         return (
             <Typography component="p" className="error">
                 {[...errorKeys.values()].map(key => (
-                    <FormattedMessage key={key} id={"app.login.error." + key} />
+                    <FormattedMessage key={key} id={"app.signup.error." + key} />
                 ))}
             </Typography>
         );

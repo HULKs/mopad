@@ -65,41 +65,44 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                     <Typography variant="subtitle1" color="textSecondary">
                         {topic.description || ""}
                     </Typography>
-                    {topic.location && (
-                        <div>
-                            <span style={topicLabelStyle}>
-                                <FormattedMessage id="topic.label.location" />:{" "}
-                            </span>
-                            {topic.location.name}
-                        </div>
-                    )}
-                    {topic.begin && (
-                        <div>
-                            <span style={topicLabelStyle}>
-                                <FormattedMessage id="topic.label.begin" />:{" "}
-                            </span>
-                            {Moment(topic.begin).format("dddd h:mma")}
-                        </div>
-                    )}
-                    {(topic.location || topic.begin) && !topic.isTalk && (
-                        <div style={{ marginTop: 8 }} />
-                    )}
-                    {!isFullscreen && !topic.isTalk && (
-                        <>
+                    <Typography variant="body1">
+                        {topic.location && (
                             <div>
                                 <span style={topicLabelStyle}>
-                                    <FormattedMessage id="topic.label.expert" />:{" "}
+                                    <FormattedMessage id="topic.label.location" />:{" "}
                                 </span>
-                                {topic.experts.map(u => u.name).join(", ")}
+                                {topic.location.name}
                             </div>
+                        )}
+
+                        {topic.begin && (
                             <div>
                                 <span style={topicLabelStyle}>
-                                    <FormattedMessage id="topic.label.newbie" />:{" "}
+                                    <FormattedMessage id="topic.label.begin" />:{" "}
                                 </span>
-                                {topic.newbies.map(u => u.name).join(", ")}
+                                {Moment(topic.begin).format("dddd h:mma")}
                             </div>
-                        </>
-                    )}
+                        )}
+                        {(topic.location || topic.begin) && !topic.isTalk && (
+                            <div style={{ marginTop: 8 }} />
+                        )}
+                        {!isFullscreen && !topic.isTalk && (
+                            <>
+                                <div>
+                                    <span style={topicLabelStyle}>
+                                        <FormattedMessage id="topic.label.expert" />:{" "}
+                                    </span>
+                                    {topic.experts.map(u => u.name).join(", ")}
+                                </div>
+                                <div>
+                                    <span style={topicLabelStyle}>
+                                        <FormattedMessage id="topic.label.newbie" />:{" "}
+                                    </span>
+                                    {topic.newbies.map(u => u.name).join(", ")}
+                                </div>
+                            </>
+                        )}
+                    </Typography>
                 </CardContent>
                 {!isFullscreen && (
                     <>
@@ -152,10 +155,10 @@ function TopicActionIcons({
     const iconOuterStyle = { padding: 0, width: 36, height: 36 };
     return (
         <div style={divStyle}>
-            <IconButton style={iconOuterStyle} onClick={onScheduleClick}>
+            <IconButton style={iconOuterStyle} onClick={onScheduleClick} color="primary">
                 <EditIcon />
             </IconButton>
-            <IconButton style={iconOuterStyle} onClick={onDeleteClick}>
+            <IconButton style={iconOuterStyle} onClick={onDeleteClick} color="primary">
                 <DeleteIcon />
             </IconButton>
         </div>
@@ -172,7 +175,7 @@ function TopicActions(props: {
     if (topic.userIsExpert) {
         return (
             <Button
-                color="primary"
+                color="secondary"
                 onClick={() => onChangeParticipation(topic.id, "expert", "leave")}
             >
                 {intl.formatMessage({ id: "topic.leave.expert" })}
@@ -183,7 +186,7 @@ function TopicActions(props: {
     if (topic.userIsNewbie) {
         return (
             <Button
-                color="primary"
+                color="secondary"
                 onClick={() => onChangeParticipation(topic.id, "newbie", "leave")}
             >
                 {intl.formatMessage({ id: "topic.leave.newbie" })}

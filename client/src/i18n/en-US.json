@@ -10,6 +10,7 @@
     "app.login.signup_cta": "Sign up",
     "app.login.error.general": "An error occurred during login. Try again.",
     "app.login.error.badCredentials": "Bad credentials. Please correct your input or sign up.",
+    "app.login.error.Invalid credentials!": "Bad credentials. Please correct your input or sign up.",
     "app.login.error.EMAIL_IN_USE": "This email is already in use.",
     "topics.headline": "Topics",
     "topics.filter.all": "All Upcoming",

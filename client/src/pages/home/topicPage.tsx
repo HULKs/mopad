@@ -2,7 +2,7 @@ import * as React from "react";
 import { FormattedMessage } from "react-intl";
 import { ApolloError } from "apollo-client";
 import * as Moment from "moment";
-import muiThemeable from 'material-ui/styles/muiThemeable';
+import muiThemeable from "material-ui/styles/muiThemeable";
 import TopicList from "./topicList";
 import TopicAdd from "./topicAdd";
 import TopicFilterSelector from "./topicFilterSelector";
@@ -64,7 +64,10 @@ export class DisconnectedTopicsPage extends React.Component<Props, State> {
 
         return (
             <div className="page">
-                <div className="pageHeader" style={{color: muiTheme.palette.textColor}}>
+                <div
+                    className="pageHeader"
+                    style={{ color: muiTheme.palette.textColor }}
+                >
                     <h1>
                         <FormattedMessage id="topics.headline" />
                     </h1>

@@ -8,10 +8,11 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { from } from "apollo-link";
 import { AuthenticationLink, LocalSessionStore } from "./business/auth";
 import { IntlProvider } from "react-intl";
-import { MuiThemeProvider } from "@material-ui/core/styles";
-import "./style/main.less"; // <- Toggle Project here: * for ARWo, ** for RoHOW
+import MuiThemeProvider from "@material-ui/core/styles/MuiThemeProvider";
+import "./style/main.less";
 
-/**/ import theme from "./style/mui/rohow";
+/**/ // <- Toggle Project here: * for ARWo, ** for RoHOW
+import theme from "./style/mui/rohow";
 const graphCoolUri = "https://api.graph.cool/simple/v1/mopad";
 document.getElementsByTagName("body")[0].style.backgroundColor = "#f5f5f5";
 /*/

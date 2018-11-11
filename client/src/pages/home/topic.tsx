@@ -16,6 +16,7 @@ import Typography from "@material-ui/core/Typography/Typography";
 
 interface PublicProps {
     topic: TopicViewModel;
+    isFullscreen: boolean;
     onChangeParticipation?(topicId: string, as: ParticipationType, action: ParticipationChange);
     onUpdate?(update: TopicUpdate);
     onDelete?(topicId: string);
@@ -45,51 +46,45 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
         };
     }
     public render() {
-        const { onChangeParticipation, intl, topic, onUpdate, onDelete } = this.props;
+        const { onChangeParticipation, intl, topic, onUpdate, onDelete, isFullscreen } = this.props;
         const { editDialogOpen, deleteDialogOpen } = this.state;
 
         return (
             <Card className="topic card">
                 <CardContent>
-                    <TopicActionIcons
-                        show={topic.canManage}
-                        onScheduleClick={() => this.setState({ editDialogOpen: true })}
-                        onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
-                    />
+                    {!isFullscreen && (
+                        <TopicActionIcons
+                            show={topic.canManage}
+                            onScheduleClick={() => this.setState({ editDialogOpen: true })}
+                            onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
+                        />
+                    )}
                     <Typography component="h5" variant="h5">
                         {topic.title}
                     </Typography>
                     <Typography variant="subtitle1" color="textSecondary">
                         {topic.description || ""}
                     </Typography>
-                    {topic.location ? (
+                    {topic.location && (
                         <div>
                             <span style={topicLabelStyle}>
                                 <FormattedMessage id="topic.label.location" />:{" "}
                             </span>
                             {topic.location.name}
                         </div>
-                    ) : (
-                        []
                     )}
-                    {topic.begin ? (
+                    {topic.begin && (
                         <div>
                             <span style={topicLabelStyle}>
                                 <FormattedMessage id="topic.label.begin" />:{" "}
                             </span>
                             {Moment(topic.begin).format("dddd h:mma")}
                         </div>
-                    ) : (
-                        []
                     )}
-                    {(topic.location || topic.begin) && !topic.isTalk ? (
+                    {(topic.location || topic.begin) && !topic.isTalk && (
                         <div style={{ marginTop: 8 }} />
-                    ) : (
-                        []
                     )}
-                    {topic.isTalk ? (
-                        []
-                    ) : (
+                    {!isFullscreen && !topic.isTalk && (
                         <>
                             <div>
                                 <span style={topicLabelStyle}>
@@ -106,47 +101,37 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                         </>
                     )}
                 </CardContent>
-                <CardActions>
-                    <TopicActions
-                        topic={topic}
-                        onChangeParticipation={onChangeParticipation}
-                        intl={intl}
-                    />
-                </CardActions>
-                <TopicEditDialog
-                    open={editDialogOpen}
-                    topic={topic}
-                    onSubmit={update => {
-                        this.setState({ editDialogOpen: false });
-                        onUpdate && onUpdate(update);
-                    }}
-                    onCancel={() => this.setState({ editDialogOpen: false })}
-                />
-                <TopicDeleteDialog
-                    open={deleteDialogOpen}
-                    topic={topic}
-                    onConfirm={() => {
-                        this.setState({ deleteDialogOpen: false });
-                        onDelete && onDelete(topic.id);
-                    }}
-                    onCancel={() => this.setState({ deleteDialogOpen: false })}
-                />
+                {!isFullscreen && (
+                    <>
+                        <CardActions>
+                            <TopicActions
+                                topic={topic}
+                                onChangeParticipation={onChangeParticipation}
+                                intl={intl}
+                            />
+                        </CardActions>
+                        <TopicEditDialog
+                            open={editDialogOpen}
+                            topic={topic}
+                            onSubmit={update => {
+                                this.setState({ editDialogOpen: false });
+                                onUpdate && onUpdate(update);
+                            }}
+                            onCancel={() => this.setState({ editDialogOpen: false })}
+                        />
+                        <TopicDeleteDialog
+                            open={deleteDialogOpen}
+                            topic={topic}
+                            onConfirm={() => {
+                                this.setState({ deleteDialogOpen: false });
+                                onDelete && onDelete(topic.id);
+                            }}
+                            onCancel={() => this.setState({ deleteDialogOpen: false })}
+                        />
+                    </>
+                )}
             </Card>
         );
-    }
-
-    private getDescriptionText(topic: TopicViewModel): string {
-        const desc: string[] = [];
-        if (topic.description) {
-            desc.push(topic.description);
-        }
-        if (topic.begin) {
-            desc.push(Moment(topic.begin).format("dddd h:mma"));
-        }
-        if (topic.location && topic.location.name) {
-            desc.push(topic.location.name);
-        }
-        return desc.join(", ");
     }
 }
 

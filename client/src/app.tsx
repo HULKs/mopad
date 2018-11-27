@@ -11,7 +11,7 @@ import FullScreenButton from "./app/fullScreenButton";
 import { PrivateRoute } from "./business/routerAuth";
 import { ISessionStore, LocalSessionStore } from "./business/auth";
 
-export class App extends React.Component {
+export class App extends React.Component<{ title?: string }> {
     private sessionStore: ISessionStore;
 
     constructor(props) {
@@ -25,8 +25,8 @@ export class App extends React.Component {
                 <div>
                     <AppBar position="static" style={{ width: "100%" }}>
                         <Toolbar variant="dense">
-                            <Typography variant="h6" color="inherit">
-                                mopad
+                            <Typography variant="h6" color="inherit" id="app-title">
+                                {this.props.title || "mopad"}
                             </Typography>
                             <div style={{ flexGrow: 1 }} />
                             <FullScreenButton />

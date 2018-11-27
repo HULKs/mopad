@@ -72,7 +72,7 @@ export class DisconnectedLoginForm extends React.Component<LoginFormProps, Login
     }
 
     private renderError() {
-        const {errors} = this.props;
+        const { errors } = this.props;
 
         if (!errors || errors.length == 0) {
             return null;

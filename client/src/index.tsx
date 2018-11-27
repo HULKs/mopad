@@ -14,10 +14,12 @@ import "./style/main.less";
 /**/ // <- Toggle Project here: * for ARWo, ** for RoHOW
 import theme from "./style/mui/rohow";
 const graphCoolUri = "https://api.graph.cool/simple/v1/mopad";
+const appTitle = "RoHOW 2018";
 document.getElementsByTagName("body")[0].style.backgroundColor = "#f5f5f5";
 /*/
 import theme from "./style/mui/arwo";
 const graphCoolUri = "https://api.graph.cool/simple/v1/arwo";
+const appTitle = "ARWO 2018";
 document.getElementsByTagName("body")[0].style.backgroundColor = "#353942";
 /**/
 
@@ -33,7 +35,7 @@ ReactDOM.render(
     <IntlProvider locale="en" messages={require("./i18n/en-US.json")}>
         <ApolloProvider client={client}>
             <MuiThemeProvider theme={theme}>
-                <App />
+                <App title={appTitle} />
             </MuiThemeProvider>
         </ApolloProvider>
     </IntlProvider>,

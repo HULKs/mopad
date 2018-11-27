@@ -65,9 +65,7 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                             onDeleteClick={() => this.setState({ deleteDialogOpen: true })}
                         />
                     )}
-                    <Typography variant="h5">
-                        {topic.title}
-                    </Typography>
+                    <Typography variant="h5">{topic.title}</Typography>
                     <Typography variant="subtitle1" color="textSecondary">
                         {topic.description || ""}
                     </Typography>
@@ -95,29 +93,48 @@ export class DisconnectedTopic extends React.Component<PublicProps & IntlProps, 
                         )}
                         {!isFullscreen && !topic.isTalk && (
                             <>
-                                <Typography component="div" onClick={() => this.setState({ participantDialogOpen: true })}>
-                                    <span style={topicLabelStyle}>
-                                        Participants:{" "}
-                                    </span>
+                                <Typography
+                                    component="div"
+                                    onClick={() => this.setState({ participantDialogOpen: true })}
+                                >
+                                    <span style={topicLabelStyle}>Participants: </span>
                                     {topic.experts.length + topic.newbies.length}
                                     <Button size="small">
-                                        <OpenIcon style={{ marginRight: "4px", fontSize: "16px" }}/>
+                                        <OpenIcon
+                                            style={{ marginRight: "4px", fontSize: "16px" }}
+                                        />
                                         Show
                                     </Button>
                                 </Typography>
-                                <Dialog fullWidth open={participantDialogOpen} onClose={() => this.setState({ participantDialogOpen: false })}>
+                                <Dialog
+                                    fullWidth
+                                    open={participantDialogOpen}
+                                    onClose={() => this.setState({ participantDialogOpen: false })}
+                                >
                                     <DialogContent>
                                         <Typography variant="h6">
                                             <FormattedMessage id="topic.label.expert" />:{" "}
                                         </Typography>
-                                        {topic.experts.map(u => <div key={u.id}>{u.team ? `${u.name} (${u.team.name})` : u.name}</div>)}
+                                        {topic.experts.map(u => (
+                                            <div key={u.id}>
+                                                {u.team ? `${u.name} (${u.team.name})` : u.name}
+                                            </div>
+                                        ))}
                                         <Typography variant="h6" style={{ marginTop: "0.5em" }}>
                                             <FormattedMessage id="topic.label.newbie" />:{" "}
                                         </Typography>
-                                        {topic.newbies.map(u => <div key={u.id}>{u.team ? `${u.name} (${u.team.name})` : u.name}</div>)}
+                                        {topic.newbies.map(u => (
+                                            <div key={u.id}>
+                                                {u.team ? `${u.name} (${u.team.name})` : u.name}
+                                            </div>
+                                        ))}
                                     </DialogContent>
                                     <DialogActions>
-                                        <Button onClick={() => this.setState({ participantDialogOpen: false })}>
+                                        <Button
+                                            onClick={() =>
+                                                this.setState({ participantDialogOpen: false })
+                                            }
+                                        >
                                             Close
                                         </Button>
                                     </DialogActions>

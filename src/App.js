@@ -1,5 +1,25 @@
 import React from "react";
+import 'semantic-ui-css/semantic.min.css'
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import { Card, Icon, Image } from 'semantic-ui-react'
+
+const CardExampleCard = () => (
+  <Card>
+    <Image src='/images/avatar/large/matthew.png' wrapped ui={false} />
+    <Card.Content>
+      <Card.Header>Matthew</Card.Header>
+      <Card.Meta>
+        <span className='date'>Joined in 2015</span>
+      </Card.Meta>
+      <Card.Description>
+        Matthew is a musician living in Nashville.
+      </Card.Description>
+    </Card.Content>
+    <Card.Content extra>
+        Hello World
+    </Card.Content>
+  </Card>
+)
 
 export default function App() {
   return (
@@ -38,7 +58,7 @@ export default function App() {
 }
 
 function Home() {
-  return <h2>Home</h2>;
+  return <CardExampleCard></CardExampleCard>;
 }
 
 function About() {

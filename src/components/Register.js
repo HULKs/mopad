@@ -69,9 +69,8 @@ export default function Register() {
                 onClick={async () => {
                   try {
                     const { user } = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                    firebase.firestore().collection("users").add({
+                    firebase.firestore().collection("users").doc(user.uid).set({
                       name: name,
-                      user_id: user.uid,
                     });
                     history.push("/");
                   } catch (error) {

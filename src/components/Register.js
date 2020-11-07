@@ -11,6 +11,7 @@ import {
 } from "semantic-ui-react";
 import {
   Link,
+  useHistory,
 } from "react-router-dom";
 import firebase from "firebase";
 
@@ -18,6 +19,7 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const history = useHistory();
   return (
     <>
       <Menu>
@@ -71,6 +73,7 @@ export default function Register() {
                       name: name,
                       user_id: user.uid,
                     });
+                    history.push("/");
                   } catch (error) {
                     alert(`${error.code}\n\n${error.message}`);
                   }

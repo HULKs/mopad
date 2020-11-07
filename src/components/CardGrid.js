@@ -7,7 +7,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 
 export default function CardGrid() {
   const [talks, talksLoading, talksError] = useCollection(
-    firebase.firestore().collection("talks"),
+    firebase.firestore().collection("talks").orderBy("time"),
   );
   // TODO: loading, error
   if (talks !== undefined) {

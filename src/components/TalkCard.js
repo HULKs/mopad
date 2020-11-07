@@ -10,12 +10,12 @@ const is_nerd = false;
 const is_noob = false;
 
 function useReferences(refs) {
-  const [values, setValues] = useState([])
+  const [values, setValues] = useState([]);
   useEffect(() => {
     (async () => {
       const resolvedRefs = await Promise.all(refs.map((ref) => ref.get()));
-      setValues(resolvedRefs.map((it) => it.data()))
-    })()
+      setValues(resolvedRefs.map((it) => it.data()));
+    })();
   }, [refs]);
   return values;
 }
@@ -34,10 +34,10 @@ export default function TalkCard({ talk }) {
       </Card.Content>
       <Card.Content>
         <Icon name={nerd_icon} />
-        <b>Nerds</b>: { nerds.map((it) => it.name).join(', ') }
+        <b>Nerds</b>: {nerds.map((it) => it.name).join(", ")}
         <br />
         <Icon name={noob_icon} />
-        <b>Noobs</b>: { noobs.map((it) => it.name).join(', ')}
+        <b>Noobs</b>: {noobs.map((it) => it.name).join(", ")}
       </Card.Content>
       <Button.Group size="mini">
         <Button toggle active={is_nerd}>

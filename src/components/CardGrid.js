@@ -14,7 +14,7 @@ export default function CardGrid() {
   if (talks !== undefined) {
     return (
       <Card.Group>
-        {talks.docs.map(talk => (
+        {talks.docs.map((talk) => (
           <TalkCard talk={talk.data()} />
         ))}
         <EditableCard />

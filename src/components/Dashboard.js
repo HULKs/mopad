@@ -7,10 +7,14 @@ export default function Dashboard() {
     <>
       <Menu inverted>
         <Menu.Item header>
-          <Image size='mini' src='./logo.png' style={{ marginRight: '1.5em' }} />
+          <Image
+            size="mini"
+            src="./logo.png"
+            style={{ marginRight: "1.5em" }}
+          />
           MOPAD
         </Menu.Item>
-        <Menu.Item as='a' position='right'>
+        <Menu.Item as="a" position="right">
           Logout
         </Menu.Item>
       </Menu>

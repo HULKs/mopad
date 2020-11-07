@@ -25,11 +25,11 @@ export default function EditableCard() {
       <Card.Content>
         <Button onClick={async () => {
           await firebase.firestore().collection("talks").add({
-            creator: `users/${user.uid}`,
+            creator: firebase.firestore().doc(`users/${user.uid}`),
             description: description,
             location: "Raum A",
             nerds: [
-              `users/${user.uid}`,
+              firebase.firestore().doc(`users/${user.uid}`),
             ],
             noobs: [],
             time: new Date(),

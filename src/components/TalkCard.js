@@ -16,7 +16,7 @@ export default function TalkCard({ talkId }) {
   useEffect(() => {
     if (talk) {
       (async () => {
-        const resolvedReferences = await Promise.all(talk.data().nerds.map((reference) => reference.get()));
+        const resolvedReferences = await Promise.all(talk.data().nerds.map(reference => reference.get()));
         setNerds(resolvedReferences.map(reference => reference.data()));
       })();
     }
@@ -26,7 +26,7 @@ export default function TalkCard({ talkId }) {
   useEffect(() => {
     if (talk) {
       (async () => {
-        const resolvedReferences = await Promise.all(talk.data().noobs.map((reference) => reference.get()));
+        const resolvedReferences = await Promise.all(talk.data().noobs.map(reference => reference.get()));
         setNoobs(resolvedReferences.map(reference => reference.data()));
       })();
     }

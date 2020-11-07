@@ -6,6 +6,9 @@ import {
   Segment,
   Card,
   Icon,
+  Input,
+  TextArea,
+  Form,
   Image,
   Button,
   Label,
@@ -22,8 +25,12 @@ const is_noob = false;
 function TalkCard({ card }) {
   return (
     <Card>
-      <Card.Content header={card.title} />
-      <Card.Content description={card.description} />
+      <Card.Content>
+        <Card.Header>{card.title}</Card.Header>
+      </Card.Content>
+      <Card.Content>
+        <Card.Description>{card.description}</Card.Description>
+      </Card.Content>
       <Card.Content>
         <Icon name={nerd_icon} />
         <b>Nerds</b>: {card.nerds.join(", ")}
@@ -47,6 +54,26 @@ function TalkCard({ card }) {
   );
 }
 
+function EditableCard() {
+  return (
+    <Card>
+      <Card.Content>
+        <Card.Header>
+          <Input fluid placeholder="Talk Topic" />
+        </Card.Header>
+      </Card.Content>
+      <Card.Content>
+        <Card.Description>
+          <TextArea placeholder="What's your talk about?" />
+        </Card.Description>
+      </Card.Content>
+      <Card.Content>
+        <Button>Create</Button>
+      </Card.Content>
+    </Card>
+  );
+}
+
 function CardGrid({ cards }) {
   return (
     <List horizontal>
@@ -55,6 +82,9 @@ function CardGrid({ cards }) {
           <TalkCard card={card} />
         </List.Item>
       ))}
+      <List.Item>
+        <EditableCard />
+      </List.Item>
     </List>
   );
 }
@@ -66,7 +96,34 @@ function Page() {
     nerds: ["TotallyNotThorsten", "Thomas"],
     noobs: ["Yuria", "Lasse", "Maxi"],
   };
-  const cards = [example_card, example_card, example_card];
+  const long_card = {
+    title: "My second Talk",
+    description: "I am adsfasd fsadfasdfasfdasdfasdf asdf asd fas df asd fsa df askg;sajg sa;lkg sagljsadlkf jdsa;lfjldsa;f j;lkdsa jf;lsajf ;lksajf ;lkdsa jf;lsajlkjsldjg;ls jg;lksd g;lkdsjg lkdsjg  a description of a talk!",
+    nerds: ["TotallyNotThorsten", "Thomas"],
+    noobs: ["Yuria", "Lasse", "Maxi"],
+  };
+  const cards = [
+    example_card,
+    example_card,
+    example_card,
+    long_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+    example_card,
+  ];
   return (
     <Segment placeholder>
       <CardGrid cards={cards} />

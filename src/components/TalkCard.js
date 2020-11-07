@@ -9,28 +9,21 @@ const noob_icon = "blind";
 const is_nerd = false;
 const is_noob = false;
 
-function Name({ documentReference }) {
-  const [user, userLoading, userError] = useDocument(documentReference);
-  if (user) {
-    return (
-      <>
-        {user.data().name}
-      </>
-    );
-  }
-  return (
-    <>
-      Loading...
-    </>
-  );
+function useReferences(refs) {
+  const [values, setValues] = useState([])
+  useEffect(() => {
+    (async () => {
+      const resolvedRefs = await Promise.all(refs.map((ref) => ref.get()));
+      setValues(resolvedRefs.map((it) => it.data()))
+    })()
+  }, [refs]);
+  return values;
 }
 
 export default function TalkCard({ talk }) {
-  // const [nerdStrings, setNerdStrings] = 
-  // useEffect(async () => {
-    
-  // }, [talk.nerds]);
-  // console.log(talk.nerds.map(async nerd => await nerd.get()));
+  const nerds = useReferences(talk.nerds);
+  const noobs = useReferences(talk.noobs);
+
   return (
     <Card raised>
       <Card.Content>
@@ -41,11 +34,10 @@ export default function TalkCard({ talk }) {
       </Card.Content>
       <Card.Content>
         <Icon name={nerd_icon} />
-        <b>Nerds</b>: {talk.nerds.map((nerd, index, array) =>
-          <><Name documentReference={nerd} />{index < array.length && <>, </>}</>)}
+        <b>Nerds</b>: { nerds.map((it) => it.name).join(', ') }
         <br />
         <Icon name={noob_icon} />
-        <b>Noobs</b>: {talk.noobs.map(noob => <Name documentReference={noob} />).join(", ")}
+        <b>Noobs</b>: { noobs.map((it) => it.name).join(', ')}
       </Card.Content>
       <Button.Group size="mini">
         <Button toggle active={is_nerd}>

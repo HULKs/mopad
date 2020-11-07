@@ -14,7 +14,7 @@ export default function Dashboard() {
           />
           MOPAD
         </Menu.Item>
-        <Menu.Item as="a" position="right">
+        <Menu.Item as="a" position="right" href='/login'>
           Logout
         </Menu.Item>
       </Menu>

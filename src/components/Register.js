@@ -8,11 +8,9 @@ import {
   Header,
   Segment,
   Message,
-  Divider,
-  Container
 } from "semantic-ui-react";
 
-export default function Login() {
+export default function Register() {
   return (
     <>
       <Menu>
@@ -28,10 +26,11 @@ export default function Login() {
       <Grid textAlign='center' style={{ height: '80vh' }} verticalAlign='middle'>
         <Grid.Column style={{ maxWidth: 450 }}>
           <Header textAlign='center'>
-            Log-in to your account
-      </Header>
-          <Form >
+            Register
+          </Header>
+          <Form>
             <Segment stacked>
+              <Form.Input fluid icon='user' iconPosition='left' placeholder='Name' />
               <Form.Input fluid icon='mail' iconPosition='left' placeholder='E-mail address' />
               <Form.Input
                 fluid
@@ -41,17 +40,16 @@ export default function Login() {
                 type='password'
               />
 
-              <Button fluid color='green' href='/'>
-                Login
+              <Button fluid color='green'>
+                Sign Up
               </Button>
             </Segment>
           </Form>
           <Message>
-            New to us? <a href='/register'>Register</a>
+            Already registered? <a href='/login'>Login</a>
           </Message>
         </Grid.Column>
       </Grid>
-
     </>
   );
 }

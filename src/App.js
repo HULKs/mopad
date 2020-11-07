@@ -2,7 +2,7 @@ import React from "react";
 import CardGrid from "./components/CardGrid";
 import { Segment } from "semantic-ui-react";
 
-function Page() {
+function Dashboard() {
   const example_card = {
     title: "My second Talk",
     description: "I am a description of a talk!",
@@ -29,11 +29,11 @@ function Page() {
   ];
   return (
     <Segment placeholder>
-      <CardGrid cards={cards} />
+      <CardGrid />
     </Segment>
   );
 }
 
 export default function App() {
-  return <Page />;
+  return <Dashboard />;
 }

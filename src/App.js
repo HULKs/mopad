@@ -24,11 +24,11 @@ const is_noob = false;
 
 function TalkCard({ card }) {
   return (
-    <Card>
+    <Card raised>
       <Card.Content>
         <Card.Header>{card.title}</Card.Header>
       </Card.Content>
-      <Card.Content>
+      <Card.Content style={{ height: 100 + "%" }}>
         <Card.Description>{card.description}</Card.Description>
       </Card.Content>
       <Card.Content>
@@ -76,16 +76,12 @@ function EditableCard() {
 
 function CardGrid({ cards }) {
   return (
-    <List horizontal>
+    <Card.Group>
       {cards.map((card) => (
-        <List.Item>
-          <TalkCard card={card} />
-        </List.Item>
+        <TalkCard card={card} />
       ))}
-      <List.Item>
-        <EditableCard />
-      </List.Item>
-    </List>
+      <EditableCard />
+    </Card.Group>
   );
 }
 
@@ -98,7 +94,8 @@ function Page() {
   };
   const long_card = {
     title: "My second Talk",
-    description: "I am adsfasd fsadfasdfasfdasdfasdf asdf asd fas df asd fsa df askg;sajg sa;lkg sagljsadlkf jdsa;lfjldsa;f j;lkdsa jf;lsajf ;lksajf ;lkdsa jf;lsajlkjsldjg;ls jg;lksd g;lkdsjg lkdsjg  a description of a talk!",
+    description:
+      "I am adsfasd fsadfasdfasfdasdfasdf asdf asd fas df asd fsa df askg;sajg sa;lkg sagljsadlkf jdsa;lfjldsa;f j;lkdsa jf;lsajf ;lksajf ;lkdsa jf;lsajlkjsldjg;ls jg;lksd g;lkdsjg lkdsjg  a description of a talk!",
     nerds: ["TotallyNotThorsten", "Thomas"],
     noobs: ["Yuria", "Lasse", "Maxi"],
   };
@@ -107,17 +104,6 @@ function Page() {
     example_card,
     example_card,
     long_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
-    example_card,
     example_card,
     example_card,
     example_card,

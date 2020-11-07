@@ -8,8 +8,6 @@ import {
   Header,
   Segment,
   Message,
-  Divider,
-  Container
 } from "semantic-ui-react";
 
 export default function Login() {

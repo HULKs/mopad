@@ -1,7 +1,15 @@
 import React from "react";
 import "semantic-ui-css/semantic.min.css";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { Card, Icon, Image, Button, Label, Grid } from "semantic-ui-react";
+import {
+  List,
+  Card,
+  Icon,
+  Image,
+  Button,
+  Label,
+  Grid,
+} from "semantic-ui-react";
 
 const nerd_icon = "graduation cap";
 const noob_icon = "blind";
@@ -37,11 +45,13 @@ const TalkCard = ({ card }) => (
 );
 
 const CardGrid = ({ cards }) => (
-  <Grid>
+  <List horizontal>
     {cards.map((card) => (
-      <TalkCard card={card} />
+      <List.Item>
+        <TalkCard card={card} />
+      </List.Item>
     ))}
-  </Grid>
+  </List>
 );
 
 export default function App() {

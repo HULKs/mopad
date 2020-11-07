@@ -7,23 +7,31 @@ import { useDocument } from "react-firebase-hooks/firestore";
 const nerdIcon = "graduation cap";
 const noobIcon = "blind";
 
-function useReferences(references, dependencies) {
-  const [values, setValues] = useState([]);
-  useEffect(() => {
-    (async () => {
-      const resolvedReferences = await Promise.all(references.map((reference) => reference.get()));
-      setValues(resolvedReferences.map(reference => reference.data()));
-    })();
-  }, dependencies);
-  return values;
-}
-
 export default function TalkCard({ talkId }) {
   const [talk, talkLoading,] = useDocument(
     firebase.firestore().doc(`talks/${talkId}`),
   );
-  const nerds = useReferences(talk ? talk.data().nerds : [], [talk]);
-  const noobs = useReferences(talk ? talk.data().noobs : [], [talk]);
+
+  const [nerds, setNerds] = useState([]);
+  useEffect(() => {
+    if (talk) {
+      (async () => {
+        const resolvedReferences = await Promise.all(talk.data().nerds.map((reference) => reference.get()));
+        setNerds(resolvedReferences.map(reference => reference.data()));
+      })();
+    }
+  }, [talk]);
+
+  const [noobs, setNoobs] = useState([]);
+  useEffect(() => {
+    if (talk) {
+      (async () => {
+        const resolvedReferences = await Promise.all(talk.data().noobs.map((reference) => reference.get()));
+        setNoobs(resolvedReferences.map(reference => reference.data()));
+      })();
+    }
+  }, [talk]);
+
   const [user, userLoading,] = useAuthState(firebase.auth());
   const isNerd = talkLoading || userLoading ? false : talk.data().nerds.some(nerd => nerd.id === user.uid);
   const isNoob = talkLoading || userLoading ? false : talk.data().noobs.some(noob => noob.id === user.uid);

@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Icon, Button } from "semantic-ui-react";
+import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 
 const nerd_icon = "graduation cap";
 const noob_icon = "blind";
@@ -8,21 +9,43 @@ const noob_icon = "blind";
 const is_nerd = false;
 const is_noob = false;
 
-export default function TalkCard({ card }) {
+function Name({ documentReference }) {
+  const [user, userLoading, userError] = useDocument(documentReference);
+  if (user) {
+    return (
+      <>
+        {user.data().name}
+      </>
+    );
+  }
+  return (
+    <>
+      Loading...
+    </>
+  );
+}
+
+export default function TalkCard({ talk }) {
+  // const [nerdStrings, setNerdStrings] = 
+  // useEffect(async () => {
+    
+  // }, [talk.nerds]);
+  // console.log(talk.nerds.map(async nerd => await nerd.get()));
   return (
     <Card raised>
       <Card.Content>
-        <Card.Header>{card.title}</Card.Header>
+        <Card.Header>{talk.title}</Card.Header>
       </Card.Content>
       <Card.Content style={{ height: 100 + "%" }}>
-        <Card.Description>{card.description}</Card.Description>
+        <Card.Description>{talk.description}</Card.Description>
       </Card.Content>
       <Card.Content>
         <Icon name={nerd_icon} />
-        <b>Nerds</b>: {card.nerds.join(", ")}
+        <b>Nerds</b>: {talk.nerds.map((nerd, index, array) =>
+          <><Name documentReference={nerd} />{index < array.length && <>, </>}</>)}
         <br />
         <Icon name={noob_icon} />
-        <b>Noobs</b>: {card.noobs.join(", ")}
+        <b>Noobs</b>: {talk.noobs.map(noob => <Name documentReference={noob} />).join(", ")}
       </Card.Content>
       <Button.Group size="mini">
         <Button toggle active={is_nerd}>

@@ -12,7 +12,7 @@ export default function CardGrid() {
   // TODO: loading, error
   if (talks !== undefined) {
     return (
-      <Card.Group>
+      <Card.Group centered>
         {talks.docs.map(talk => (
           <TalkCard talkId={talk.id} />
         ))}

@@ -1,23 +1,27 @@
 import React from "react";
 import CardGrid from "./CardGrid";
-import { Segment, Header, Icon } from "semantic-ui-react";
+import {Container, Menu, Image} from "semantic-ui-react";
 import firebase from "firebase";
 
 export default function Dashboard() {
   return (
     <>
-      <Segment clearing>
-        <Header as="h1" floated="left">
-          <Icon name="blind" size="medium" />
-          <Header.Content>MOPAD</Header.Content>
-        </Header>
-        <Header floated="right" block onClick={() => {
-          firebase.auth().signOut();
-        }}>
+      <Menu inverted attached>
+        <Menu.Item header>
+          <Image
+            size="mini"
+            src="./logo.png"
+            style={{ marginRight: "1.5em" }}
+          />
+          MOPAD
+        </Menu.Item>
+        <Menu.Item as="a" position="right" onClick={() => { firebase.auth().signOut(); }}>
           Logout
-        </Header>
-      </Segment>
-      <CardGrid />
+        </Menu.Item>
+      </Menu>
+      <Container style={{ marginTop: "2em" }} >
+        <CardGrid />
+      </Container>
     </>
   );
 }

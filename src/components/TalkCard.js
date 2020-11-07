@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Icon, Button } from "semantic-ui-react";
 import firebase from "firebase";
-import { useCollection, useDocument } from "react-firebase-hooks/firestore";
+import { useDocument } from "react-firebase-hooks/firestore";
 
 const nerd_icon = "graduation cap";
 const noob_icon = "blind";
@@ -39,10 +39,10 @@ export default function TalkCard({ talkId }) {
         </Card.Content>
         <Card.Content>
           <Icon name={nerd_icon} />
-          <b>Nerds</b>: {nerds.map((it) => it.name).join(', ')}
+          <b>Nerds</b>: {nerds.map(nerd => nerd.name).join(', ')}
           <br />
           <Icon name={noob_icon} />
-          <b>Noobs</b>: {noobs.map((it) => it.name).join(', ')}
+          <b>Noobs</b>: {noobs.map(noob => noob.name).join(', ')}
         </Card.Content>
         <Button.Group size="mini">
           <Button toggle active={is_nerd}>

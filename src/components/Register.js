@@ -10,7 +10,7 @@ import {
   Message,
 } from "semantic-ui-react";
 
-export default function SignUp() {
+export default function Register() {
   return (
     <>
       <Menu>
@@ -46,7 +46,7 @@ export default function SignUp() {
             </Segment>
           </Form>
           <Message>
-            Already registered? <a href='#'>Login</a>
+            Already registered? <a href='/login'>Login</a>
           </Message>
         </Grid.Column>
       </Grid>

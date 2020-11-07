@@ -30,7 +30,7 @@ export default function Login() {
           <Header textAlign='center'>
             Log-in to your account
       </Header>
-          <Form size='large'>
+          <Form >
             <Segment stacked>
               <Form.Input fluid icon='mail' iconPosition='left' placeholder='E-mail address' />
               <Form.Input
@@ -41,13 +41,13 @@ export default function Login() {
                 type='password'
               />
 
-              <Button fluid color='green' size='large'>
+              <Button fluid color='green' href='/'>
                 Login
-          </Button>
+              </Button>
             </Segment>
           </Form>
           <Message>
-            New to us? <a href='#'>Sign Up</a>
+            New to us? <a href='/register'>Register</a>
           </Message>
         </Grid.Column>
       </Grid>

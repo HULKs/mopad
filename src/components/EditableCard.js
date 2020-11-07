@@ -31,7 +31,7 @@ export default function EditableCard() {
             noobs: [
               firebase.firestore().doc("users/lxnlapA1KgtPSEp63kZ3"),
             ],
-            time: new Date,
+            time: new Date(),
             title: title,
             type: "discussion",
           });

@@ -1,12 +1,12 @@
 import React from "react";
 import CardGrid from "./CardGrid";
-import {Container, Menu, Image} from "semantic-ui-react";
+import {Grid, Container, Menu, Image} from "semantic-ui-react";
 import firebase from "firebase";
 
 export default function Dashboard() {
   return (
     <>
-      <Menu inverted attached>
+      <Menu inverted attached style={{marginBottom: "2em"}}>
         <Menu.Item header>
           <Image
             size="mini"
@@ -19,7 +19,7 @@ export default function Dashboard() {
           Logout
         </Menu.Item>
       </Menu>
-      <Container style={{ marginTop: "2em" }} >
+      <Container style={{width: "90%"}}>
         <CardGrid />
       </Container>
     </>

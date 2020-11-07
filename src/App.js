@@ -56,15 +56,17 @@ function TalkCard({ card }) {
 
 function EditableCard() {
   return (
-    <Card>
+    <Card inverted>
       <Card.Content>
         <Card.Header>
-          <Input fluid placeholder="Talk Topic" />
+          <Input transparent fluid placeholder="Talk Topic..." />
         </Card.Header>
       </Card.Content>
       <Card.Content>
         <Card.Description>
-          <TextArea placeholder="What's your talk about?" />
+          <Form>
+            <TextArea placeholder="What's your talk about?" />
+          </Form>
         </Card.Description>
       </Card.Content>
       <Card.Content>

@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { Input, Form, TextArea, Card, Button } from "semantic-ui-react";
 import firebase from "firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function EditableCard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [user,,] = useAuthState(firebase.auth());
+  // TODO: user loading, user error
   return (
     <Card inverted>
       <Card.Content>
@@ -22,15 +25,13 @@ export default function EditableCard() {
       <Card.Content>
         <Button onClick={async () => {
           await firebase.firestore().collection("talks").add({
-            creator: "users/lxnlapA1KgtPSEp63kZ3", // TODO: from auth
+            creator: `users/${user.uid}`,
             description: description,
             location: "Raum A",
             nerds: [
-              firebase.firestore().doc("users/lxnlapA1KgtPSEp63kZ3"),
+              `users/${user.uid}`,
             ],
-            noobs: [
-              firebase.firestore().doc("users/lxnlapA1KgtPSEp63kZ3"),
-            ],
+            noobs: [],
             time: new Date(),
             title: title,
             type: "discussion",

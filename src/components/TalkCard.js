@@ -199,16 +199,18 @@ export default function TalkCard({ talkId }) {
 
     return (
       <Card raised>
-        <Button
-          style={{ paddingBottom: 1.5 + "em" }}
-          onClick={() => {
-            setTitle(talk.data().title);
-            setDescription(talk.data().description);
-            setIsEditing(true);
-          }}
-        >
-          EditCard
-        </Button>
+        {!isEditing && (
+          <Button
+            style={{ minHeight: 2.5 + "em" }}
+            onClick={() => {
+              setTitle(talk.data().title);
+              setDescription(talk.data().description);
+              setIsEditing(true);
+            }}
+          >
+            EditCard
+          </Button>
+        )}
         <Card.Content>
           <Card.Header>{titleField}</Card.Header>
           <Card.Meta>Created by: {creator}</Card.Meta>

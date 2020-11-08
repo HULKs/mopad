@@ -12,11 +12,18 @@ import {
 import { Link, useHistory } from "react-router-dom";
 import firebase from "firebase";
 
-export default function Register() {
+export default function Register({ teams }) {
   const [name, setName] = useState("");
+  const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const history = useHistory();
+  const teamOptions = Object.values(teams).map((doc) => ({
+    key: doc.name,
+    text: doc.name,
+    value: doc.name,
+  }));
+
   return (
     <>
       <Menu>
@@ -44,6 +51,12 @@ export default function Register() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+              <Form.Select
+                placeholder="Team"
+                fluid
+                options={teamOptions}
+                onChange={(_, { value }) => setTeam(value)}
+              />
               <Form.Input
                 fluid
                 icon="mail"
@@ -66,6 +79,14 @@ export default function Register() {
                 fluid
                 color="green"
                 onClick={async () => {
+                  if (name === "") {
+                    alert("Please specify a name!");
+                    return;
+                  }
+                  if (team === "") {
+                    alert("Please specify a team!");
+                    return;
+                  }
                   try {
                     const {
                       user,
@@ -74,6 +95,7 @@ export default function Register() {
                       .createUserWithEmailAndPassword(email, password);
                     firebase.firestore().collection("users").doc(user.uid).set({
                       name: name,
+                      team: team,
                     });
                     history.push("/");
                   } catch (error) {

@@ -3,6 +3,9 @@ import { Input, Form, TextArea, Card, Button } from "semantic-ui-react";
 import firebase from "firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 
+const nerdIcon = "graduation cap";
+const noobIcon = "earlybirds";
+
 export default function EditableCard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

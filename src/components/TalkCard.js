@@ -5,7 +5,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useDocument } from "react-firebase-hooks/firestore";
 
 const nerdIcon = "graduation cap";
-const noobIcon = "blind";
+const noobIcon = "earlybirds";
 
 export default function TalkCard({ talkId }) {
   const [talk, talkLoading] = useDocument(

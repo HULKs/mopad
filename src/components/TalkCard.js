@@ -36,6 +36,16 @@ export default function TalkCard({ talkId }) {
     }
   }, [talk]);
 
+  const [creator, setCreator] = useState("");
+  useEffect(() => {
+    if (talk) {
+      (async () => {
+        const resolvedReference = await talk.data().creator.get();
+        setCreator(resolvedReference.data().name);
+      })();
+    }
+  }, [talk]);
+
   const [user, userLoading] = useAuthState(firebase.auth());
   const isNerd =
     talkLoading || userLoading
@@ -52,6 +62,7 @@ export default function TalkCard({ talkId }) {
       <Card raised>
         <Card.Content>
           <Card.Header>{talk.data().title}</Card.Header>
+          <Card.Meta>{creator}</Card.Meta>
         </Card.Content>
         <Card.Content style={{ height: 100 + "%" }}>
           <Card.Description>{talk.data().description}</Card.Description>

@@ -103,10 +103,7 @@ export default function TalkCard({ talkId }) {
               }
             }}
           >
-            I'm a{" "}
-            <span style={{ marginLeft: 0.1 + "em" }}>
-              <Icon name={nerdIcon} />
-            </span>
+            Join as <Icon style={{ marginLeft: 0.1 + "em" }} name={nerdIcon} />
           </Button>
           <Button.Or />
           <Button
@@ -137,7 +134,7 @@ export default function TalkCard({ talkId }) {
               }
             }}
           >
-            I'm a <Icon style={{ marginLeft: 0.1 + "em" }} name={noobIcon} />
+            Join as <Icon style={{ marginLeft: 0.1 + "em" }} name={noobIcon} />
           </Button>
         </Button.Group>
       </Card>

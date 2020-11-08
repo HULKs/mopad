@@ -6,7 +6,7 @@ import { Container } from "semantic-ui-react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import firebase from "firebase";
 
-export default function Dashboard({ user }) {
+export default function Dashboard({ user, teams }) {
   const [usersCollection, usersCollectionLoading] = useCollection(
     firebase.firestore().collection("users")
   );
@@ -52,7 +52,7 @@ export default function Dashboard({ user }) {
     <>
       <DashboardMenu />
       <Container style={{ width: "90%" }}>
-        <CardGrid user={user} users={users} talks={talks} />
+        <CardGrid user={user} users={users} talks={talks} teams={teams} />
       </Container>
     </>
   );

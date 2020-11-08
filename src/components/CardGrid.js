@@ -3,7 +3,7 @@ import { Card } from "semantic-ui-react";
 import TalkCard from "./TalkCard";
 import EditableCard from "./EditableCard";
 
-export default function CardGrid({ user, users, talks }) {
+export default function CardGrid({ user, users, talks, teams }) {
   const scheduledTalkIds = Object.keys(talks)
     .filter((talkId) => "scheduled_at" in talks[talkId])
     .sort(
@@ -28,6 +28,7 @@ export default function CardGrid({ user, users, talks }) {
           talk={talks[talkId]}
           user={user}
           users={users}
+          teams={teams}
         />
       ))}
       {unscheduledTalkIds.map((talkId) => (
@@ -37,6 +38,7 @@ export default function CardGrid({ user, users, talks }) {
           talk={talks[talkId]}
           user={user}
           users={users}
+          teams={teams}
         />
       ))}
       <EditableCard user={user} />

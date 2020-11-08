@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input, Form, TextArea, Card, Button } from "semantic-ui-react";
+import { Icon, Input, Form, TextArea, Card, Button } from "semantic-ui-react";
 import firebase from "firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -10,6 +10,28 @@ export default function EditableCard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [user, ,] = useAuthState(firebase.auth());
+
+  const addCard = async (isNerd) => {
+    if (title === "") {
+      alert("Please specify a title!");
+      return;
+    }
+    await firebase
+      .firestore()
+      .collection("talks")
+      .add({
+        creator: firebase.firestore().doc(`users/${user.uid}`),
+        description: description,
+        location: "Raum A",
+        nerds: isNerd ? [firebase.firestore().doc(`users/${user.uid}`)] : [],
+        noobs: !isNerd ? [firebase.firestore().doc(`users/${user.uid}`)] : [],
+        time: new Date(),
+        title: title,
+        type: "discussion",
+      });
+    setTitle("");
+    setDescription("");
+  };
   // TODO: user loading, user error
   return (
     <Card inverted>
@@ -37,34 +59,15 @@ export default function EditableCard() {
           </Form>
         </Card.Description>
       </Card.Content>
-      <Card.Content>
-        <Button
-          onClick={async () => {
-            if (title == "")
-            {
-              alert("Please specify a title!");
-              return;
-            }
-            await firebase
-              .firestore()
-              .collection("talks")
-              .add({
-                creator: firebase.firestore().doc(`users/${user.uid}`),
-                description: description,
-                location: "Raum A",
-                nerds: [firebase.firestore().doc(`users/${user.uid}`)],
-                noobs: [],
-                time: new Date(),
-                title: title,
-                type: "discussion",
-              });
-            setTitle("");
-            setDescription("");
-          }}
-        >
-          Create
+      <Button.Group size="medium">
+        <Button onClick={() => addCard(true)}>
+          Create as <Icon style={{ marginLeft: 0.1 + "em" }} name={nerdIcon} />
         </Button>
-      </Card.Content>
+        <Button.Or />
+        <Button onClick={() => addCard(false)}>
+          Create as <Icon style={{ marginLeft: 0.1 + "em" }} name={noobIcon} />
+        </Button>
+      </Button.Group>
     </Card>
   );
 }

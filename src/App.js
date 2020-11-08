@@ -8,11 +8,12 @@ import {
 import Dashboard from "./components/Dashboard";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import LoadingPage from "./components/LoadingPage";
 import firebase from "firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function App() {
-  const [user, userLoading,] = useAuthState(firebase.auth());
+  const [user, userLoading] = useAuthState(firebase.auth());
   // TODO: userLoading, userError
   return (
     <Router>
@@ -24,14 +25,13 @@ export default function App() {
           <Register />
         </Route>
         <Route path="/">
-          {userLoading ?
-            <div>Loading...</div>
-            :
-            user ?
-              <Dashboard />
-              :
-              <Redirect to="/login" />
-          }
+          {userLoading ? (
+            <LoadingPage />
+          ) : user ? (
+            <Dashboard />
+          ) : (
+            <Redirect to="/login" />
+          )}
         </Route>
       </Switch>
     </Router>

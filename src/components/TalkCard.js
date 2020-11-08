@@ -3,6 +3,7 @@ import { Card, Icon, Button } from "semantic-ui-react";
 import firebase from "firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useDocument } from "react-firebase-hooks/firestore";
+import PlaceholderCard from "./PlaceholderCard";
 
 const nerdIcon = "graduation cap";
 const noobIcon = "earlybirds";
@@ -148,5 +149,5 @@ export default function TalkCard({ talkId }) {
     );
   }
   // TODO: loading, error
-  return <>Loading...</>;
+  return <PlaceholderCard />;
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import CardGrid from "./CardGrid";
-import {Grid, Container, Menu, Image} from "semantic-ui-react";
+import {Container, Menu, Image} from "semantic-ui-react";
 import firebase from "firebase";
 
 export default function Dashboard() {

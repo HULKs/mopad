@@ -35,7 +35,7 @@ export default function Register() {
         <Grid.Column style={{ maxWidth: 450 }}>
           <Header textAlign="center">Register</Header>
           <Form>
-            <Segment stacked>
+            <Segment>
               <Form.Input
                 fluid
                 icon="user"

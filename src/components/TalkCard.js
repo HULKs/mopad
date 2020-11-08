@@ -9,32 +9,39 @@ const noobIcon = "earlybirds";
 
 export default function TalkCard({ talkId }) {
   const [talk, talkLoading] = useDocument(
-    firebase.firestore().doc(`talks/${talkId}`)
+    firebase.firestore().doc(`talks/${talkId}`),
   );
 
+  const [user, userLoading] = useAuthState(firebase.auth());
   const [nerds, setNerds] = useState([]);
   useEffect(() => {
-    if (talk) {
+    if (talk && user) {
       (async () => {
         const resolvedReferences = await Promise.all(
-          talk.data().nerds.map((reference) => reference.get())
+          [
+            ...talk.data().nerds.filter(nerd => nerd.id === user.uid),
+            ...talk.data().nerds.filter(nerd => nerd.id !== user.uid),
+          ].map(reference => reference.get()),
         );
-        setNerds(resolvedReferences.map((reference) => reference.data()));
+        setNerds(resolvedReferences.map(reference => reference.data()));
       })();
     }
-  }, [talk]);
+  }, [talk, user]);
 
   const [noobs, setNoobs] = useState([]);
   useEffect(() => {
     if (talk) {
       (async () => {
         const resolvedReferences = await Promise.all(
-          talk.data().noobs.map((reference) => reference.get())
+          [
+            ...talk.data().noobs.filter(noob => noob.id === user.uid),
+            ...talk.data().noobs.filter(noob => noob.id !== user.uid),
+          ].map(reference => reference.get()),
         );
-        setNoobs(resolvedReferences.map((reference) => reference.data()));
+        setNoobs(resolvedReferences.map(reference => reference.data()));
       })();
     }
-  }, [talk]);
+  }, [talk, user]);
 
   const [creator, setCreator] = useState("");
   useEffect(() => {
@@ -46,15 +53,15 @@ export default function TalkCard({ talkId }) {
     }
   }, [talk]);
 
-  const [user, userLoading] = useAuthState(firebase.auth());
+
   const isNerd =
     talkLoading || userLoading
       ? false
-      : talk.data().nerds.some((nerd) => nerd.id === user.uid);
+      : talk.data().nerds.some(nerd => nerd.id === user.uid);
   const isNoob =
     talkLoading || userLoading
       ? false
-      : talk.data().noobs.some((noob) => noob.id === user.uid);
+      : talk.data().noobs.some(noob => noob.id === user.uid);
   // TODO: user error
 
   if (talk) {
@@ -69,10 +76,10 @@ export default function TalkCard({ talkId }) {
         </Card.Content>
         <Card.Content>
           <Icon name={nerdIcon} />
-          <b>Nerds</b>: {nerds.map((nerd) => nerd.name).join(", ")}
+          <b>Nerds</b>: {nerds.map(nerd => nerd.name).join(", ")}
           <br />
           <Icon name={noobIcon} />
-          <b>Noobs</b>: {noobs.map((noob) => noob.name).join(", ")}
+          <b>Noobs</b>: {noobs.map(noob => noob.name).join(", ")}
         </Card.Content>
         <Button.Group size="medium">
           <Button

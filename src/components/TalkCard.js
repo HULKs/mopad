@@ -200,7 +200,7 @@ export default function TalkCard({ talkId }) {
     return (
       <Card raised>
         <Button
-          style={{ paddingBottom: 20 }}
+          style={{ paddingBottom: 1.5 + "em" }}
           onClick={() => {
             setTitle(talk.data().title);
             setDescription(talk.data().description);

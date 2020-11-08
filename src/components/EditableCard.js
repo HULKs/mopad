@@ -35,7 +35,7 @@ export default function EditableCard() {
   };
   // TODO: user loading, user error
   return (
-    <Card inverted>
+    <Card>
       <Card.Content>
         <Card.Header>
           <Input

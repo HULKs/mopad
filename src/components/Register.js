@@ -9,10 +9,7 @@ import {
   Segment,
   Message,
 } from "semantic-ui-react";
-import {
-  Link,
-  useHistory,
-} from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import firebase from "firebase";
 
 export default function Register() {
@@ -27,16 +24,16 @@ export default function Register() {
           <Image size="mini" src="./logo.png" style={{ marginRight: "1em" }} />
           MOPAD
         </Menu.Item>
-        <Menu.Item header>
-          RoHOW 2020
-        </Menu.Item>
+        <Menu.Item header>RoHOW 2020</Menu.Item>
       </Menu>
 
-      <Grid textAlign="center" style={{ height: "80vh" }} verticalAlign="middle">
+      <Grid
+        textAlign="center"
+        style={{ height: "80vh" }}
+        verticalAlign="middle"
+      >
         <Grid.Column style={{ maxWidth: 450 }}>
-          <Header textAlign="center">
-            Register
-          </Header>
+          <Header textAlign="center">Register</Header>
           <Form>
             <Segment stacked>
               <Form.Input
@@ -45,7 +42,7 @@ export default function Register() {
                 iconPosition="left"
                 placeholder="Name"
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
               />
               <Form.Input
                 fluid
@@ -53,14 +50,16 @@ export default function Register() {
                 iconPosition="left"
                 placeholder="E-mail address"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
               />
               <Form.Input
                 fluid
                 icon="lock"
                 iconPosition="left"
                 placeholder="Password"
-                type="password" value={password} onChange={e => setPassword(e.target.value)}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
 
               <Button
@@ -68,7 +67,11 @@ export default function Register() {
                 color="green"
                 onClick={async () => {
                   try {
-                    const { user } = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    const {
+                      user,
+                    } = await firebase
+                      .auth()
+                      .createUserWithEmailAndPassword(email, password);
                     firebase.firestore().collection("users").doc(user.uid).set({
                       name: name,
                     });

@@ -74,7 +74,7 @@ export default function TalkCard({ talkId }) {
           <Icon name={noobIcon} />
           <b>Noobs</b>: {noobs.map((noob) => noob.name).join(", ")}
         </Card.Content>
-        <Button.Group size="mini">
+        <Button.Group size="medium">
           <Button
             toggle
             active={isNerd}

@@ -197,20 +197,23 @@ export default function TalkCard({ talkId }) {
       <JoinButtonGroup talkId={talkId} isNerd={isNerd} isNoob={isNoob} />
     );
 
+    const allowEditing = talk.data().creator.id === user.uid;
+    const editButton = !isEditing && allowEditing && (
+      <Button
+        style={{ minHeight: 2.5 + "em" }}
+        onClick={() => {
+          setTitle(talk.data().title);
+          setDescription(talk.data().description);
+          setIsEditing(true);
+        }}
+      >
+        EditCard
+      </Button>
+    );
+
     return (
       <Card raised>
-        {!isEditing && (
-          <Button
-            style={{ minHeight: 2.5 + "em" }}
-            onClick={() => {
-              setTitle(talk.data().title);
-              setDescription(talk.data().description);
-              setIsEditing(true);
-            }}
-          >
-            EditCard
-          </Button>
-        )}
+        {editButton}
         <Card.Content>
           <Card.Header>{titleField}</Card.Header>
           <Card.Meta>Created by: {creator}</Card.Meta>

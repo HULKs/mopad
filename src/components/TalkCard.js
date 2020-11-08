@@ -103,6 +103,7 @@ export default function TalkCard({ talkId, talk, users, user }) {
   const [description, setDescription] = useState("");
 
   const creator = users[talk.creator.id].name;
+  const isAdmin = users[user.uid].isAdmin;
 
   const isNerd = talk.nerds.some((nerd) => nerd.id === user.uid);
   const isNoob = talk.noobs.some((noob) => noob.id === user.uid);
@@ -157,7 +158,7 @@ export default function TalkCard({ talkId, talk, users, user }) {
     />
   );
 
-  const allowEditing = talk.creator.id === user.uid;
+  const allowEditing = talk.creator.id === user.uid || isAdmin;
   const editButton = !isEditing && allowEditing && (
     <Button
       icon

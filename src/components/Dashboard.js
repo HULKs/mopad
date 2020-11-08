@@ -6,7 +6,7 @@ import firebase from "firebase";
 export default function Dashboard() {
   return (
     <>
-      <Menu inverted attached style={{marginBottom: "2em"}}>
+      <Menu attached style={{marginBottom: "2em"}}>
         <Menu.Item header>
           <Image
             size="mini"

@@ -62,7 +62,7 @@ export default function TalkCard({ talkId }) {
       <Card raised>
         <Card.Content>
           <Card.Header>{talk.data().title}</Card.Header>
-          <Card.Meta>{creator}</Card.Meta>
+          <Card.Meta>Created by: {creator}</Card.Meta>
         </Card.Content>
         <Card.Content style={{ height: 100 + "%" }}>
           <Card.Description>{talk.data().description}</Card.Description>

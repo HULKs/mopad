@@ -3,7 +3,7 @@ import CardGrid from "./CardGrid";
 import {Container, Menu, Image} from "semantic-ui-react";
 import firebase from "firebase";
 
-export default function Dashboard() {
+export default function Dashboard({ user, users, talks }) {
   return (
     <>
       <Menu attached style={{marginBottom: "2em"}}>
@@ -20,7 +20,7 @@ export default function Dashboard() {
         </Menu.Item>
       </Menu>
       <Container style={{width: "90%"}}>
-        <CardGrid />
+        <CardGrid user={user} users={users} talks={talks} />
       </Container>
     </>
   );

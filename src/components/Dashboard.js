@@ -1,25 +1,57 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import CardGrid from "./CardGrid";
-import {Container, Menu, Image} from "semantic-ui-react";
+import DashboardMenu from "./DashboardMenu";
+import LoadingDashboard from "./LoadingDashboard";
+import { Container } from "semantic-ui-react";
+import { useCollection } from "react-firebase-hooks/firestore";
 import firebase from "firebase";
 
-export default function Dashboard({ user, users, talks }) {
+export default function Dashboard({ user }) {
+  const [usersCollection, usersCollectionLoading] = useCollection(
+    firebase.firestore().collection("users")
+  );
+  const [users, setUsers] = useState({});
+  useEffect(() => {
+    if (usersCollection) {
+      setUsers(
+        usersCollection.docs.reduce(
+          (accumulator, reference) => ({
+            ...accumulator,
+            [reference.id]: reference.data(),
+          }),
+          {}
+        )
+      );
+    }
+  }, [usersCollection]);
+
+  const [talksCollection, talksCollectionLoading] = useCollection(
+    firebase.firestore().collection("talks")
+  );
+  const [talks, setTalks] = useState({});
+  useEffect(() => {
+    if (talksCollection) {
+      setTalks(
+        talksCollection.docs.reduce(
+          (accumulator, reference) => ({
+            ...accumulator,
+            [reference.id]: reference.data(),
+          }),
+          {}
+        )
+      );
+    }
+  }, [talksCollection]);
+
+  // TODO: user error, and other errors
+
+  if (talksCollectionLoading || usersCollectionLoading) {
+    return <LoadingDashboard />;
+  }
   return (
     <>
-      <Menu attached style={{marginBottom: "2em"}}>
-        <Menu.Item header>
-          <Image
-            size="mini"
-            src="./logo.png"
-            style={{ marginRight: "1.5em" }}
-          />
-          MOPAD
-        </Menu.Item>
-        <Menu.Item as="a" position="right" onClick={() => { firebase.auth().signOut(); }}>
-          Logout
-        </Menu.Item>
-      </Menu>
-      <Container style={{width: "90%"}}>
+      <DashboardMenu />
+      <Container style={{ width: "90%" }}>
         <CardGrid user={user} users={users} talks={talks} />
       </Container>
     </>

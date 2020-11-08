@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { Icon, Input, Form, TextArea, Card, Button } from "semantic-ui-react";
 import firebase from "firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
 
 const nerdIcon = "graduation cap";
 const noobIcon = "earlybirds";
 
-export default function EditableCard() {
+export default function EditableCard({ user }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [user, ,] = useAuthState(firebase.auth());
 
   const addCard = async (isNerd) => {
     if (title === "") {

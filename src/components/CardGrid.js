@@ -16,7 +16,7 @@ export default function CardGrid({ user, users, talks }) {
           users={users}
         />)
       }
-      <EditableCard />
+      <EditableCard user={user} />
     </Card.Group>
   );
 }

@@ -2,6 +2,7 @@ import React from "react";
 import { Card } from "semantic-ui-react";
 import TalkCard from "./TalkCard";
 import EditableCard from "./EditableCard";
+import LoadingPage from "./LoadingPage";
 import firebase from "firebase";
 import { useCollection } from "react-firebase-hooks/firestore";
 
@@ -20,17 +21,5 @@ export default function CardGrid() {
       </Card.Group>
     );
   }
-  return (
-    <div>Loading</div>
-    // <Card>
-    //   <Card.Content>
-    //     <Placeholder>
-    //       <Placeholder.Paragraph>
-    //         <Placeholder.Line length="medium">
-    //         </Placeholder.Line>
-    //       </Placeholder.Paragraph>
-    //     </Placeholder>
-    //   </Card.Content>
-    // </Card>
-  );
+  return <LoadingPage />;
 }

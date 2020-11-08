@@ -8,16 +8,18 @@ const nerdIcon = "graduation cap";
 const noobIcon = "blind";
 
 export default function TalkCard({ talkId }) {
-  const [talk, talkLoading,] = useDocument(
-    firebase.firestore().doc(`talks/${talkId}`),
+  const [talk, talkLoading] = useDocument(
+    firebase.firestore().doc(`talks/${talkId}`)
   );
 
   const [nerds, setNerds] = useState([]);
   useEffect(() => {
     if (talk) {
       (async () => {
-        const resolvedReferences = await Promise.all(talk.data().nerds.map(reference => reference.get()));
-        setNerds(resolvedReferences.map(reference => reference.data()));
+        const resolvedReferences = await Promise.all(
+          talk.data().nerds.map((reference) => reference.get())
+        );
+        setNerds(resolvedReferences.map((reference) => reference.data()));
       })();
     }
   }, [talk]);
@@ -26,15 +28,23 @@ export default function TalkCard({ talkId }) {
   useEffect(() => {
     if (talk) {
       (async () => {
-        const resolvedReferences = await Promise.all(talk.data().noobs.map(reference => reference.get()));
-        setNoobs(resolvedReferences.map(reference => reference.data()));
+        const resolvedReferences = await Promise.all(
+          talk.data().noobs.map((reference) => reference.get())
+        );
+        setNoobs(resolvedReferences.map((reference) => reference.data()));
       })();
     }
   }, [talk]);
 
-  const [user, userLoading,] = useAuthState(firebase.auth());
-  const isNerd = talkLoading || userLoading ? false : talk.data().nerds.some(nerd => nerd.id === user.uid);
-  const isNoob = talkLoading || userLoading ? false : talk.data().noobs.some(noob => noob.id === user.uid);
+  const [user, userLoading] = useAuthState(firebase.auth());
+  const isNerd =
+    talkLoading || userLoading
+      ? false
+      : talk.data().nerds.some((nerd) => nerd.id === user.uid);
+  const isNoob =
+    talkLoading || userLoading
+      ? false
+      : talk.data().noobs.some((noob) => noob.id === user.uid);
   // TODO: user error
 
   if (talk) {
@@ -48,42 +58,74 @@ export default function TalkCard({ talkId }) {
         </Card.Content>
         <Card.Content>
           <Icon name={nerdIcon} />
-          <b>Nerds</b>: {nerds.map(nerd => nerd.name).join(', ')}
+          <b>Nerds</b>: {nerds.map((nerd) => nerd.name).join(", ")}
           <br />
           <Icon name={noobIcon} />
-          <b>Noobs</b>: {noobs.map(noob => noob.name).join(', ')}
+          <b>Noobs</b>: {noobs.map((noob) => noob.name).join(", ")}
         </Card.Content>
         <Button.Group size="mini">
-          <Button toggle active={isNerd} onClick={() => {
-            if (isNerd) {
-              firebase.firestore().doc(`talks/${talkId}`).update({
-                nerds: firebase.firestore.FieldValue.arrayRemove(firebase.firestore().doc(`users/${user.uid}`)),
-              });
-            } else {
-              firebase.firestore().doc(`talks/${talkId}`).update({
-                nerds: firebase.firestore.FieldValue.arrayUnion(firebase.firestore().doc(`users/${user.uid}`)),
-                noobs: firebase.firestore.FieldValue.arrayRemove(firebase.firestore().doc(`users/${user.uid}`)),
-              });
-            }
-          }}>
+          <Button
+            toggle
+            active={isNerd}
+            onClick={() => {
+              if (isNerd) {
+                firebase
+                  .firestore()
+                  .doc(`talks/${talkId}`)
+                  .update({
+                    nerds: firebase.firestore.FieldValue.arrayRemove(
+                      firebase.firestore().doc(`users/${user.uid}`)
+                    ),
+                  });
+              } else {
+                firebase
+                  .firestore()
+                  .doc(`talks/${talkId}`)
+                  .update({
+                    nerds: firebase.firestore.FieldValue.arrayUnion(
+                      firebase.firestore().doc(`users/${user.uid}`)
+                    ),
+                    noobs: firebase.firestore.FieldValue.arrayRemove(
+                      firebase.firestore().doc(`users/${user.uid}`)
+                    ),
+                  });
+              }
+            }}
+          >
             I'm a{" "}
             <span style={{ marginLeft: 0.1 + "em" }}>
               <Icon name={nerdIcon} />
             </span>
           </Button>
           <Button.Or />
-          <Button toggle active={isNoob} onClick={() => {
-            if (isNoob) {
-              firebase.firestore().doc(`talks/${talkId}`).update({
-                noobs: firebase.firestore.FieldValue.arrayRemove(firebase.firestore().doc(`users/${user.uid}`)),
-              });
-            } else {
-              firebase.firestore().doc(`talks/${talkId}`).update({
-                nerds: firebase.firestore.FieldValue.arrayRemove(firebase.firestore().doc(`users/${user.uid}`)),
-                noobs: firebase.firestore.FieldValue.arrayUnion(firebase.firestore().doc(`users/${user.uid}`)),
-              });
-            }
-          }}>
+          <Button
+            toggle
+            active={isNoob}
+            onClick={() => {
+              if (isNoob) {
+                firebase
+                  .firestore()
+                  .doc(`talks/${talkId}`)
+                  .update({
+                    noobs: firebase.firestore.FieldValue.arrayRemove(
+                      firebase.firestore().doc(`users/${user.uid}`)
+                    ),
+                  });
+              } else {
+                firebase
+                  .firestore()
+                  .doc(`talks/${talkId}`)
+                  .update({
+                    nerds: firebase.firestore.FieldValue.arrayRemove(
+                      firebase.firestore().doc(`users/${user.uid}`)
+                    ),
+                    noobs: firebase.firestore.FieldValue.arrayUnion(
+                      firebase.firestore().doc(`users/${user.uid}`)
+                    ),
+                  });
+              }
+            }}
+          >
             I'm a <Icon style={{ marginLeft: 0.1 + "em" }} name={noobIcon} />
           </Button>
         </Button.Group>
@@ -91,8 +133,5 @@ export default function TalkCard({ talkId }) {
     );
   }
   // TODO: loading, error
-  return (
-    <>
-      Loading...
-    </>);
+  return <>Loading...</>;
 }

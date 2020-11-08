@@ -37,6 +37,11 @@ export default function EditableCard() {
       <Card.Content>
         <Button
           onClick={async () => {
+            if (title == "")
+            {
+              alert("Please specify a title!");
+              return;
+            }
             await firebase
               .firestore()
               .collection("talks")

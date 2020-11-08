@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Switch,
@@ -11,20 +11,40 @@ import Register from "./components/Register";
 import LoadingPage from "./components/LoadingPage";
 import firebase from "firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { useCollection } from "react-firebase-hooks/firestore";
 
 export default function App() {
   const [user, userLoading] = useAuthState(firebase.auth());
 
+  const [teamsCollection, teamsCollectionLoading] = useCollection(
+    firebase.firestore().collection("teams")
+  );
+  const [teams, setTeams] = useState({});
+  useEffect(() => {
+    if (teamsCollection) {
+      setTeams(
+        teamsCollection.docs.reduce(
+          (accumulator, reference) => ({
+            ...accumulator,
+            [reference.id]: reference.data(),
+          }),
+          {}
+        )
+      );
+    }
+  }, [teamsCollection]);
+
   // TODO: user error, and other errors
 
+  if (userLoading || teamsCollectionLoading) {
+    return <LoadingPage />;
+  }
+
   const pageContent = () => {
-    if (userLoading) {
-      return <LoadingPage />;
-    }
     if (!user) {
       return <Redirect to="/login" />;
     }
-    return <Dashboard user={user} />;
+    return <Dashboard user={user} teams={teams} />;
   };
 
   return (
@@ -34,7 +54,7 @@ export default function App() {
           <Login />
         </Route>
         <Route path="/register">
-          <Register />
+          <Register teams={teams} />
         </Route>
         <Route path="/">{pageContent()}</Route>
       </Switch>

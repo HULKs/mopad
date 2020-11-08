@@ -87,7 +87,7 @@ function EditButtonGroup({ onCancelClick, onUpdateClick }) {
   );
 }
 
-export default function TalkCard({ talkId, talk, users, user }) {
+export default function TalkCard({ talkId, talk, users, user, teams }) {
   const nerds = [
     ...talk.nerds.filter((nerd) => nerd.id === user.uid),
     ...talk.nerds.filter((nerd) => nerd.id !== user.uid),
@@ -197,7 +197,10 @@ export default function TalkCard({ talkId, talk, users, user }) {
         </Card.Meta>
         <Card.Meta>
           <Icon name="edit" style={{ marginRight: "0.25rem" }} />
-          {creator}
+          <Popup
+            content={teams[users[talk.creator.id].team.id].name}
+            trigger={<span>{creator}</span>}
+          />
         </Card.Meta>
       </Card.Content>
       <Card.Content style={{ height: 100 + "%" }}>

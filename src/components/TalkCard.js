@@ -89,14 +89,14 @@ function EditButtonGroup({ onCancelClick, onUpdateClick }) {
 
 export default function TalkCard({ talkId, talk, users, user }) {
   const nerds = [
-    ...talk.nerds.filter(nerd => nerd.id === user.uid),
-    ...talk.nerds.filter(nerd => nerd.id !== user.uid),
-  ].map(nerd => users[nerd.id].name);
+    ...talk.nerds.filter((nerd) => nerd.id === user.uid),
+    ...talk.nerds.filter((nerd) => nerd.id !== user.uid),
+  ].map((nerd) => users[nerd.id].name);
 
   const noobs = [
-    ...talk.noobs.filter(noob => noob.id === user.uid),
-    ...talk.noobs.filter(noob => noob.id !== user.uid),
-  ].map(noob => users[noob.id].name);
+    ...talk.noobs.filter((noob) => noob.id === user.uid),
+    ...talk.noobs.filter((noob) => noob.id !== user.uid),
+  ].map((noob) => users[noob.id].name);
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(""); // TODO: initial state
@@ -104,8 +104,8 @@ export default function TalkCard({ talkId, talk, users, user }) {
 
   const creator = users[talk.creator.id].name;
 
-  const isNerd = talk.nerds.some(nerd => nerd.id === user.uid);
-  const isNoob = talk.noobs.some(noob => noob.id === user.uid);
+  const isNerd = talk.nerds.some((nerd) => nerd.id === user.uid);
+  const isNoob = talk.noobs.some((noob) => noob.id === user.uid);
 
   const titleField = isEditing ? (
     <Input
@@ -115,8 +115,8 @@ export default function TalkCard({ talkId, talk, users, user }) {
       onChange={(e) => setTitle(e.target.value)}
     />
   ) : (
-      talk.title
-    );
+    talk.title
+  );
 
   const descriptionField = isEditing ? (
     <TextArea
@@ -131,8 +131,8 @@ export default function TalkCard({ talkId, talk, users, user }) {
       onChange={(e) => setDescription(e.target.value)}
     />
   ) : (
-      <Card.Description>{talk.description}</Card.Description>
-    );
+    <Card.Description>{talk.description}</Card.Description>
+  );
 
   const buttonGroup = isEditing ? (
     <EditButtonGroup
@@ -149,37 +149,54 @@ export default function TalkCard({ talkId, talk, users, user }) {
       }}
     />
   ) : (
-      <JoinButtonGroup talkId={talkId} isNerd={isNerd} isNoob={isNoob} user={user} />
-    );
+    <JoinButtonGroup
+      talkId={talkId}
+      isNerd={isNerd}
+      isNoob={isNoob}
+      user={user}
+    />
+  );
 
   const allowEditing = talk.creator.id === user.uid;
   const editButton = !isEditing && allowEditing && (
     <Button
-      style={{ minHeight: 2.5 + "em" }}
+      icon
+      size="tiny"
       onClick={() => {
         setTitle(talk.title);
         setDescription(talk.description);
         setIsEditing(true);
       }}
     >
-      EditCard
+      <Icon name="pencil" />
     </Button>
   );
 
   return (
     <Card raised>
-      {editButton}
       <Card.Content>
-        <Card.Header>{titleField}</Card.Header>
+        <Card.Header>
+          <div style={{ float: "right" }}>{editButton}</div>
+          {titleField}
+        </Card.Header>
         <Card.Meta style={{ marginTop: "0.5rem" }}>
           <Icon name="clock" style={{ marginRight: "0.25rem" }} />
-          {talk.scheduled_at
-            ? <Popup
+          {talk.scheduled_at ? (
+            <Popup
               content={<Moment local>{talk.scheduled_at.toDate()}</Moment>}
-              trigger={<Moment fromNow local>{talk.scheduled_at.toDate()}</Moment>}
+              trigger={
+                <Moment fromNow local>
+                  {talk.scheduled_at.toDate()}
+                </Moment>
+              }
             />
-            : <>not scheduled yet</>
-          }
+          ) : (
+            <>not scheduled yet</>
+          )}
+        </Card.Meta>
+        <Card.Meta>
+          <Icon name="edit" style={{ marginRight: "0.25rem" }} />
+          {creator}
         </Card.Meta>
       </Card.Content>
       <Card.Content style={{ height: 100 + "%" }}>
@@ -191,10 +208,6 @@ export default function TalkCard({ talkId, talk, users, user }) {
         <br />
         <Icon name={noobIcon} />
         <b>Noobs</b>: {noobs.join(", ")}
-        <Card.Meta style={{ marginTop: "0.5rem" }}>
-          <Icon name="edit" />
-          <b>Creator</b>: {creator}
-        </Card.Meta>
       </Card.Content>
       {buttonGroup}
     </Card>

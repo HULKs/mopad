@@ -25,7 +25,8 @@ export default function EditableCard() {
         location: "Raum A",
         nerds: isNerd ? [firebase.firestore().doc(`users/${user.uid}`)] : [],
         noobs: !isNerd ? [firebase.firestore().doc(`users/${user.uid}`)] : [],
-        time: new Date(),
+        time: firebase.firestore.Timestamp.now(), // TODO: remove
+        created_at: firebase.firestore.Timestamp.now(),
         title: title,
         type: "discussion",
       });

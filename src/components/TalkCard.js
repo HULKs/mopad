@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card, Icon, Button } from "semantic-ui-react";
+import { Card, Icon, Button, Popup } from "semantic-ui-react";
+import Moment from "react-moment";
 import firebase from "firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useDocument } from "react-firebase-hooks/firestore";
@@ -70,7 +71,16 @@ export default function TalkCard({ talkId }) {
       <Card raised>
         <Card.Content>
           <Card.Header>{talk.data().title}</Card.Header>
-          <Card.Meta>Created by: {creator}</Card.Meta>
+          <Card.Meta style={{ marginTop: "0.5rem" }}>
+            <Icon name="clock" style={{ marginRight: "0.25rem" }} />
+            {talk.data().scheduled_at
+              ? <Popup
+                content={<Moment local>{talk.data().scheduled_at.toDate()}</Moment>}
+                trigger={<Moment fromNow local>{talk.data().scheduled_at.toDate()}</Moment>}
+              />
+              : <>not scheduled yet</>
+            }
+          </Card.Meta>
         </Card.Content>
         <Card.Content style={{ height: 100 + "%" }}>
           <Card.Description>{talk.data().description}</Card.Description>
@@ -81,6 +91,10 @@ export default function TalkCard({ talkId }) {
           <br />
           <Icon name={noobIcon} />
           <b>Noobs</b>: {noobs.map(noob => noob.name).join(", ")}
+          <Card.Meta style={{ marginTop: "0.5rem" }}>
+            <Icon name="edit" />
+            <b>Creator</b>: {creator}
+          </Card.Meta>
         </Card.Content>
         <Button.Group size="medium">
           <Button

@@ -26,6 +26,7 @@ export default function EditableCard() {
           <Form>
             <TextArea
               style={{ border: "none", padding: 0 }}
+              rows={5}
               placeholder="What's your talk about?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}

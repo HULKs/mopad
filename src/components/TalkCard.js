@@ -6,11 +6,12 @@ import firebase from "firebase";
 const nerdIcon = "graduation cap";
 const noobIcon = "earlybirds";
 
-function JoinButtonGroup({ talkId, isNerd, isNoob, user }) {
+function JoinButtonGroup({ talkId, isNerd, isNoob, user, disabled }) {
   return (
     <Button.Group size="medium">
       <Button
         toggle
+        disabled={disabled}
         active={isNerd}
         onClick={() => {
           if (isNerd) {
@@ -39,9 +40,10 @@ function JoinButtonGroup({ talkId, isNerd, isNoob, user }) {
       >
         Join as <Icon style={{ marginLeft: 0.1 + "em" }} name={nerdIcon} />
       </Button>
-      <Button.Or />
+      <Button.Or disabled={disabled} />
       <Button
         toggle
+        disabled={disabled}
         active={isNoob}
         onClick={() => {
           if (isNoob) {
@@ -119,6 +121,25 @@ export default function TalkCard({ talkId, talk, users, user, teams }) {
     talk.title
   );
 
+  const scheduledField = talk.scheduled_at ? (
+    <Popup
+      content={<Moment local>{talk.scheduled_at.toDate()}</Moment>}
+      trigger={
+        <Moment fromNow local>
+          {talk.scheduled_at.toDate()}
+        </Moment>
+      }
+    />
+  ) : (
+    <>not scheduled yet</>
+  );
+
+  const MILLISECONDS_PER_MINUTE = 60000;
+  const isEventPassed = talk.scheduled_at
+    ? talk.scheduled_at.toDate().getTime() - Date.now() <
+      -30 * MILLISECONDS_PER_MINUTE
+    : false;
+
   const descriptionField = isEditing ? (
     <TextArea
       style={{
@@ -151,6 +172,7 @@ export default function TalkCard({ talkId, talk, users, user, teams }) {
     />
   ) : (
     <JoinButtonGroup
+      disabled={isEventPassed}
       talkId={talkId}
       isNerd={isNerd}
       isNoob={isNoob}
@@ -158,7 +180,8 @@ export default function TalkCard({ talkId, talk, users, user, teams }) {
     />
   );
 
-  const allowEditing = talk.creator.id === user.uid || isAdmin;
+  const allowEditing =
+    (talk.creator.id === user.uid || isAdmin) && !isEventPassed;
   const editButton = !isEditing && allowEditing && (
     <Button
       icon
@@ -182,18 +205,7 @@ export default function TalkCard({ talkId, talk, users, user, teams }) {
         </Card.Header>
         <Card.Meta style={{ marginTop: "0.5rem" }}>
           <Icon name="clock" style={{ marginRight: "0.25rem" }} />
-          {talk.scheduled_at ? (
-            <Popup
-              content={<Moment local>{talk.scheduled_at.toDate()}</Moment>}
-              trigger={
-                <Moment fromNow local>
-                  {talk.scheduled_at.toDate()}
-                </Moment>
-              }
-            />
-          ) : (
-            <>not scheduled yet</>
-          )}
+          {scheduledField}
         </Card.Meta>
         <Card.Meta>
           <Icon name="edit" style={{ marginRight: "0.25rem" }} />

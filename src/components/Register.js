@@ -18,10 +18,10 @@ export default function Register({ teams }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const history = useHistory();
-  const teamOptions = Object.values(teams).map((doc) => ({
-    key: doc.name,
-    text: doc.name,
-    value: doc.name,
+  const teamOptions = Object.entries(teams).map(([id, data]) => ({
+    key: data.name,
+    text: data.name,
+    value: id,
   }));
 
   return (
@@ -93,10 +93,14 @@ export default function Register({ teams }) {
                     } = await firebase
                       .auth()
                       .createUserWithEmailAndPassword(email, password);
-                    firebase.firestore().collection("users").doc(user.uid).set({
-                      name: name,
-                      team: team,
-                    });
+                    firebase
+                      .firestore()
+                      .collection("users")
+                      .doc(user.uid)
+                      .set({
+                        name: name,
+                        team: firebase.firestore().doc(`teams/${team}`),
+                      });
                     history.push("/");
                   } catch (error) {
                     alert(`${error.code}\n\n${error.message}`);

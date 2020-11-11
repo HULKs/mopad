@@ -2,7 +2,7 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "scripts": {
-    "lint": "eslint .",
+    "lint": "echo \"will not link\"",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
@@ -19,7 +19,6 @@
     "ical-generator": "^1.15.1"
   },
   "devDependencies": {
-    "eslint": "^7.13.0",
     "firebase-functions-test": "^0.2.0"
   },
   "private": true

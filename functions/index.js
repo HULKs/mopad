@@ -5,7 +5,7 @@ const moment = require("moment");
 
 admin.initializeApp();
 
-exports.ical = functions.region("europe-west1", "europe-west2").https.onRequest(async (request, response) => {
+exports.ical = functions.region("europe-west1").https.onRequest(async (request, response) => {
     const talks = await admin.firestore().collection("talks").get();
 
     const calendar = ical({

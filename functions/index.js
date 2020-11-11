@@ -26,6 +26,7 @@ exports.ical = functions.https.onRequest(async (request, response) => {
 
         if (scheduledAt && duration) {
             calendar.createEvent({
+                id: talk.id,
                 start: moment(scheduledAt.toDate()),
                 end: moment(scheduledAt.toDate()).add(duration, "seconds"),
                 summary: talk.get("title"),

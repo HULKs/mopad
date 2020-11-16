@@ -33,7 +33,7 @@ const useStyles = makeStyles(theme => ({
     marginBottom: theme.spacing(4),
   },
   floatingActionButton: {
-    position: "absolute",
+    position: "fixed",
     right: theme.spacing(4),
     bottom: theme.spacing(4),
   },

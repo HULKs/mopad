@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Button,
   Dialog,
@@ -41,6 +41,7 @@ export default function ExportTalkCalendarDialog({ userId, open, onClose }) {
       <Typography variant="body2" className={classes.link}>
         <a
           target="_blank"
+          rel="noreferrer"
           href={`${window.location}ical${onlySubscribedEvents ? `?user=${encodeURIComponent(userId)}` : ""}`}
         >
           {`${window.location}ical${onlySubscribedEvents ? `?user=${encodeURIComponent(userId)}` : ""}`}

@@ -18,6 +18,7 @@ import EventIcon from "@material-ui/icons/Event";
 import { makeStyles } from "@material-ui/core/styles";
 
 import CreateTalkDialog from "./CreateTalkDialog";
+import ExportTalkCalendarDialog from "./ExportTalkCalendarDialog";
 import TalkCard from "./TalkCard";
 
 const useStyles = makeStyles(theme => ({
@@ -135,6 +136,8 @@ export default function TalkList({ userId, user, users, talks, teams }) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createError, setCreateError] = useState();
 
+  const [showEventCalendarDialog, setShowEventCalendarDialog] = useState(false);
+
   return <>
     <CreateTalkDialog
       open={showCreateDialog}
@@ -158,6 +161,11 @@ export default function TalkList({ userId, user, users, talks, teams }) {
     >
       <AddIcon />
     </Fab>
+    <ExportTalkCalendarDialog
+      userId={userId}
+      open={showEventCalendarDialog}
+      onClose={() => setShowEventCalendarDialog(false)}
+    />
     <Container maxWidth="md" className={classes.titleContainer}>
       <Grid container alignItems="center">
         <Grid item className={classes.title}>
@@ -182,8 +190,8 @@ export default function TalkList({ userId, user, users, talks, teams }) {
           </Paper>
         </Grid> */}
         <Grid item>
-          <Tooltip title="Event Calendar">
-            <IconButton color="inherit">
+          <Tooltip title="Export talk calendar (iCal)">
+            <IconButton color="inherit" onClick={() => setShowEventCalendarDialog(true)}>
               <EventIcon />
             </IconButton>
           </Tooltip>

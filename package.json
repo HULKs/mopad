@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@date-io/moment": "1.x",
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/pickers": "^3.2.10",
+    "@material-ui/styles": "^4.10.0",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -12,11 +17,7 @@
     "react-dom": "^17.0.1",
     "react-firebase-hooks": "^2.2.0",
     "react-moment": "^1.0.0",
-    "react-router-dom": "^5.2.0",
-    "react-scripts": "4.0.0",
-    "semantic-ui-css": "^2.4.1",
-    "semantic-ui-react": "^2.0.1",
-    "web-vitals": "^0.2.4"
+    "react-scripts": "4.0.0"
   },
   "scripts": {
     "start": "react-scripts start",

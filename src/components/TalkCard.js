@@ -1,219 +1,286 @@
 import React, { useState } from "react";
-import { Input, TextArea, Card, Icon, Button, Popup } from "semantic-ui-react";
 import Moment from "react-moment";
-import firebase from "firebase";
+import firebase from "firebase/app";
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Grid,
+  IconButton,
+  Snackbar,
+  Tooltip,
+  Typography,
+} from "@material-ui/core";
+import DescriptionIcon from "@material-ui/icons/Description";
+import EditIcon from "@material-ui/icons/Edit";
+import EventIcon from "@material-ui/icons/Event";
+import PeopleIcon from "@material-ui/icons/People";
+import { makeStyles } from "@material-ui/core/styles";
 
-const nerdIcon = "graduation cap";
-const noobIcon = "earlybirds";
+import EditTalkDialog from "./EditTalkDialog";
+import UserNameWithTeam from "./UserNameWithTeam";
 
-function JoinButtonGroup({ talkId, isNerd, isNoob, user }) {
-  return (
-    <Button.Group size="medium">
-      <Button
-        toggle
-        active={isNerd}
-        onClick={() => {
-          if (isNerd) {
-            firebase
-              .firestore()
-              .doc(`talks/${talkId}`)
-              .update({
-                nerds: firebase.firestore.FieldValue.arrayRemove(
-                  firebase.firestore().doc(`users/${user.uid}`)
-                ),
-              });
-          } else {
-            firebase
-              .firestore()
-              .doc(`talks/${talkId}`)
-              .update({
-                nerds: firebase.firestore.FieldValue.arrayUnion(
-                  firebase.firestore().doc(`users/${user.uid}`)
-                ),
-                noobs: firebase.firestore.FieldValue.arrayRemove(
-                  firebase.firestore().doc(`users/${user.uid}`)
-                ),
-              });
-          }
-        }}
-      >
-        Join as <Icon style={{ marginLeft: 0.1 + "em" }} name={nerdIcon} />
-      </Button>
-      <Button.Or />
-      <Button
-        toggle
-        active={isNoob}
-        onClick={() => {
-          if (isNoob) {
-            firebase
-              .firestore()
-              .doc(`talks/${talkId}`)
-              .update({
-                noobs: firebase.firestore.FieldValue.arrayRemove(
-                  firebase.firestore().doc(`users/${user.uid}`)
-                ),
-              });
-          } else {
-            firebase
-              .firestore()
-              .doc(`talks/${talkId}`)
-              .update({
-                nerds: firebase.firestore.FieldValue.arrayRemove(
-                  firebase.firestore().doc(`users/${user.uid}`)
-                ),
-                noobs: firebase.firestore.FieldValue.arrayUnion(
-                  firebase.firestore().doc(`users/${user.uid}`)
-                ),
-              });
-          }
-        }}
-      >
-        Join as <Icon style={{ marginLeft: 0.1 + "em" }} name={noobIcon} />
-      </Button>
-    </Button.Group>
-  );
+const useStyles = makeStyles(theme => ({
+  primaryBackground: {
+    backgroundColor: theme.palette.primary.light,
+  },
+  secondaryBackground: {
+    backgroundColor: theme.palette.secondary.light,
+  },
+  cardContent: {
+    paddingBottom: 0,
+  },
+  editButton: {
+    float: "right",
+    marginTop: theme.spacing(-2),
+    marginRight: theme.spacing(-2),
+  },
+  cardSection: {
+    marginTop: theme.spacing(1.75),
+  },
+  cardSectionIcon: {
+    marginRight: theme.spacing(1.3),
+    color: theme.palette.text.secondary,
+  },
+  cardSectionText: {
+    paddingTop: theme.spacing(0.25),
+  },
+  cardSectionTypography: {
+    paddingTop: theme.spacing(0.25),
+    paddingBottom: theme.spacing(0.5),
+    lineHeight: 1.3,
+  },
+  cardSectionPeopleLabel: {
+    marginRight: theme.spacing(0.5),
+  },
+  cardActions: {
+    justifyContent: "flex-end",
+  },
+}));
+
+function arrayToNameList(array, userId, users, teams) {
+  const itemToComponent = item => <UserNameWithTeam
+    key={item.id}
+    userName={users[item.id].name}
+    teamName={teams[users[item.id].team.id].name}
+    isYou={item.id === userId}
+  />;
+
+  return [
+    ...array.filter(item => item.id === userId),
+    ...array.filter(item => item.id !== userId),
+  ].reduce((array, item, index) => index === 0
+    ? ([...array, itemToComponent(item)])
+    : ([...array, <React.Fragment key={index}>{", "}</React.Fragment>, itemToComponent(item)]),
+    []);
 }
 
-function EditButtonGroup({ onCancelClick, onUpdateClick }) {
-  return (
-    <Button.Group size="medium">
-      <Button basic color="red" onClick={onCancelClick}>
-        Cancel
-      </Button>
-      <Button basic color="green" onClick={onUpdateClick}>
-        Update
-      </Button>
-    </Button.Group>
-  );
+async function switchOrDisable(talkId, isEnabled, selfArray, otherArray, userId) {
+  if (isEnabled) {
+    await firebase
+      .firestore()
+      .doc(`talks/${talkId}`)
+      .update({
+        [selfArray]: firebase.firestore.FieldValue.arrayRemove(
+          firebase.firestore().doc(`users/${userId}`)
+        ),
+      });
+  } else {
+    await firebase
+      .firestore()
+      .doc(`talks/${talkId}`)
+      .update({
+        [selfArray]: firebase.firestore.FieldValue.arrayUnion(
+          firebase.firestore().doc(`users/${userId}`)
+        ),
+        [otherArray]: firebase.firestore.FieldValue.arrayRemove(
+          firebase.firestore().doc(`users/${userId}`)
+        ),
+      });
+  }
 }
 
-export default function TalkCard({ talkId, talk, users, user, teams }) {
-  const nerds = [
-    ...talk.nerds.filter((nerd) => nerd.id === user.uid),
-    ...talk.nerds.filter((nerd) => nerd.id !== user.uid),
-  ].map((nerd) => users[nerd.id].name);
+async function updateTitleAndDescription(talkId, setShowEditDialog, setEditError, title, description) {
+  setShowEditDialog(false);
+  try {
+    await firebase
+      .firestore()
+      .doc(`talks/${talkId}`)
+      .update({
+        title: title,
+        description: description,
+      });
+  } catch (error) {
+    console.error(error);
+    setEditError(error);
+  }
+}
 
-  const noobs = [
-    ...talk.noobs.filter((noob) => noob.id === user.uid),
-    ...talk.noobs.filter((noob) => noob.id !== user.uid),
-  ].map((noob) => users[noob.id].name);
+async function updateScheduledAtAndDurationAndLocation(talkId, setShowEditDialog, setEditError, scheduledAt, duration, location) {
+  setShowEditDialog(false);
+  try {
+    await firebase
+      .firestore()
+      .doc(`talks/${talkId}`)
+      .update({
+        scheduledAt: scheduledAt
+          ? firebase.firestore.Timestamp.fromDate(scheduledAt.toDate())
+          : firebase.firestore.FieldValue.delete(),
+        duration: scheduledAt ? duration : firebase.firestore.FieldValue.delete(),
+        location: scheduledAt ? location : firebase.firestore.FieldValue.delete(),
+      });
+  } catch (error) {
+    console.error(error);
+    setEditError(error);
+  }
+}
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(""); // TODO: initial state
-  const [description, setDescription] = useState("");
+async function deleteTalk(talkId, setShowEditDialog, setEditError) {
+  setShowEditDialog(false);
+  try {
+    await firebase
+      .firestore()
+      .doc(`talks/${talkId}`)
+      .delete();
+  } catch (error) {
+    console.error(error);
+    setEditError(error);
+  }
+}
 
-  const creator = users[talk.creator.id].name;
-  const isAdmin = users[user.uid].isAdmin;
+export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
+  const classes = useStyles();
 
-  const isNerd = talk.nerds.some((nerd) => nerd.id === user.uid);
-  const isNoob = talk.noobs.some((noob) => noob.id === user.uid);
+  const nerds = arrayToNameList(talk.nerds, userId, users, teams);
+  const noobs = arrayToNameList(talk.noobs, userId, users, teams);
 
-  const titleField = isEditing ? (
-    <Input
-      transparent
-      fluid
-      value={title}
-      onChange={(e) => setTitle(e.target.value)}
-    />
-  ) : (
-    talk.title
-  );
+  const isNerd = talk.nerds.some(nerd => nerd.id === userId);
+  const isNoob = talk.noobs.some(noob => noob.id === userId);
 
-  const descriptionField = isEditing ? (
-    <TextArea
-      style={{
-        width: 100 + "%",
-        height: 100 + "%",
-        border: "none",
-        padding: 0,
-      }}
-      rows={5}
-      value={description}
-      onChange={(e) => setDescription(e.target.value)}
-    />
-  ) : (
-    <Card.Description>{talk.description}</Card.Description>
-  );
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editError, setEditError] = useState();
 
-  const buttonGroup = isEditing ? (
-    <EditButtonGroup
-      onCancelClick={() => {
-        setIsEditing(false);
-      }}
-      onUpdateClick={() => {
-        firebase.firestore().doc(`talks/${talkId}`).update({
-          title: title,
-          description: description,
-        });
+  const isEditable = talk.creator.id === userId || user.roles.includes("editor");
+  const isSchedulable = user.roles.includes("scheduler");
 
-        setIsEditing(false);
-      }}
-    />
-  ) : (
-    <JoinButtonGroup
-      talkId={talkId}
-      isNerd={isNerd}
-      isNoob={isNoob}
-      user={user}
-    />
-  );
-
-  const allowEditing = talk.creator.id === user.uid || isAdmin;
-  const editButton = !isEditing && allowEditing && (
-    <Button
-      icon
-      size="tiny"
-      onClick={() => {
-        setTitle(talk.title);
-        setDescription(talk.description);
-        setIsEditing(true);
-      }}
-    >
-      <Icon name="pencil" />
-    </Button>
-  );
-
-  return (
-    <Card raised>
-      <Card.Content>
-        <Card.Header>
-          <div style={{ float: "right" }}>{editButton}</div>
-          {titleField}
-        </Card.Header>
-        <Card.Meta style={{ marginTop: "0.5rem" }}>
-          <Icon name="clock" style={{ marginRight: "0.25rem" }} />
-          {talk.scheduled_at ? (
-            <Popup
-              content={<Moment local>{talk.scheduled_at.toDate()}</Moment>}
-              trigger={
-                <Moment fromNow local>
-                  {talk.scheduled_at.toDate()}
-                </Moment>
-              }
-            />
-          ) : (
-            <>not scheduled yet</>
-          )}
-        </Card.Meta>
-        <Card.Meta>
-          <Icon name="edit" style={{ marginRight: "0.25rem" }} />
-          <Popup
-            content={teams[users[talk.creator.id].team.id].name}
-            trigger={<span>{creator}</span>}
-          />
-        </Card.Meta>
-      </Card.Content>
-      <Card.Content style={{ height: 100 + "%" }}>
-        {descriptionField}
-      </Card.Content>
-      <Card.Content>
-        <Icon name={nerdIcon} />
-        <b>Nerds</b>: {nerds.join(", ")}
-        <br />
-        <Icon name={noobIcon} />
-        <b>Noobs</b>: {noobs.join(", ")}
-      </Card.Content>
-      {buttonGroup}
+  return <Grid xs={12} sm={6} md={4} lg={3} xl={2} item>
+    <Card elevation={isNerd || isNoob ? 8 : 1}>
+      {(isEditable || isSchedulable) && <>
+        <EditTalkDialog
+          talkId={talkId}
+          talk={talk}
+          isEditable={isEditable}
+          isSchedulable={isSchedulable}
+          open={showEditDialog}
+          onClose={() => setShowEditDialog(false)}
+          onEditUpdate={async (title, description) =>
+            await updateTitleAndDescription(talkId, setShowEditDialog, setEditError, title, description)}
+          onScheduleUpdate={async (scheduledAt, duration, location) =>
+            await updateScheduledAtAndDurationAndLocation(talkId, setShowEditDialog, setEditError, scheduledAt, duration, location)}
+          onDelete={async () =>
+            await deleteTalk(talkId, setShowEditDialog, setEditError)}
+        />
+        <Snackbar
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          open={editError ? true : false}
+          autoHideDuration={10000}
+          onClose={() => setEditError()}
+          message={editError ? `${editError.name}: ${editError.message}` : "..."}
+        />
+      </>}
+      <CardContent className={classes.cardContent}>
+        {(isEditable || isSchedulable) && <Tooltip title="Edit talk" className={classes.editButton}>
+          <IconButton onClick={() => setShowEditDialog(true)}>
+            <EditIcon />
+          </IconButton>
+        </Tooltip>}
+        <Typography variant="h6">
+          {talk.title}
+        </Typography>
+        {talk.scheduledAt && talk.duration && talk.location &&
+          <Grid container className={classes.cardSection} wrap="nowrap">
+            <Grid item className={classes.cardSectionIcon}>
+              <EventIcon color="inherit" />
+            </Grid>
+            <Grid item className={classes.cardSectionText}>
+              <Typography variant="body2" color="textSecondary">
+                <Tooltip title={<Moment local>{talk.scheduledAt.toDate()}</Moment>}>
+                  <Moment fromNow local>{talk.scheduledAt.toDate()}</Moment>
+                </Tooltip>
+              </Typography>
+              {/* {" "}for {Math.round(talk.duration / 60)} minutes */}
+              <Typography variant="body2" color="textSecondary">
+                {talk.location}
+              </Typography>
+            </Grid>
+          </Grid>
+        }
+        <Grid container className={classes.cardSection} wrap="nowrap">
+          <Grid item className={classes.cardSectionIcon}>
+            <DescriptionIcon color="inherit" />
+          </Grid>
+          <Grid item className={classes.cardSectionText}>
+            {talk.description
+              .split("\n")
+              .map((line, index) => <Typography
+                className={classes.cardSectionTypography}
+                key={index}
+                variant="body2"
+                color="textSecondary"
+              >
+                {line}
+              </Typography>)}
+          </Grid>
+        </Grid>
+        <Grid container className={classes.cardSection} wrap="nowrap">
+          <Grid item className={classes.cardSectionIcon}>
+            <PeopleIcon color="inherit" />
+          </Grid>
+          <Grid item className={classes.cardSectionText}>
+            <Grid container wrap="nowrap">
+              <Grid item className={classes.cardSectionPeopleLabel}>
+                <Typography variant="body2" color="textSecondary">
+                  Nerds:
+                </Typography>
+              </Grid>
+              <Grid item>
+                <Typography variant="body2" color="textSecondary">
+                  {nerds}
+                </Typography>
+              </Grid>
+            </Grid>
+            <Grid container wrap="nowrap">
+              <Grid item className={classes.cardSectionPeopleLabel}>
+                <Typography variant="body2" color="textSecondary">
+                  Noobs:
+                </Typography>
+              </Grid>
+              <Grid item>
+                <Typography variant="body2" color="textSecondary">
+                  {noobs}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </CardContent>
+      <CardActions className={classes.cardActions}>
+        <Button
+          variant={isNoob ? "contained" : undefined}
+          color="primary"
+          onClick={async () => switchOrDisable(talkId, isNoob, "noobs", "nerds", userId)}
+        >
+          Noob
+        </Button>
+        <Button
+          variant={isNerd ? "contained" : undefined}
+          color="primary"
+          onClick={async () => switchOrDisable(talkId, isNerd, "nerds", "noobs", userId)}
+        >
+          Nerd
+        </Button>
+      </CardActions>
     </Card>
-  );
+  </Grid >;
 }

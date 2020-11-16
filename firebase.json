@@ -12,12 +12,12 @@
     ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
-      },
-      {
         "source": "/ical",
         "function": "ical"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   },

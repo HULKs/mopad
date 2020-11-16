@@ -1,63 +1,65 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+
+import useTalks from "./hooks/useTalks";
+import useTeams from "./hooks/useTeams";
+import useUser from "./hooks/useUser";
+import useUsers from "./hooks/useUsers";
+
+import TalkList from "./components/TalkList";
+import SignInPage from "./components/SignInPage";
+
 import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Redirect,
-} from "react-router-dom";
-import Dashboard from "./components/Dashboard";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import LoadingPage from "./components/LoadingPage";
-import firebase from "firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { useCollection } from "react-firebase-hooks/firestore";
+  Container,
+  Typography,
+  CircularProgress,
+  Box,
+} from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+
+const useStyles = makeStyles({
+  loadingBox: {
+    textAlign: "center",
+  }
+});
 
 export default function App() {
-  const [user, userLoading] = useAuthState(firebase.auth());
+  const classes = useStyles();
+  const [users, usersLoading, usersError] = useUsers();
+  const [userId, user, userLoading, userError] = useUser(users, usersLoading, usersError);
+  const [teams, teamsLoading, teamsError] = useTeams();
+  const [talks, talksLoading, talksError] = useTalks();
 
-  const [teamsCollection, teamsCollectionLoading] = useCollection(
-    firebase.firestore().collection("teams")
-  );
-  const [teams, setTeams] = useState({});
-  useEffect(() => {
-    if (teamsCollection) {
-      setTeams(
-        teamsCollection.docs.reduce(
-          (accumulator, reference) => ({
-            ...accumulator,
-            [reference.id]: reference.data(),
-          }),
-          {}
-        )
-      );
-    }
-  }, [teamsCollection]);
-
-  // TODO: user error, and other errors
-
-  if (userLoading || teamsCollectionLoading) {
-    return <LoadingPage />;
+  if (usersError || userError || teamsError || talksError) {
+    return <Container maxWidth="lg">
+      <Typography variant="h5">Users Error</Typography>
+      <Typography color="error">{JSON.stringify(usersError)}</Typography>
+      <Typography variant="h5">User Error</Typography>
+      <Typography color="error">{JSON.stringify(userError)}</Typography>
+      <Typography variant="h5">Teams Error</Typography>
+      <Typography color="error">{JSON.stringify(teamsError)}</Typography>
+      <Typography variant="h5">Talks Error</Typography>
+      <Typography color="error">{JSON.stringify(talksError)}</Typography>
+    </Container>;
   }
 
-  const pageContent = () => {
-    if (!user) {
-      return <Redirect to="/login" />;
-    }
-    return <Dashboard user={user} teams={teams} />;
-  };
+  if (usersLoading || userLoading || teamsLoading || talksLoading) {
+    return <Box m={8} className={classes.loadingBox}>
+      <CircularProgress />
+      <Typography style={{ marginTop: "1rem" }}>
+        Booting chestboard...
+      </Typography>
+    </Box>;
+  }
 
-  return (
-    <Router>
-      <Switch>
-        <Route path="/login">
-          <Login />
-        </Route>
-        <Route path="/register">
-          <Register teams={teams} />
-        </Route>
-        <Route path="/">{pageContent()}</Route>
-      </Switch>
-    </Router>
-  );
+  if (!user) {
+    return <SignInPage teams={teams} />;
+  }
+
+  return <TalkList
+    userId={userId}
+    user={user}
+    users={users}
+    talks={talks}
+    teams={teams}
+  />;
 }

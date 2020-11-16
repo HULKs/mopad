@@ -1,19 +1,36 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import "./fonts.css";
 import "./index.css";
-import "semantic-ui-css/semantic.min.css";
 import App from "./App";
-import reportWebVitals from "./reportWebVitals";
 import "./firebase";
+import {
+  MuiPickersUtilsProvider,
+} from "@material-ui/pickers";
+import {
+  createMuiTheme,
+  ThemeProvider,
+} from "@material-ui/core/styles";
+import green from "@material-ui/core/colors/green";
+import MomentUtils from "@date-io/moment";
+
+const theme = createMuiTheme({
+  palette: {
+    primary: {
+      light: green[500],
+      main: green[700],
+      dark: green[800],
+    },
+  },
+});
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <MuiPickersUtilsProvider utils={MomentUtils}>
+      <ThemeProvider theme={theme}>
+        <App />
+      </ThemeProvider>
+    </MuiPickersUtilsProvider>
   </React.StrictMode>,
   document.getElementById("root")
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

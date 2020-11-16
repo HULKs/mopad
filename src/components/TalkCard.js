@@ -125,7 +125,7 @@ async function updateScheduledAtAndDurationAndLocation(talkId, setShowEditDialog
       .doc(`talks/${talkId}`)
       .update({
         scheduledAt: scheduledAt
-          ? firebase.firestore.Timestamp.fromDate(scheduledAt.toDate())
+          ? firebase.firestore.Timestamp.fromDate(scheduledAt)
           : firebase.firestore.FieldValue.delete(),
         duration: scheduledAt ? duration : firebase.firestore.FieldValue.delete(),
         location: scheduledAt ? location : firebase.firestore.FieldValue.delete(),

@@ -21,7 +21,7 @@ exports.ical = functions.region("europe-west1").https.onRequest(async (request, 
     });
 
     talks.forEach(talk => {
-        const scheduledAt = talk.get("scheduled_at");
+        const scheduledAt = talk.get("scheduledAt");
         const duration = talk.get("duration");
 
         if (scheduledAt && duration) {

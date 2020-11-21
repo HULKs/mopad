@@ -27,8 +27,13 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(3.75),
     marginBottom: theme.spacing(2),
   },
+  sectionCollapseButton: {
+    marginLeft: "auto",
+  },
+  sectionHeadingContainer: {
+    marginBottom: theme.spacing(2),
+  },
   cardContainer: {
-    marginTop: theme.spacing(2),
     marginBottom: theme.spacing(4),
   },
   floatingActionButton: {
@@ -99,12 +104,12 @@ export default function TalkList({ userId, user, users, talks, teams }) {
     setFilteredTalks(
       searchWords.length !== 0
         ? talks.filter(([, talk]) =>
-            searchWords.some(
-              (word) =>
-                talk.description.toLowerCase().includes(word.toLowerCase()) ||
-                talk.title.toLowerCase().includes(word.toLowerCase())
-            )
+          searchWords.some(
+            (word) =>
+              talk.description.toLowerCase().includes(word.toLowerCase()) ||
+              talk.title.toLowerCase().includes(word.toLowerCase())
           )
+        )
         : talks
     );
   }, [talks, searchWords]);
@@ -116,21 +121,38 @@ export default function TalkList({ userId, user, users, talks, teams }) {
     unscheduledTalks,
   ] = usePartitionedTalks(filteredTalks);
 
-  const renderTalkSection = (title, talkList) => (
+  const [pastScheduledTalksExpanded, setPastScheduledTalksExpanded] = useState(false);
+  const [currentScheduledTalksExpanded, setCurrentScheduledTalksExpanded] = useState(true);
+  const [upcomingScheduledTalksExpanded, setUpcomingScheduledTalksExpanded] = useState(true);
+  const [unscheduledScheduledTalksExpanded, setUnscheduledScheduledTalksExpanded] = useState(true);
+
+  const renderTalkSection = (expanded, setExpanded, title, talkList) => (
     <>
       {talkList.length > 0 && (
         <>
-          <Container maxWidth="md">
-            <Typography variant="h5">{title}</Typography>
-          </Container>
           <Container
-            maxWidth={talkList.length > 0 ? false : "md"}
-            className={classes.cardContainer}
+            maxWidth="md"
+            className={classes.sectionHeadingContainer}
           >
-            <Grid container spacing={2}>
-              {talkList}
+            <Grid container alignItems="center">
+              <Grid item>
+                <Typography variant="h5">{title}</Typography>
+              </Grid>
+              <Grid item className={classes.sectionCollapseButton}>
+                <Button onClick={() => setExpanded(!expanded)}>Show {expanded ? "less" : "more"}</Button>
+              </Grid>
             </Grid>
           </Container>
+          {expanded &&
+            <Container
+              maxWidth={talkList.length > 0 ? false : "md"}
+              className={classes.cardContainer}
+            >
+              <Grid container spacing={2}>
+                {talkList}
+              </Grid>
+            </Container>
+          }
         </>
       )}
     </>
@@ -235,18 +257,26 @@ export default function TalkList({ userId, user, users, talks, teams }) {
         </Grid>
       </Container>
       {renderTalkSection(
+        pastScheduledTalksExpanded,
+        setPastScheduledTalksExpanded,
         "Past talks",
         pastScheduledTalks.map(renderTalkCardFromTalk)
       )}
       {renderTalkSection(
+        currentScheduledTalksExpanded,
+        setCurrentScheduledTalksExpanded,
         "Current talks",
         currentScheduledTalks.map(renderTalkCardFromTalk)
       )}
       {renderTalkSection(
+        upcomingScheduledTalksExpanded,
+        setUpcomingScheduledTalksExpanded,
         "Upcoming talks",
         upcomingScheduledTalks.map(renderTalkCardFromTalk)
       )}
       {renderTalkSection(
+        unscheduledScheduledTalksExpanded,
+        setUnscheduledScheduledTalksExpanded,
         "Unscheduled talks",
         unscheduledTalks.map(renderTalkCardFromTalk)
       )}

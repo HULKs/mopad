@@ -22,10 +22,17 @@ import ExportTalkCalendarDialog from "./ExportTalkCalendarDialog";
 import TalkCard from "./TalkCard";
 import usePartitionedTalks from "../hooks/usePartitionedTalks";
 
+import waiting from "./waiting.gif";
+
 const useStyles = makeStyles((theme) => ({
   titleContainer: {
     marginTop: theme.spacing(3.75),
     marginBottom: theme.spacing(2),
+  },
+  waitingContainer: {
+    marginTop: theme.spacing(4),
+    marginBottom: theme.spacing(2),
+    textAlign: "center",
   },
   sectionCollapseButton: {
     marginLeft: "auto",
@@ -260,6 +267,14 @@ export default function TalkList({ userId, user, users, talks, teams }) {
         </Grid> */}
         </Grid>
       </Container>
+      {pastScheduledTalks.length === 0 &&
+        currentScheduledTalks.length === 0 &&
+        upcomingScheduledTalks.length === 0 &&
+        unscheduledTalks.length === 0 &&
+        <Container maxWidth="md" className={classes.waitingContainer}>
+          <img src={waiting} alt="" />
+        </Container>
+      }
       {renderTalkSection(
         pastScheduledTalksExpanded,
         setPastScheduledTalksExpanded,

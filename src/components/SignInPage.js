@@ -350,7 +350,7 @@ export default function SignInPage({ teams }) {
         </Grid>
         <Grid item className={classes.footer}>
           <Typography variant="body2" color="textSecondary">
-            <a href="https://rohow.de/2020/de/imprint.html" className={classes.footerLinks}>Imprint/Impressum</a> – <a href="https://rohow.de/2020/de/privacy_policy.html" className={classes.footerLinks}>Privacy Policy/Datenschutzerklärung</a>
+            <a target="_blank" rel="noreferrer" href="https://rohow.de/2020/de/imprint.html" className={classes.footerLinks}>Imprint/Impressum</a> – <a target="_blank" rel="noreferrer" href="https://rohow.de/2020/de/privacy_policy.html" className={classes.footerLinks}>Privacy Policy/Datenschutzerklärung</a>
           </Typography>
         </Grid>
       </Grid>

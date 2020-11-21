@@ -41,6 +41,7 @@ function updateStateFromTalk(
 
 export default function EditTalkDialog({
   talk,
+  isDeletable,
   isEditable,
   isSchedulable,
   open,
@@ -171,7 +172,7 @@ export default function EditTalkDialog({
         )}
       </DialogContent>
       <DialogActions>
-        {isEditable && (
+        {isDeletable && (
           <Button className={classes.deleteButton} onClick={onDelete}>
             Delete
           </Button>

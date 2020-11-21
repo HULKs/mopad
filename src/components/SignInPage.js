@@ -64,6 +64,9 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(4),
     marginBottom: theme.spacing(2),
   },
+  footerLinks: {
+    color: theme.palette.primary.main,
+  },
 }));
 
 export default function SignInPage({ teams }) {
@@ -347,7 +350,7 @@ export default function SignInPage({ teams }) {
         </Grid>
         <Grid item className={classes.footer}>
           <Typography variant="body2" color="textSecondary">
-            TODO: GDPR
+            <a href="https://rohow.de/2020/de/imprint.html" className={classes.footerLinks}>Imprint/Impressum</a> – <a href="https://rohow.de/2020/de/privacy_policy.html" className={classes.footerLinks}>Privacy Policy/Datenschutzerklärung</a>
           </Typography>
         </Grid>
       </Grid>

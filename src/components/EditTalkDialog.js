@@ -29,19 +29,33 @@ const useStyles = makeStyles(theme => ({
 export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, onClose, onEditUpdate, onScheduleUpdate, onDelete }) {
   const classes = useStyles();
 
+  const [dirty, setDirty] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledAt, setScheduledAt] = useState(null);
   const [duration, setDuration] = useState(600);
   const [location, setLocation] = useState("");
 
-  useEffect(() => {
+  const updateStateFromTalk = () => {
     setTitle(talk.title);
     setDescription(talk.description);
     setScheduledAt(talk.scheduledAt ? talk.scheduledAt.toDate() : null);
     setDuration(talk.duration ? talk.duration : 600);
     setLocation(talk.location ? talk.location : "");
-  }, [talk]);
+  };
+
+  useEffect(() => {
+    if (!dirty) {
+      updateStateFromTalk();
+    }
+  }, [dirty, talk]);
+
+  useEffect(() => {
+    if (open) {
+      setDirty(false);
+      updateStateFromTalk();
+    }
+  }, [open])
 
   return <Dialog open={open} onClose={onClose}>
     <DialogTitle className={classes.title}>Edit talk</DialogTitle>
@@ -54,7 +68,10 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
           margin="normal"
           fullWidth
           value={title}
-          onChange={event => setTitle(event.target.value)}
+          onChange={event => {
+            setDirty(true);
+            setTitle(event.target.value);
+          }}
         />
         <TextField
           label="Talk Description"
@@ -62,7 +79,10 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
           margin="normal"
           fullWidth
           value={description}
-          onChange={event => setDescription(event.target.value)}
+          onChange={event => {
+            setDirty(true);
+            setDescription(event.target.value);
+          }}
           multiline
         />
       </>}
@@ -74,7 +94,10 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
           inputVariant="outlined"
           fullWidth
           value={scheduledAt}
-          onChange={setScheduledAt}
+          onChange={newScheduledAt => {
+            setDirty(true);
+            setScheduledAt(newScheduledAt);
+          }}
           label="Scheduled date and time"
           showTodayButton
           margin="normal"
@@ -84,7 +107,10 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
           <Slider
             margin="normal"
             value={duration}
-            onChange={(event, newDuration) => setDuration(newDuration)}
+            onChange={(event, newDuration) => {
+              setDirty(true);
+              setDuration(newDuration);
+            }}
             marks={[
               { value: 30 * 60, label: "0:30" },
               { value: 60 * 60, label: "1:00" },
@@ -103,7 +129,10 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
             margin="normal"
             fullWidth
             value={location}
-            onChange={event => setLocation(event.target.value)}
+            onChange={event => {
+              setDirty(true);
+              setLocation(event.target.value);
+            }}
           />
         </>}
       </>}

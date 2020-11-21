@@ -20,6 +20,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import CreateTalkDialog from "./CreateTalkDialog";
 import ExportTalkCalendarDialog from "./ExportTalkCalendarDialog";
 import TalkCard from "./TalkCard";
+import usePartitionedTalks from "../hooks/usePartitionedTalks";
 
 const useStyles = makeStyles(theme => ({
   titleContainer: {
@@ -80,45 +81,8 @@ export default function TalkList({ userId, user, users, talks, teams }) {
     users={users}
     teams={teams}
   />;
-  const sortByScheduledAt = ([talkIdA, talkA], [talkIdB, talkB]) =>
-    talkA.scheduledAt.toMillis() -
-    talkB.scheduledAt.toMillis();
-  const sortByCreatedAt = ([talkIdA, talkA], [talkIdB, talkB]) =>
-    talkA.createdAt.toMillis() -
-    talkB.createdAt.toMillis();
 
-  const pastScheduledTalks = Object.entries(talks)
-    .filter(([talkId, talk]) =>
-      "scheduledAt" in talk &&
-      "duration" in talk &&
-      talk.scheduledAt.toMillis() + (talk.duration * 1000) < firebase.firestore.Timestamp.now().toMillis()
-    )
-    .sort(sortByScheduledAt)
-    .map(renderTalkCardFromTalk);
-
-  const currentScheduledTalks = Object.entries(talks)
-    .filter(([talkId, talk]) =>
-      "scheduledAt" in talk &&
-      "duration" in talk &&
-      talk.scheduledAt.toMillis() < firebase.firestore.Timestamp.now().toMillis() &&
-      talk.scheduledAt.toMillis() + (talk.duration * 1000) >= firebase.firestore.Timestamp.now().toMillis()
-    )
-    .sort(sortByScheduledAt)
-    .map(renderTalkCardFromTalk);
-
-  const upcomingScheduledTalks = Object.entries(talks)
-    .filter(([talkId, talk]) =>
-      "scheduledAt" in talk &&
-      "duration" in talk &&
-      talk.scheduledAt.toMillis() >= firebase.firestore.Timestamp.now().toMillis()
-    )
-    .sort(sortByScheduledAt)
-    .map(renderTalkCardFromTalk);
-
-  const unscheduledTalks = Object.entries(talks)
-    .filter(([talkId, talk]) => !("scheduledAt" in talk) || !("duration" in talk))
-    .sort(sortByCreatedAt)
-    .map(renderTalkCardFromTalk);
+  const [pastScheduledTalks, currentScheduledTalks, upcomingScheduledTalks, unscheduledTalks] = usePartitionedTalks(talks);
 
   const renderTalkSection = (title, talkList) => <>
     {talkList.length > 0 && <>
@@ -205,10 +169,10 @@ export default function TalkList({ userId, user, users, talks, teams }) {
         </Grid> */}
       </Grid>
     </Container>
-    {renderTalkSection("Past talks", pastScheduledTalks)}
-    {renderTalkSection("Current talks", currentScheduledTalks)}
-    {renderTalkSection("Upcoming talks", upcomingScheduledTalks)}
-    {renderTalkSection("Unscheduled talks", unscheduledTalks)}
+    {renderTalkSection("Past talks", pastScheduledTalks.map(renderTalkCardFromTalk))}
+    {renderTalkSection("Current talks", currentScheduledTalks.map(renderTalkCardFromTalk))}
+    {renderTalkSection("Upcoming talks", upcomingScheduledTalks.map(renderTalkCardFromTalk))}
+    {renderTalkSection("Unscheduled talks", unscheduledTalks.map(renderTalkCardFromTalk))}
     <Container maxWidth="md" className={classes.userContainer}>
       <Grid container alignItems="center" justify="center">
         <Grid item>

@@ -71,7 +71,8 @@ async function createTalk(
   userId,
   isNerd,
   title,
-  description
+  description,
+  duration
 ) {
   setShowCreateDialog(false);
   try {
@@ -85,6 +86,7 @@ async function createTalk(
         nerds: isNerd ? [firebase.firestore().doc(`users/${userId}`)] : [],
         noobs: !isNerd ? [firebase.firestore().doc(`users/${userId}`)] : [],
         title: title,
+        duration: duration,
       });
   } catch (error) {
     console.error(error);
@@ -179,24 +181,26 @@ export default function TalkList({ userId, user, users, talks, teams }) {
       <CreateTalkDialog
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
-        onCreateAsNerd={async (title, description) =>
+        onCreateAsNerd={async (title, description, duration) =>
           await createTalk(
             setShowCreateDialog,
             setCreateError,
             userId,
             true,
             title,
-            description
+            description,
+            duration
           )
         }
-        onCreateAsNoob={async (title, description) =>
+        onCreateAsNoob={async (title, description, duration) =>
           await createTalk(
             setShowCreateDialog,
             setCreateError,
             userId,
             false,
             title,
-            description
+            description,
+            duration
           )
         }
       />

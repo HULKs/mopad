@@ -96,7 +96,7 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
           value={scheduledAt}
           onChange={newScheduledAt => {
             setDirty(true);
-            setScheduledAt(newScheduledAt);
+            setScheduledAt(newScheduledAt.toDate());
           }}
           label="Scheduled date and time"
           showTodayButton

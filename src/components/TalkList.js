@@ -321,7 +321,7 @@ export default function TalkList({ userId, user, users, talks, teams }) {
       </Container>
       <Container maxWidth="md" className={classes.legalContainer}>
         <Typography variant="body2" color="textSecondary">
-          <a href="https://rohow.de/2020/de/imprint.html" className={classes.legalContainerLinks}>Imprint/Impressum</a> – <a href="https://rohow.de/2020/de/privacy_policy.html" className={classes.legalContainerLinks}>Privacy Policy/Datenschutzerklärung</a>
+          <a target="_blank" rel="noreferrer" href="https://rohow.de/2020/de/imprint.html" className={classes.legalContainerLinks}>Imprint/Impressum</a> – <a target="_blank" rel="noreferrer" href="https://rohow.de/2020/de/privacy_policy.html" className={classes.legalContainerLinks}>Privacy Policy/Datenschutzerklärung</a>
         </Typography>
       </Container>
     </>

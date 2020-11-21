@@ -26,6 +26,14 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+function updateStateFromTalk(talk, setTitle, setDescription, setScheduledAt, setDuration, setLocation) {
+  setTitle(talk.title);
+  setDescription(talk.description);
+  setScheduledAt(talk.scheduledAt ? talk.scheduledAt.toDate() : null);
+  setDuration(talk.duration ? talk.duration : 600);
+  setLocation(talk.location ? talk.location : "");
+}
+
 export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, onClose, onEditUpdate, onScheduleUpdate, onDelete }) {
   const classes = useStyles();
 
@@ -36,26 +44,17 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
   const [duration, setDuration] = useState(600);
   const [location, setLocation] = useState("");
 
-  const updateStateFromTalk = () => {
-    setTitle(talk.title);
-    setDescription(talk.description);
-    setScheduledAt(talk.scheduledAt ? talk.scheduledAt.toDate() : null);
-    setDuration(talk.duration ? talk.duration : 600);
-    setLocation(talk.location ? talk.location : "");
-  };
-
   useEffect(() => {
     if (!dirty) {
-      updateStateFromTalk();
+      updateStateFromTalk(talk, setTitle, setDescription, setScheduledAt, setDuration, setLocation);
     }
   }, [dirty, talk]);
 
   useEffect(() => {
     if (open) {
       setDirty(false);
-      updateStateFromTalk();
     }
-  }, [open])
+  }, [open]);
 
   return <Dialog open={open} onClose={onClose}>
     <DialogTitle className={classes.title}>Edit talk</DialogTitle>

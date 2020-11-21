@@ -144,7 +144,25 @@ export default function SignInPage({ teams }) {
                 .auth()
                 .signInWithEmailAndPassword(`${userId}@mopad.app`, password);
             } catch (error) {
-              setError(error);
+              switch (error.code) {
+                case "auth/invalid-email": {
+                  setError("Failed to login: Your name is too long");
+                  break;
+                }
+                case "auth/user-disabled": {
+                  setError("Failed to login: You have been disabled");
+                  break;
+                }
+                case "auth/user-not-found":
+                case "auth/wrong-password": {
+                  setError("Failed to login: User, team or password wrong");
+                  break;
+                }
+                default: {
+                  setError(`Failed to login: ${error.name}, ${error.message}`);
+                  break;
+                }
+              }
               setLoading(false);
             }
           }}
@@ -154,106 +172,122 @@ export default function SignInPage({ teams }) {
       </Grid>
     </>
   ) : (
-    <>
-      <Grid item>
-        <TextField
-          label="Your Name"
-          variant="outlined"
-          margin="normal"
-          fullWidth
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          helperText="Unique within your team, visible to everyone"
-        />
-      </Grid>
-      <Grid item>
-        <FormControl variant="outlined" margin="normal" fullWidth>
-          <InputLabel id="team-select-label">Your Team</InputLabel>
-          <Select
-            labelId="team-select-label"
-            value={team}
-            onChange={(event) => setTeam(event.target.value)}
-            label="Your Team"
-          >
-            {Object.entries(teams).map(([teamId, team]) => (
-              <MenuItem key={teamId} value={teamId}>
-                {team.name}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>Visible to everyone</FormHelperText>
-        </FormControl>
-      </Grid>
-      <Grid item>
-        <TextField
-          label="Password"
-          variant="outlined"
-          margin="normal"
-          fullWidth
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-      </Grid>
-      <Grid item>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={notARobot}
-              onChange={(event) => setNotARobot(event.target.checked)}
-              color="primary"
-            />
-          }
-          label="I'm not a NAO"
-        />
-      </Grid>
-      <Grid item className={classes.button}>
-        <Button
-          disabled={!name || !team || !password || !notARobot}
-          color="primary"
-          fullWidth
-          variant="contained"
-          onClick={async () => {
-            setLoading(true);
-            try {
-              const userId = Array.from(`${team}:${name}`, (byte) =>
-                byte.charCodeAt(0).toString(16).padStart(2, "0")
-              ).join("");
-              const {
-                user,
-              } = await firebase
-                .auth()
-                .createUserWithEmailAndPassword(
-                  `${userId}@mopad.app`,
-                  password
-                );
-              await firebase
-                .firestore()
-                .collection("users")
-                .doc(userId)
-                .set(
-                  {
-                    name: name,
-                    team: firebase.firestore().doc(`teams/${team}`),
-                    roles: [],
-                    authenticationId: user.uid,
-                  },
-                  {
-                    merge: true,
-                  }
-                );
-            } catch (error) {
-              // TODO: prettier error message
-              setError(error);
-              setLoading(false);
+      <>
+        <Grid item>
+          <TextField
+            label="Your Name"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            helperText="Unique within your team, visible to everyone"
+          />
+        </Grid>
+        <Grid item>
+          <FormControl variant="outlined" margin="normal" fullWidth>
+            <InputLabel id="team-select-label">Your Team</InputLabel>
+            <Select
+              labelId="team-select-label"
+              value={team}
+              onChange={(event) => setTeam(event.target.value)}
+              label="Your Team"
+            >
+              {Object.entries(teams).map(([teamId, team]) => (
+                <MenuItem key={teamId} value={teamId}>
+                  {team.name}
+                </MenuItem>
+              ))}
+            </Select>
+            <FormHelperText>Visible to everyone</FormHelperText>
+          </FormControl>
+        </Grid>
+        <Grid item>
+          <TextField
+            label="Password"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </Grid>
+        <Grid item>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={notARobot}
+                onChange={(event) => setNotARobot(event.target.checked)}
+                color="primary"
+              />
             }
-          }}
-        >
-          Register
+            label="I'm not a NAO"
+          />
+        </Grid>
+        <Grid item className={classes.button}>
+          <Button
+            disabled={!name || !team || !password || !notARobot}
+            color="primary"
+            fullWidth
+            variant="contained"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const userId = Array.from(`${team}:${name}`, (byte) =>
+                  byte.charCodeAt(0).toString(16).padStart(2, "0")
+                ).join("");
+                const {
+                  user,
+                } = await firebase
+                  .auth()
+                  .createUserWithEmailAndPassword(
+                    `${userId}@mopad.app`,
+                    password
+                  );
+                await firebase
+                  .firestore()
+                  .collection("users")
+                  .doc(userId)
+                  .set(
+                    {
+                      name: name,
+                      team: firebase.firestore().doc(`teams/${team}`),
+                      roles: [],
+                      authenticationId: user.uid,
+                    },
+                    {
+                      merge: true,
+                    }
+                  );
+              } catch (error) {
+                switch (error.code) {
+                  case "auth/email-already-in-use": {
+                    setError("Failed to register: You are already registered in this team");
+                    break;
+                  }
+                  case "auth/invalid-email": {
+                    setError("Failed to register: Your name is too long");
+                    break;
+                  }
+                  case "auth/weak-password": {
+                    setError("Failed to register: Password too weak");
+                    break;
+                  }
+                  default: {
+                    setError(`Failed to register: ${error.name}, ${error.message}`);
+                    break;
+                  }
+                }
+                setLoading(false);
+              }
+            }}
+          >
+            Register
         </Button>
-      </Grid>
-    </>
-  );
+        </Grid>
+      </>
+    );
 
   return (
     <Container maxWidth="xs">
@@ -265,7 +299,7 @@ export default function SignInPage({ teams }) {
         open={error ? true : false}
         autoHideDuration={10000}
         onClose={() => setError()}
-        message={error ? `${error.name}: ${error.message}` : "..."}
+        message={error ? error : "..."}
       />
       <Grid container direction="column">
         <Grid item className={classes.title}>

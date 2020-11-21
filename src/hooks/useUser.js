@@ -3,7 +3,9 @@ import firebase from "firebase/app";
 import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function useDocuments(users, usersLoading, usersError) {
-  const [userState, userStateLoading, userStateError] = useAuthState(firebase.auth());
+  const [userState, userStateLoading, userStateError] = useAuthState(
+    firebase.auth()
+  );
   const [userId, setUserId] = useState();
   const [user, setUser] = useState();
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,9 @@ export default function useDocuments(users, usersLoading, usersError) {
         return;
       }
 
-      const matching = Object.entries(users).find(([_, user]) => user.authenticationId === userState.uid);
+      const matching = Object.entries(users).find(
+        ([_, user]) => user.authenticationId === userState.uid
+      );
       if (!matching) {
         return;
       }

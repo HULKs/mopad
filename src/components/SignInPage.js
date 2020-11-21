@@ -22,7 +22,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import PermIdentityIcon from "@material-ui/icons/PermIdentity";
 import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   errorMessage: {
     backgroundColor: theme.palette.error.main,
   },
@@ -63,7 +63,7 @@ const useStyles = makeStyles(theme => ({
     textAlign: "center",
     marginTop: theme.spacing(4),
     marginBottom: theme.spacing(2),
-  }
+  },
 }));
 
 export default function SignInPage({ teams }) {
@@ -78,16 +78,18 @@ export default function SignInPage({ teams }) {
   const [error, setError] = useState();
 
   if (loading) {
-    return <Box m={8} className={classes.loadingBox}>
-      <CircularProgress />
-      <Typography className={classes.loadingText}>
-        Connecting to LoLA...
-      </Typography>
-    </Box>;
+    return (
+      <Box m={8} className={classes.loadingBox}>
+        <CircularProgress />
+        <Typography className={classes.loadingText}>
+          Connecting to LoLA...
+        </Typography>
+      </Box>
+    );
   }
 
-  const form = showLogin
-    ? <>
+  const form = showLogin ? (
+    <>
       <Grid item>
         <TextField
           label="Your Name"
@@ -95,30 +97,23 @@ export default function SignInPage({ teams }) {
           margin="normal"
           fullWidth
           value={name}
-          onChange={event => setName(event.target.value)}
+          onChange={(event) => setName(event.target.value)}
         />
       </Grid>
       <Grid item>
-        <FormControl
-          variant="outlined"
-          margin="normal"
-          fullWidth
-        >
-          <InputLabel
-            id="team-select-label"
-          >
-            Your Team
-          </InputLabel>
+        <FormControl variant="outlined" margin="normal" fullWidth>
+          <InputLabel id="team-select-label">Your Team</InputLabel>
           <Select
             labelId="team-select-label"
             value={team}
-            onChange={event => setTeam(event.target.value)}
+            onChange={(event) => setTeam(event.target.value)}
             label="Your Team"
           >
-            {Object.entries(teams).map(([teamId, team]) =>
+            {Object.entries(teams).map(([teamId, team]) => (
               <MenuItem key={teamId} value={teamId}>
                 {team.name}
-              </MenuItem>)}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Grid>
@@ -130,7 +125,7 @@ export default function SignInPage({ teams }) {
           fullWidth
           type="password"
           value={password}
-          onChange={event => setPassword(event.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
         />
       </Grid>
       <Grid item className={classes.button}>
@@ -142,9 +137,8 @@ export default function SignInPage({ teams }) {
           onClick={async () => {
             setLoading(true);
             try {
-              const userId = Array.from(
-                `${team}:${name}`,
-                byte => byte.charCodeAt(0).toString(16).padStart(2, "0")
+              const userId = Array.from(`${team}:${name}`, (byte) =>
+                byte.charCodeAt(0).toString(16).padStart(2, "0")
               ).join("");
               await firebase
                 .auth()
@@ -159,7 +153,8 @@ export default function SignInPage({ teams }) {
         </Button>
       </Grid>
     </>
-    : <>
+  ) : (
+    <>
       <Grid item>
         <TextField
           label="Your Name"
@@ -167,31 +162,24 @@ export default function SignInPage({ teams }) {
           margin="normal"
           fullWidth
           value={name}
-          onChange={event => setName(event.target.value)}
+          onChange={(event) => setName(event.target.value)}
           helperText="Unique within your team, visible to everyone"
         />
       </Grid>
       <Grid item>
-        <FormControl
-          variant="outlined"
-          margin="normal"
-          fullWidth
-        >
-          <InputLabel
-            id="team-select-label"
-          >
-            Your Team
-          </InputLabel>
+        <FormControl variant="outlined" margin="normal" fullWidth>
+          <InputLabel id="team-select-label">Your Team</InputLabel>
           <Select
             labelId="team-select-label"
             value={team}
-            onChange={event => setTeam(event.target.value)}
+            onChange={(event) => setTeam(event.target.value)}
             label="Your Team"
           >
-            {Object.entries(teams).map(([teamId, team]) =>
+            {Object.entries(teams).map(([teamId, team]) => (
               <MenuItem key={teamId} value={teamId}>
                 {team.name}
-              </MenuItem>)}
+              </MenuItem>
+            ))}
           </Select>
           <FormHelperText>Visible to everyone</FormHelperText>
         </FormControl>
@@ -204,16 +192,18 @@ export default function SignInPage({ teams }) {
           fullWidth
           type="password"
           value={password}
-          onChange={event => setPassword(event.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
         />
       </Grid>
       <Grid item>
         <FormControlLabel
-          control={<Checkbox
-            checked={notARobot}
-            onChange={event => setNotARobot(event.target.checked)}
-            color="primary"
-          />}
+          control={
+            <Checkbox
+              checked={notARobot}
+              onChange={(event) => setNotARobot(event.target.checked)}
+              color="primary"
+            />
+          }
           label="I'm not a NAO"
         />
       </Grid>
@@ -226,25 +216,32 @@ export default function SignInPage({ teams }) {
           onClick={async () => {
             setLoading(true);
             try {
-              const userId = Array.from(
-                `${team}:${name}`,
-                byte => byte.charCodeAt(0).toString(16).padStart(2, "0")
+              const userId = Array.from(`${team}:${name}`, (byte) =>
+                byte.charCodeAt(0).toString(16).padStart(2, "0")
               ).join("");
-              const { user } = await firebase
+              const {
+                user,
+              } = await firebase
                 .auth()
-                .createUserWithEmailAndPassword(`${userId}@mopad.app`, password);
+                .createUserWithEmailAndPassword(
+                  `${userId}@mopad.app`,
+                  password
+                );
               await firebase
                 .firestore()
                 .collection("users")
                 .doc(userId)
-                .set({
-                  name: name,
-                  team: firebase.firestore().doc(`teams/${team}`),
-                  roles: [],
-                  authenticationId: user.uid,
-                }, {
-                  merge: true,
-                });
+                .set(
+                  {
+                    name: name,
+                    team: firebase.firestore().doc(`teams/${team}`),
+                    roles: [],
+                    authenticationId: user.uid,
+                  },
+                  {
+                    merge: true,
+                  }
+                );
             } catch (error) {
               // TODO: prettier error message
               setError(error);
@@ -255,66 +252,67 @@ export default function SignInPage({ teams }) {
           Register
         </Button>
       </Grid>
-    </>;
+    </>
+  );
 
-  return <Container maxWidth="xs">
-    <Snackbar
-      ContentProps={{
-        className: classes.errorMessage,
-      }}
-      anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      open={error ? true : false}
-      autoHideDuration={10000}
-      onClose={() => setError()}
-      message={error ? `${error.name}: ${error.message}` : "..."}
-    />
-    <Grid container direction="column">
-      <Grid item className={classes.title}>
-        <Typography variant="h3">
-          MOPAD
-        </Typography>
-      </Grid>
-      <Grid item className={classes.subtitle}>
-        <Typography variant="body2" color="textSecondary">
-          Moderated Organization PAD (powerful, agile, distributed)
-        </Typography>
-      </Grid>
-      <Grid item className={classes.formTitle}>
-        <Grid container alignItems="center" justify="center">
-          <Grid item>
-            <Avatar className={classes.avatar}>
-              {showLogin ? <LockOutlinedIcon /> : <PermIdentityIcon />}
-            </Avatar>
-          </Grid>
-          <Grid item className={classes.subsubtitle}>
-            <Typography variant="h5">
-              {showLogin ? "Login" : "Register"}
-            </Typography>
+  return (
+    <Container maxWidth="xs">
+      <Snackbar
+        ContentProps={{
+          className: classes.errorMessage,
+        }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        open={error ? true : false}
+        autoHideDuration={10000}
+        onClose={() => setError()}
+        message={error ? `${error.name}: ${error.message}` : "..."}
+      />
+      <Grid container direction="column">
+        <Grid item className={classes.title}>
+          <Typography variant="h3">MOPAD</Typography>
+        </Grid>
+        <Grid item className={classes.subtitle}>
+          <Typography variant="body2" color="textSecondary">
+            Moderated Organization PAD (powerful, agile, distributed)
+          </Typography>
+        </Grid>
+        <Grid item className={classes.formTitle}>
+          <Grid container alignItems="center" justify="center">
+            <Grid item>
+              <Avatar className={classes.avatar}>
+                {showLogin ? <LockOutlinedIcon /> : <PermIdentityIcon />}
+              </Avatar>
+            </Grid>
+            <Grid item className={classes.subsubtitle}>
+              <Typography variant="h5">
+                {showLogin ? "Login" : "Register"}
+              </Typography>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-      {form}
-      <Grid item className={classes.signUp}>
-        <Grid container alignItems="center" justify="center">
-          <Grid item>
-            <Typography>
-              {showLogin ? "Don't have an account?" : "Already have an account?"}
-            </Typography>
-          </Grid>
-          <Grid item>
-            <Button
-              onClick={() => setShowLogin(!showLogin)}
-            >
-              {showLogin ? "Register" : "Login"}
-            </Button>
+        {form}
+        <Grid item className={classes.signUp}>
+          <Grid container alignItems="center" justify="center">
+            <Grid item>
+              <Typography>
+                {showLogin
+                  ? "Don't have an account?"
+                  : "Already have an account?"}
+              </Typography>
+            </Grid>
+            <Grid item>
+              <Button onClick={() => setShowLogin(!showLogin)}>
+                {showLogin ? "Register" : "Login"}
+              </Button>
+            </Grid>
           </Grid>
         </Grid>
+        <Grid item className={classes.footer}>
+          <Typography variant="body2" color="textSecondary">
+            TODO: GDPR
+          </Typography>
+        </Grid>
       </Grid>
-      <Grid item className={classes.footer}>
-        <Typography variant="body2" color="textSecondary">
-          TODO: GDPR
-        </Typography>
-      </Grid>
-    </Grid>
-  </Container>;
-};
+    </Container>
+  );
+}

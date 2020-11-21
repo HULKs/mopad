@@ -2,6 +2,7 @@
   "name": "mopad",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://mopad.rohow.de/",
   "dependencies": {
     "@date-io/moment": "1.x",
     "@material-ui/core": "^4.11.0",

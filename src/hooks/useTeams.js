@@ -1,5 +1,5 @@
-import useDocuments from "./useDocuments";
+import useDocumentsAsObject from "./useDocumentsAsObject";
 
 export default function useTeams() {
-  return useDocuments("teams");
+  return useDocumentsAsObject("teams");
 }

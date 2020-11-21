@@ -1,5 +1,5 @@
-import useDocuments from "./useDocuments";
+import useDocumentsAsArray from "./useDocumentsAsArray";
 
 export default function useTalks() {
-  return useDocuments("talks");
+  return useDocumentsAsArray("talks");
 }

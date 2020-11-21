@@ -191,8 +191,9 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editError, setEditError] = useState();
 
+  const isDeletable = user.roles.includes("editor");
   const isEditable =
-    talk.creator.id === userId || user.roles.includes("editor");
+    talk.creator.id === userId || isDeletable;
   const isSchedulable = user.roles.includes("scheduler");
 
   return (
@@ -203,6 +204,7 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
             <EditTalkDialog
               talkId={talkId}
               talk={talk}
+              isDeletable={isDeletable}
               isEditable={isEditable}
               isSchedulable={isSchedulable}
               open={showEditDialog}

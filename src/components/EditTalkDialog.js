@@ -149,6 +149,7 @@ export default function EditTalkDialog({ talk, isEditable, isSchedulable, open, 
         Cancel
       </Button>
       <Button
+        disabled={isEditable && (title.length === 0 || description.length === 0)}
         color="primary"
         onClick={async () => {
           if (isEditable) {

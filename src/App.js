@@ -20,6 +20,9 @@ const useStyles = makeStyles({
   loadingBox: {
     textAlign: "center",
   },
+  loadingText: {
+    marginTop: theme.spacing(1),
+  },
 });
 
 export default function App() {
@@ -52,7 +55,7 @@ export default function App() {
     return (
       <Box m={8} className={classes.loadingBox}>
         <CircularProgress />
-        <Typography style={{ marginTop: "1rem" }}>
+        <Typography className={classes.loadingText}>
           Booting chestboard...
         </Typography>
       </Box>

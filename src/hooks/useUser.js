@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import firebase from "firebase/app";
 import { useAuthState } from "react-firebase-hooks/auth";
 
-export default function useDocuments(users, usersLoading, usersError) {
+export default function useUser(users, usersLoading, usersError) {
   const [userState, userStateLoading, userStateError] = useAuthState(
     firebase.auth()
   );

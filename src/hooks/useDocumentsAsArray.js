@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import firebase from "firebase/app";
 import { useCollection } from "react-firebase-hooks/firestore";
 
-export default function useDocuments(collectionName) {
+export default function useDocumentsAsArray(collectionName) {
   const [collection, collectionLoading, collectionError] = useCollection(
     firebase.firestore().collection(collectionName)
   );
@@ -13,13 +13,7 @@ export default function useDocuments(collectionName) {
   useEffect(() => {
     if (!collectionLoading && collection) {
       setDocuments(
-        collection.docs.reduce(
-          (accumulator, reference) => ({
-            ...accumulator,
-            [reference.id]: reference.data(),
-          }),
-          {}
-        )
+        collection.docs.map((reference) => [reference.id, reference.data()])
       );
       setLoading(false);
     }

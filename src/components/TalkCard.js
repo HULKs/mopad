@@ -198,7 +198,7 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
         <Typography variant="h6">
           {talk.title}
         </Typography>
-        {talk.scheduledAt && talk.duration && talk.location &&
+        {"scheduledAt" in talk && "duration" in talk && "location" in talk &&
           <Grid container className={classes.cardSection} wrap="nowrap">
             <Grid item className={classes.cardSectionIcon}>
               <EventIcon color="inherit" />

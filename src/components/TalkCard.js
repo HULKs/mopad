@@ -57,6 +57,7 @@ const useStyles = makeStyles((theme) => ({
   },
   cardSectionPeopleLabel: {
     marginRight: theme.spacing(0.5),
+    whiteSpace: "nowrap",
   },
   cardActions: {
     justifyContent: "flex-end",

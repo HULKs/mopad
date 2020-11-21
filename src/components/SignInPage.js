@@ -89,7 +89,40 @@ export default function SignInPage({ teams }) {
   }
 
   const form = showLogin ? (
-    <>
+    <form onSubmit={async event => {
+      event.preventDefault();
+
+      setLoading(true);
+      try {
+        const userId = Array.from(`${team}:${name}`, (byte) =>
+          byte.charCodeAt(0).toString(16).padStart(2, "0")
+        ).join("");
+        await firebase
+          .auth()
+          .signInWithEmailAndPassword(`${userId}@mopad.app`, password);
+      } catch (error) {
+        switch (error.code) {
+          case "auth/invalid-email": {
+            setError("Failed to login: Your name is too long");
+            break;
+          }
+          case "auth/user-disabled": {
+            setError("Failed to login: You have been disabled");
+            break;
+          }
+          case "auth/user-not-found":
+          case "auth/wrong-password": {
+            setError("Failed to login: User, team or password wrong");
+            break;
+          }
+          default: {
+            setError(`Failed to login: ${error.name}, ${error.message}`);
+            break;
+          }
+        }
+        setLoading(false);
+      }
+    }}>
       <Grid item>
         <TextField
           label="Your Name"
@@ -134,45 +167,66 @@ export default function SignInPage({ teams }) {
           color="primary"
           fullWidth
           variant="contained"
-          onClick={async () => {
-            setLoading(true);
-            try {
-              const userId = Array.from(`${team}:${name}`, (byte) =>
-                byte.charCodeAt(0).toString(16).padStart(2, "0")
-              ).join("");
-              await firebase
-                .auth()
-                .signInWithEmailAndPassword(`${userId}@mopad.app`, password);
-            } catch (error) {
-              switch (error.code) {
-                case "auth/invalid-email": {
-                  setError("Failed to login: Your name is too long");
-                  break;
-                }
-                case "auth/user-disabled": {
-                  setError("Failed to login: You have been disabled");
-                  break;
-                }
-                case "auth/user-not-found":
-                case "auth/wrong-password": {
-                  setError("Failed to login: User, team or password wrong");
-                  break;
-                }
-                default: {
-                  setError(`Failed to login: ${error.name}, ${error.message}`);
-                  break;
-                }
-              }
-              setLoading(false);
-            }
-          }}
+          type="submit"
         >
           Login
         </Button>
       </Grid>
-    </>
+    </form>
   ) : (
-      <>
+      <form onSubmit={async event => {
+        event.preventDefault();
+
+        setLoading(true);
+        try {
+          const userId = Array.from(`${team}:${name}`, (byte) =>
+            byte.charCodeAt(0).toString(16).padStart(2, "0")
+          ).join("");
+          const {
+            user,
+          } = await firebase
+            .auth()
+            .createUserWithEmailAndPassword(
+              `${userId}@mopad.app`,
+              password
+            );
+          await firebase
+            .firestore()
+            .collection("users")
+            .doc(userId)
+            .set(
+              {
+                name: name,
+                team: firebase.firestore().doc(`teams/${team}`),
+                roles: [],
+                authenticationId: user.uid,
+              },
+              {
+                merge: true,
+              }
+            );
+        } catch (error) {
+          switch (error.code) {
+            case "auth/email-already-in-use": {
+              setError("Failed to register: You are already registered in this team");
+              break;
+            }
+            case "auth/invalid-email": {
+              setError("Failed to register: Your name is too long");
+              break;
+            }
+            case "auth/weak-password": {
+              setError("Failed to register: Password too weak");
+              break;
+            }
+            default: {
+              setError(`Failed to register: ${error.name}, ${error.message}`);
+              break;
+            }
+          }
+          setLoading(false);
+        }
+      }}>
         <Grid item>
           <TextField
             label="Your Name"
@@ -231,62 +285,12 @@ export default function SignInPage({ teams }) {
             color="primary"
             fullWidth
             variant="contained"
-            onClick={async () => {
-              setLoading(true);
-              try {
-                const userId = Array.from(`${team}:${name}`, (byte) =>
-                  byte.charCodeAt(0).toString(16).padStart(2, "0")
-                ).join("");
-                const {
-                  user,
-                } = await firebase
-                  .auth()
-                  .createUserWithEmailAndPassword(
-                    `${userId}@mopad.app`,
-                    password
-                  );
-                await firebase
-                  .firestore()
-                  .collection("users")
-                  .doc(userId)
-                  .set(
-                    {
-                      name: name,
-                      team: firebase.firestore().doc(`teams/${team}`),
-                      roles: [],
-                      authenticationId: user.uid,
-                    },
-                    {
-                      merge: true,
-                    }
-                  );
-              } catch (error) {
-                switch (error.code) {
-                  case "auth/email-already-in-use": {
-                    setError("Failed to register: You are already registered in this team");
-                    break;
-                  }
-                  case "auth/invalid-email": {
-                    setError("Failed to register: Your name is too long");
-                    break;
-                  }
-                  case "auth/weak-password": {
-                    setError("Failed to register: Password too weak");
-                    break;
-                  }
-                  default: {
-                    setError(`Failed to register: ${error.name}, ${error.message}`);
-                    break;
-                  }
-                }
-                setLoading(false);
-              }
-            }}
+            type="submit"
           >
             Register
         </Button>
         </Grid>
-      </>
+      </form>
     );
 
   return (

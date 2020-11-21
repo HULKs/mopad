@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import firebase from "firebase/app";
 import {
   Button,
@@ -6,15 +6,15 @@ import {
   Fab,
   Grid,
   IconButton,
-  // InputBase,
-  // Paper,
+  InputBase,
+  Paper,
   Tooltip,
   Typography,
   Snackbar,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import EventIcon from "@material-ui/icons/Event";
-// import SearchIcon from "@material-ui/icons/Search";
+import SearchIcon from "@material-ui/icons/Search";
 import { makeStyles } from "@material-ui/core/styles";
 
 import CreateTalkDialog from "./CreateTalkDialog";
@@ -26,9 +26,6 @@ const useStyles = makeStyles((theme) => ({
   titleContainer: {
     marginTop: theme.spacing(3.75),
     marginBottom: theme.spacing(2),
-  },
-  title: {
-    marginRight: theme.spacing(2),
   },
   cardContainer: {
     marginTop: theme.spacing(2),
@@ -46,6 +43,9 @@ const useStyles = makeStyles((theme) => ({
   legalContainer: {
     marginBottom: theme.spacing(2),
     textAlign: "center",
+  },
+  fullWidthGridItem: {
+    flexGrow: 1,
   },
 }));
 
@@ -91,12 +91,30 @@ export default function TalkList({ userId, user, users, talks, teams }) {
     />
   );
 
+  const [searchInputText, setSearchInputText] = useState("");
+  const [searchWords, setSearchWords] = useState([]);
+  const [filteredTalks, setFilteredTalks] = useState([]);
+
+  useEffect(() => {
+    setFilteredTalks(
+      searchWords.length !== 0
+        ? talks.filter(([, talk]) =>
+            searchWords.some(
+              (word) =>
+                talk.description.toLowerCase().includes(word.toLowerCase()) ||
+                talk.title.toLowerCase().includes(word.toLowerCase())
+            )
+          )
+        : talks
+    );
+  }, [talks, searchWords]);
+
   const [
     pastScheduledTalks,
     currentScheduledTalks,
     upcomingScheduledTalks,
     unscheduledTalks,
-  ] = usePartitionedTalks(talks);
+  ] = usePartitionedTalks(filteredTalks);
 
   const renderTalkSection = (title, talkList) => (
     <>
@@ -171,26 +189,10 @@ export default function TalkList({ userId, user, users, talks, teams }) {
         onClose={() => setShowEventCalendarDialog(false)}
       />
       <Container maxWidth="md" className={classes.titleContainer}>
-        <Grid container alignItems="center">
-          <Grid item className={classes.title}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item>
             <Typography variant="h3">MOPAD</Typography>
           </Grid>
-          {/* <Grid item>
-          <Paper>
-            <Grid container>
-              <Grid item>
-                <IconButton>
-                  <SearchIcon />
-                </IconButton>
-              </Grid>
-              <Grid item>
-                <InputBase
-                  placeholder="Search"
-                />
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid> */}
           <Grid item>
             <Tooltip title="Export talk calendar (iCal)">
               <IconButton
@@ -200,6 +202,28 @@ export default function TalkList({ userId, user, users, talks, teams }) {
                 <EventIcon />
               </IconButton>
             </Tooltip>
+          </Grid>
+          <Grid item className={classes.fullWidthGridItem}>
+            <Paper>
+              <Grid container>
+                <Grid item>
+                  <form
+                    onSubmit={(e) => {
+                      setSearchWords(searchInputText.split(" "));
+                      e.preventDefault();
+                    }}
+                  >
+                    <IconButton type="submit">
+                      <SearchIcon />
+                    </IconButton>
+                    <InputBase
+                      onChange={(e) => setSearchInputText(e.target.value)}
+                      placeholder="Search"
+                    />
+                  </form>
+                </Grid>
+              </Grid>
+            </Paper>
           </Grid>
           {/* <Grid item>
           <Tooltip title="RoHOW Website">

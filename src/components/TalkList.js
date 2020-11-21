@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(4),
   },
   floatingActionButton: {
+    zIndex: (theme.zIndex.appBar + theme.zIndex.drawer) / 2,
     position: "fixed",
     right: theme.spacing(4),
     bottom: theme.spacing(4),

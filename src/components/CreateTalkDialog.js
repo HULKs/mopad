@@ -93,7 +93,7 @@ export default function EditTalkDialog({
           disabled={title.length === 0 || description.length === 0}
           color="primary"
           onClick={async () => {
-            onCreateAsNoob(title, description);
+            onCreateAsNoob(title, description, duration);
           }}
         >
           Noob
@@ -102,7 +102,7 @@ export default function EditTalkDialog({
           disabled={title.length === 0 || description.length === 0}
           color="primary"
           onClick={async () => {
-            onCreateAsNerd(title, description);
+            onCreateAsNerd(title, description, duration);
           }}
         >
           Nerd

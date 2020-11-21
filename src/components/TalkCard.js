@@ -36,8 +36,12 @@ const useStyles = makeStyles(theme => ({
     marginTop: theme.spacing(-2),
     marginRight: theme.spacing(-2),
   },
+  cardTitle: {
+    overflowWrap: "break-word",
+  },
   cardSection: {
     marginTop: theme.spacing(1.75),
+    overflowWrap: "anywhere",
   },
   cardSectionIcon: {
     marginRight: theme.spacing(1.3),
@@ -195,7 +199,7 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
             <EditIcon />
           </IconButton>
         </Tooltip>}
-        <Typography variant="h6">
+        <Typography variant="h6" className={classes.cardTitle}>
           {talk.title}
         </Typography>
         {"scheduledAt" in talk && "duration" in talk && "location" in talk &&

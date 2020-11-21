@@ -17,9 +17,9 @@ function partitionTalks(
   setUnscheduled
 ) {
   setPast(
-    Object.entries(talks)
+    talks
       .filter(
-        ([talkId, talk]) =>
+        ([, talk]) =>
           "scheduledAt" in talk &&
           "duration" in talk &&
           "location" in talk &&
@@ -30,9 +30,9 @@ function partitionTalks(
   );
 
   setCurrent(
-    Object.entries(talks)
+    talks
       .filter(
-        ([talkId, talk]) =>
+        ([, talk]) =>
           "scheduledAt" in talk &&
           "duration" in talk &&
           "location" in talk &&
@@ -45,9 +45,9 @@ function partitionTalks(
   );
 
   setUpcoming(
-    Object.entries(talks)
+    talks
       .filter(
-        ([talkId, talk]) =>
+        ([, talk]) =>
           "scheduledAt" in talk &&
           "duration" in talk &&
           "location" in talk &&
@@ -58,9 +58,9 @@ function partitionTalks(
   );
 
   setUnscheduled(
-    Object.entries(talks)
+    talks
       .filter(
-        ([talkId, talk]) =>
+        ([, talk]) =>
           !("scheduledAt" in talk) ||
           !("duration" in talk) ||
           !("location" in talk)
@@ -78,7 +78,7 @@ export default function usePartitionedTalks(talks) {
   useEffect(() => {
     let timeouts = [];
 
-    for (const talk of Object.values(talks)) {
+    for (const [, talk] of talks) {
       if ("scheduledAt" in talk && "duration" in talk && "location" in talk) {
         if (
           talk.scheduledAt.toMillis() >=

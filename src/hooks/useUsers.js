@@ -1,5 +1,5 @@
-import useDocuments from "./useDocuments";
+import useDocumentsAsObject from "./useDocumentsAsObject";
 
 export default function useUsers() {
-  return useDocuments("users");
+  return useDocumentsAsObject("users");
 }

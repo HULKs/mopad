@@ -301,7 +301,7 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
               <Grid container wrap="nowrap">
                 <Grid item className={classes.cardSectionPeopleLabel}>
                   <Typography variant="body2" color="textSecondary">
-                    Nerds:
+                    Nerds ({talk.nerds.length}):
                   </Typography>
                 </Grid>
                 <Grid item>
@@ -313,7 +313,7 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
               <Grid container wrap="nowrap">
                 <Grid item className={classes.cardSectionPeopleLabel}>
                   <Typography variant="body2" color="textSecondary">
-                    Noobs:
+                    Noobs ({talk.noobs.length}):
                   </Typography>
                 </Grid>
                 <Grid item>

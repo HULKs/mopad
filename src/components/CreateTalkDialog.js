@@ -62,6 +62,7 @@ export default function EditTalkDialog({ open, onClose, onCreateAsNerd, onCreate
         Cancel
       </Button>
       <Button
+        disabled={title.length === 0 || description.length === 0}
         color="primary"
         onClick={async () => {
           onCreateAsNoob(title, description);
@@ -70,6 +71,7 @@ export default function EditTalkDialog({ open, onClose, onCreateAsNerd, onCreate
         Noob
       </Button>
       <Button
+        disabled={title.length === 0 || description.length === 0}
         color="primary"
         onClick={async () => {
           onCreateAsNerd(title, description);

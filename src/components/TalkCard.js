@@ -125,13 +125,15 @@ async function updateTitleAndDescription(
   setShowEditDialog,
   setEditError,
   title,
-  description
+  description,
+  duration
 ) {
   setShowEditDialog(false);
   try {
     await firebase.firestore().doc(`talks/${talkId}`).update({
       title: title,
       description: description,
+      duration: duration
     });
   } catch (error) {
     console.error(error);
@@ -156,9 +158,7 @@ async function updateScheduledAtAndDurationAndLocation(
         scheduledAt: scheduledAt
           ? firebase.firestore.Timestamp.fromDate(scheduledAt)
           : firebase.firestore.FieldValue.delete(),
-        duration: scheduledAt
-          ? duration
-          : firebase.firestore.FieldValue.delete(),
+        duration: duration,
         location: scheduledAt
           ? location
           : firebase.firestore.FieldValue.delete(),
@@ -209,13 +209,14 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
               isSchedulable={isSchedulable}
               open={showEditDialog}
               onClose={() => setShowEditDialog(false)}
-              onEditUpdate={async (title, description) =>
+              onEditUpdate={async (title, description, duration) =>
                 await updateTitleAndDescription(
                   talkId,
                   setShowEditDialog,
                   setEditError,
                   title,
-                  description
+                  description,
+                  duration
                 )
               }
               onScheduleUpdate={async (scheduledAt, duration, location) =>
@@ -254,7 +255,7 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
           <Typography variant="h6" className={classes.cardTitle}>
             {talk.title}
           </Typography>
-          {"scheduledAt" in talk && "duration" in talk && "location" in talk && (
+          {"scheduledAt" in talk && "location" in talk && (
             <Grid container className={classes.cardSection} wrap="nowrap">
               <Grid item className={classes.cardSectionIcon}>
                 <EventIcon color="inherit" />
@@ -268,8 +269,8 @@ export default function TalkCard({ talkId, talk, userId, user, users, teams }) {
                       {talk.scheduledAt.toDate()}
                     </Moment>
                   </Tooltip>
+                  {" "}for {Math.round(talk.duration / 60)} minutes
                 </Typography>
-                {/* {" "}for {Math.round(talk.duration / 60)} minutes */}
                 <Typography variant="body2" color="textSecondary">
                   {talk.location}
                 </Typography>

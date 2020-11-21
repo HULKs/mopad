@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Slider,
   TextField,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -16,6 +17,9 @@ const useStyles = makeStyles((theme) => ({
   },
   dialogText: {
     marginBottom: 0,
+  },
+  sectionTextTitle: {
+    marginTop: theme.spacing(2),
   },
 }));
 
@@ -29,11 +33,13 @@ export default function EditTalkDialog({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [duration, setDuration] = useState(3600);
 
   useEffect(() => {
     if (open) {
       setTitle("");
       setDescription("");
+      setDuration(3600);
     }
   }, [open]);
 
@@ -60,6 +66,25 @@ export default function EditTalkDialog({
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           multiline
+        />
+        <DialogContentText className={classes.sectionTextTitle}>
+          Select talk duration:
+        </DialogContentText>
+        <Slider
+          margin="normal"
+          value={duration}
+          onChange={(event, newDuration) => setDuration(newDuration)}
+          marks={[
+            { value: 30 * 60, label: "0:30" },
+            { value: 60 * 60, label: "1:00" },
+            { value: 60 * 60 + 30 * 60, label: "1:30" },
+            { value: 2 * 60 * 60, label: "2:00" },
+          ]}
+          step={5 * 60}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(value) => `${Math.round(value / 60)}`}
+          min={0}
+          max={2 * 60 * 60}
         />
       </DialogContent>
       <DialogActions>

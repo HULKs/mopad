@@ -34,9 +34,9 @@ function updateStateFromTalk(
 ) {
   setTitle(talk.title);
   setDescription(talk.description);
-  setScheduledAt(talk.scheduledAt ? talk.scheduledAt.toDate() : null);
-  setDuration(talk.duration ? talk.duration : 600);
-  setLocation(talk.location ? talk.location : "");
+  setScheduledAt("scheduledAt" in talk ? talk.scheduledAt.toDate() : null);
+  setDuration(talk.duration);
+  setLocation("location" in talk ? talk.location : "");
 }
 
 export default function EditTalkDialog({
@@ -56,7 +56,7 @@ export default function EditTalkDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledAt, setScheduledAt] = useState(null);
-  const [duration, setDuration] = useState(600);
+  const [duration, setDuration] = useState(3600);
   const [location, setLocation] = useState("");
 
   useEffect(() => {
@@ -132,42 +132,44 @@ export default function EditTalkDialog({
               margin="normal"
             />
             {scheduledAt && (
-              <>
-                <DialogContentText className={classes.sectionTextTitle}>
-                  Select talk duration:
-                </DialogContentText>
-                <Slider
-                  margin="normal"
-                  value={duration}
-                  onChange={(event, newDuration) => {
-                    setDirty(true);
-                    setDuration(newDuration);
-                  }}
-                  marks={[
-                    { value: 30 * 60, label: "0:30" },
-                    { value: 60 * 60, label: "1:00" },
-                    { value: 60 * 60 + 30 * 60, label: "1:30" },
-                    { value: 2 * 60 * 60, label: "2:00" },
-                  ]}
-                  step={5 * 60}
-                  valueLabelDisplay="auto"
-                  valueLabelFormat={(value) => `${Math.round(value / 60)}`}
-                  min={0}
-                  max={2 * 60 * 60}
-                />
-                <TextField
-                  label="Talk Location"
-                  variant="outlined"
-                  margin="normal"
-                  fullWidth
-                  value={location}
-                  onChange={(event) => {
-                    setDirty(true);
-                    setLocation(event.target.value);
-                  }}
-                />
-              </>
+              <TextField
+                label="Talk Location"
+                variant="outlined"
+                margin="normal"
+                fullWidth
+                value={location}
+                onChange={(event) => {
+                  setDirty(true);
+                  setLocation(event.target.value);
+                }}
+              />
             )}
+          </>
+        )}
+        {(isEditable || isSchedulable) && (
+          <>
+            <DialogContentText className={classes.sectionTextTitle}>
+              Select talk duration:
+            </DialogContentText>
+            <Slider
+              margin="normal"
+              value={duration}
+              onChange={(event, newDuration) => {
+                setDirty(true);
+                setDuration(newDuration);
+              }}
+              marks={[
+                { value: 30 * 60, label: "0:30" },
+                { value: 60 * 60, label: "1:00" },
+                { value: 60 * 60 + 30 * 60, label: "1:30" },
+                { value: 2 * 60 * 60, label: "2:00" },
+              ]}
+              step={5 * 60}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${Math.round(value / 60)}`}
+              min={0}
+              max={2 * 60 * 60}
+            />
           </>
         )}
       </DialogContent>
@@ -185,7 +187,7 @@ export default function EditTalkDialog({
           color="primary"
           onClick={async () => {
             if (isEditable) {
-              await onEditUpdate(title, description);
+              await onEditUpdate(title, description, duration);
             }
             if (isSchedulable) {
               await onScheduleUpdate(scheduledAt, duration, location);

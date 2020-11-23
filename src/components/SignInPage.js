@@ -145,7 +145,7 @@ export default function SignInPage({ teams }) {
             onChange={(event) => setTeam(event.target.value)}
             label="Your Team"
           >
-            {Object.entries(teams).map(([teamId, team]) => (
+            {Object.entries(teams).sort(([teamIdA, teamA], [teamIdB, teamB]) => teamA.name - teamB.name).map(([teamId, team]) => (
               <MenuItem key={teamId} value={teamId}>
                 {team.name}
               </MenuItem>
@@ -250,7 +250,7 @@ export default function SignInPage({ teams }) {
               onChange={(event) => setTeam(event.target.value)}
               label="Your Team"
             >
-              {Object.entries(teams).map(([teamId, team]) => (
+              {Object.entries(teams).sort(([teamIdA, teamA], [teamIdB, teamB]) => teamA.name - teamB.name).map(([teamId, team]) => (
                 <MenuItem key={teamId} value={teamId}>
                   {team.name}
                 </MenuItem>

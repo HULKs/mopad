@@ -8,45 +8,6 @@ admin.initializeApp({
   databaseURL: "https://mopad-hulks.firebaseio.com",
 });
 
-async function initDocuments() {
-  const teams = [
-    "B-Human",
-    "Bembelbots",
-    "Berlin United",
-    "BitBots",
-    "BlueWave",
-    "DinoBytes",
-    "DutchNaoTeam",
-    "HS-KL",
-    "HULKs",
-    "MiPal",
-    "NaoDevils",
-    "NomadZ",
-    "Rinobot",
-    "RoboEirann",
-    "rUNSWift",
-    "SPQR",
-    "UnBeatables",
-    "UT Austin Villa",
-  ];
-  for (const team of teams) {
-    const teamId = Array.from(team, byte => byte.charCodeAt(0).toString(16).padStart(2, "0")).join("");
-    console.log(`Setting document teams/${teamId}...`);
-    await admin.firestore().doc(`teams/${teamId}`).set({ name: team });
-  }
-  await admin.firestore().collection("talks").add({
-    createdAt: admin.firestore.Timestamp.now(),
-    creator: admin.firestore().doc("users/firestore-admin"),
-    title: "vRoHOW 2020 Kick-Off",
-    description: "Open ceremony",
-    nerds: [],
-    noobs: [],
-    scheduledAt: admin.firestore.Timestamp.fromDate(new Date("2020-12-04 19:00:00 +1")),
-    duration: 1800,
-    location: "Discord",
-  });
-}
-
 function valueToJSON(value) {
   if (value instanceof admin.firestore.Timestamp) {
     return {
@@ -195,7 +156,6 @@ async function wipeUsers() {
 }
 
 if (process.argv.length < 3) {
-  console.error(`Usage: ${process.argv[0]} ${process.argv[1]} init-documents`);
   console.error(`Usage: ${process.argv[0]} ${process.argv[1]} backup-documents DUMP_JSON_FILE`);
   console.error(`Usage: ${process.argv[0]} ${process.argv[1]} restore-documents DUMP_JSON_FILE`);
   console.error(`Usage: ${process.argv[0]} ${process.argv[1]} wipe-documents`);
@@ -206,10 +166,6 @@ if (process.argv.length < 3) {
 }
 
 switch (process.argv[2]) {
-  case "init-documents": {
-    initDocuments();
-    break;
-  }
   case "backup-documents": {
     backupDocuments(process.argv[3]);
     break;

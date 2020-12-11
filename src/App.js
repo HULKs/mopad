@@ -1,6 +1,5 @@
 import React from "react";
 
-import useTalks from "./hooks/useTalks";
 import useTeams from "./hooks/useTeams";
 import useUser from "./hooks/useUser";
 import useUsers from "./hooks/useUsers";
@@ -34,9 +33,8 @@ export default function App() {
     usersError
   );
   const [teams, teamsLoading, teamsError] = useTeams();
-  const [talks, talksLoading, talksError] = useTalks();
 
-  if (usersError || userError || teamsError || talksError) {
+  if (usersError || userError || teamsError) {
     return (
       <Container maxWidth="lg">
         <Typography variant="h5">Users Error</Typography>
@@ -45,13 +43,11 @@ export default function App() {
         <Typography color="error">{JSON.stringify(userError)}</Typography>
         <Typography variant="h5">Teams Error</Typography>
         <Typography color="error">{JSON.stringify(teamsError)}</Typography>
-        <Typography variant="h5">Talks Error</Typography>
-        <Typography color="error">{JSON.stringify(talksError)}</Typography>
       </Container>
     );
   }
 
-  if (usersLoading || userLoading || teamsLoading || talksLoading) {
+  if (usersLoading || userLoading || teamsLoading) {
     return (
       <Box m={8} className={classes.loadingBox}>
         <CircularProgress />
@@ -71,7 +67,6 @@ export default function App() {
       userId={userId}
       user={user}
       users={users}
-      talks={talks}
       teams={teams}
     />
   );

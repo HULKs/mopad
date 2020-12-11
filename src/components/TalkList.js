@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import firebase from "firebase/app";
 import {
+  Box,
   Button,
+  CircularProgress,
   Container,
   Fab,
   Grid,
@@ -23,6 +25,7 @@ import TalkCard from "./TalkCard";
 import usePartitionedTalks from "../hooks/usePartitionedTalks";
 
 import waiting from "./waiting.gif";
+import useTalks from "../hooks/useTalks";
 
 const useStyles = makeStyles((theme) => ({
   titleContainer: {
@@ -63,6 +66,12 @@ const useStyles = makeStyles((theme) => ({
   fullWidthGridItem: {
     flexGrow: 1,
   },
+  loadingBox: {
+    textAlign: "center",
+  },
+  loadingText: {
+    marginTop: theme.spacing(1),
+  },
 }));
 
 async function createTalk(
@@ -94,8 +103,9 @@ async function createTalk(
   }
 }
 
-export default function TalkList({ userId, user, users, talks, teams }) {
+export default function TalkList({ userId, user, users, teams }) {
   const classes = useStyles();
+  const [talks, talksLoading, talksError] = useTalks();
 
   const renderTalkCardFromTalk = ([talkId, talk]) => (
     <TalkCard
@@ -114,17 +124,19 @@ export default function TalkList({ userId, user, users, talks, teams }) {
   const [filteredTalks, setFilteredTalks] = useState([]);
 
   useEffect(() => {
-    setFilteredTalks(
-      searchWords.length !== 0
-        ? talks.filter(([, talk]) =>
-          searchWords.some(
-            (word) =>
-              talk.description.toLowerCase().includes(word.toLowerCase()) ||
-              talk.title.toLowerCase().includes(word.toLowerCase())
+    if (talks !== undefined) {
+      setFilteredTalks(
+        searchWords.length !== 0
+          ? talks.filter(([, talk]) =>
+            searchWords.some(
+              (word) =>
+                talk.description.toLowerCase().includes(word.toLowerCase()) ||
+                talk.title.toLowerCase().includes(word.toLowerCase())
+            )
           )
-        )
-        : talks
-    );
+          : talks
+      );
+    }
   }, [talks, searchWords]);
 
   const [
@@ -175,6 +187,26 @@ export default function TalkList({ userId, user, users, talks, teams }) {
   const [createError, setCreateError] = useState();
 
   const [showEventCalendarDialog, setShowEventCalendarDialog] = useState(false);
+
+  if (talksError) {
+    return (
+      <Container maxWidth="lg">
+        <Typography variant="h5">Talks Error</Typography>
+        <Typography color="error">{JSON.stringify(talksError)}</Typography>
+      </Container>
+    );
+  }
+
+  if (talksLoading) {
+    return (
+      <Box m={8} className={classes.loadingBox}>
+        <CircularProgress />
+        <Typography className={classes.loadingText}>
+          Warming joints...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <>

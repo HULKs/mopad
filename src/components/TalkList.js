@@ -10,17 +10,14 @@ import {
   IconButton,
   InputBase,
   Paper,
-  Tooltip,
   Typography,
   Snackbar,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
-import EventIcon from "@material-ui/icons/Event";
 import SearchIcon from "@material-ui/icons/Search";
 import { makeStyles } from "@material-ui/core/styles";
 
 import CreateTalkDialog from "./CreateTalkDialog";
-import ExportTalkCalendarDialog from "./ExportTalkCalendarDialog";
 import TalkCard from "./TalkCard";
 import usePartitionedTalks from "../hooks/usePartitionedTalks";
 
@@ -186,8 +183,6 @@ export default function TalkList({ userId, user, users, teams }) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createError, setCreateError] = useState();
 
-  const [showEventCalendarDialog, setShowEventCalendarDialog] = useState(false);
-
   if (talksError) {
     return (
       <Container maxWidth="lg">
@@ -252,25 +247,10 @@ export default function TalkList({ userId, user, users, teams }) {
       >
         <AddIcon />
       </Fab>
-      <ExportTalkCalendarDialog
-        userId={userId}
-        open={showEventCalendarDialog}
-        onClose={() => setShowEventCalendarDialog(false)}
-      />
       <Container maxWidth="md" className={classes.titleContainer}>
         <Grid container spacing={2} alignItems="center">
           <Grid item>
             <Typography variant="h3">MOPAD</Typography>
-          </Grid>
-          <Grid item>
-            <Tooltip title="Export talk calendar (iCal)">
-              <IconButton
-                color="inherit"
-                onClick={() => setShowEventCalendarDialog(true)}
-              >
-                <EventIcon />
-              </IconButton>
-            </Tooltip>
           </Grid>
           <Grid item className={classes.fullWidthGridItem}>
             <Paper>

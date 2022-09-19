@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
+    io,
     net::SocketAddr,
     path::Path,
     str::FromStr,
@@ -14,9 +15,10 @@ use axum::{
         ws::{Message, WebSocket},
         WebSocketUpgrade,
     },
+    http::StatusCode,
     response::IntoResponse,
-    routing::get,
-    Error, Router, Server,
+    routing::{get, get_service},
+    Router, Server,
 };
 use eyre::{eyre, WrapErr};
 use rand_core::OsRng;
@@ -28,6 +30,7 @@ use tokio::{
     select,
     sync::{broadcast, mpsc, Mutex},
 };
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -48,16 +51,18 @@ async fn main() -> eyre::Result<()> {
     ));
 
     let (updates_sender, _updates_receiver) = broadcast::channel(1337);
-    let application = Router::new().route(
-        "/api",
-        get({
-            let teams = teams.clone();
-            let users = users.clone();
-            let talks = talks.clone();
-            let updates_sender = updates_sender.clone();
-            move |upgrade| handle_websocket(upgrade, teams, users, talks, updates_sender)
-        }),
-    );
+    let application = Router::new()
+        .route(
+            "/api",
+            get({
+                let teams = teams.clone();
+                let users = users.clone();
+                let talks = talks.clone();
+                let updates_sender = updates_sender.clone();
+                move |upgrade| handle_websocket(upgrade, teams, users, talks, updates_sender)
+            }),
+        )
+        .fallback(get_service(ServeDir::new(".")).handle_error(handle_error));
 
     Server::bind(&SocketAddr::from_str("0.0.0.0:1337").unwrap())
         .serve(application.into_make_service())
@@ -109,6 +114,11 @@ where
     file.write_all(contents.as_bytes())
         .await
         .wrap_err_with(|| format!("failed to write to {file_path:?}"))
+}
+
+async fn handle_error(error: io::Error) -> impl IntoResponse {
+    eprintln!("Error in ServeDir: {error:?}");
+    (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
 }
 
 async fn handle_websocket(
@@ -185,7 +195,7 @@ async fn connection(
 }
 
 async fn handle_message(
-    command_message: Result<Message, Error>,
+    command_message: Result<Message, axum::Error>,
     teams: &Arc<BTreeSet<String>>,
     users: &Arc<Mutex<BTreeMap<usize, User>>>,
     talks: &Arc<Mutex<BTreeMap<usize, Talk>>>,

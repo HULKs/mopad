@@ -1,28 +1,32 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
+    net::SocketAddr,
     path::Path,
+    str::FromStr,
     sync::Arc,
     time::{Duration, SystemTime},
 };
 
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use eyre::{ContextCompat, WrapErr};
-use futures_util::{SinkExt, StreamExt};
+use axum::{
+    extract::{
+        ws::{Message, WebSocket},
+        WebSocketUpgrade,
+    },
+    response::IntoResponse,
+    routing::get,
+    Error, Router, Server,
+};
+use eyre::{eyre, WrapErr};
 use rand_core::OsRng;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{from_str, to_string};
 use tokio::{
     fs::{read_to_string, File},
     io::AsyncWriteExt,
-    net::{TcpListener, TcpStream},
-    select, spawn,
+    select,
     sync::{broadcast, mpsc, Mutex},
-};
-use tokio_tungstenite::{
-    accept_async,
-    tungstenite::{Message, Result},
-    WebSocketStream,
 };
 
 #[tokio::main]
@@ -43,22 +47,22 @@ async fn main() -> eyre::Result<()> {
             .wrap_err("failed to read talks")?,
     ));
 
-    let listener = TcpListener::bind("0.0.0.0:1337")
-        .await
-        .wrap_err("failed to bind")?;
-
     let (updates_sender, _updates_receiver) = broadcast::channel(1337);
-    loop {
-        let (stream, _) = listener.accept().await.wrap_err("failed to accept")?;
+    let application = Router::new().route(
+        "/api",
+        get({
+            let teams = teams.clone();
+            let users = users.clone();
+            let talks = talks.clone();
+            let updates_sender = updates_sender.clone();
+            move |upgrade| handle_websocket(upgrade, teams, users, talks, updates_sender)
+        }),
+    );
 
-        spawn(connection(
-            stream,
-            teams.clone(),
-            users.clone(),
-            talks.clone(),
-            updates_sender.clone(),
-        ));
-    }
+    Server::bind(&SocketAddr::from_str("0.0.0.0:1337").unwrap())
+        .serve(application.into_make_service())
+        .await
+        .wrap_err("failed to server")
 }
 
 async fn read_users<P>(file_path: P) -> eyre::Result<BTreeMap<usize, User>>
@@ -107,18 +111,39 @@ where
         .wrap_err_with(|| format!("failed to write to {file_path:?}"))
 }
 
+async fn handle_websocket(
+    upgrade: WebSocketUpgrade,
+    teams: Arc<BTreeSet<String>>,
+    users: Arc<Mutex<BTreeMap<usize, User>>>,
+    talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
+    updates_sender: broadcast::Sender<Update>,
+) -> impl IntoResponse {
+    upgrade.on_upgrade(move |socket| {
+        handle_upgraded_websocket(socket, teams, users, talks, updates_sender)
+    })
+}
+
+async fn handle_upgraded_websocket(
+    socket: WebSocket,
+    teams: Arc<BTreeSet<String>>,
+    users: Arc<Mutex<BTreeMap<usize, User>>>,
+    talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
+    updates_sender: broadcast::Sender<Update>,
+) {
+    match connection(socket, teams, users, talks, updates_sender).await {
+        Ok(_) => {}
+        Err(error) => eprintln!("Error in handle_upgraded_websocket():\n{error:?}"),
+    }
+}
+
 async fn connection(
-    stream: TcpStream,
+    mut socket: WebSocket,
     teams: Arc<BTreeSet<String>>,
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: broadcast::Sender<Update>,
 ) -> eyre::Result<()> {
-    let mut websocket_stream = accept_async(stream)
-        .await
-        .wrap_err("failed to shake hands")?;
-
-    websocket_stream
+    socket
         .send(Message::Text(
             to_string(&Update::Teams {
                 teams: (*teams).clone(),
@@ -133,7 +158,7 @@ async fn connection(
     let mut current_user = None;
     loop {
         select! {
-            command_message = websocket_stream.next() => {
+            command_message = socket.recv() => {
                 if let None = command_message {
                     break;
                 }
@@ -143,13 +168,13 @@ async fn connection(
             }
             update = updates_receiver.recv() => {
                 let update = update.wrap_err("failed to receive update")?;
-                handle_update(update, &mut websocket_stream)
+                handle_update(update, &mut socket)
                     .await
                     .wrap_err("failed to handle update")?;
             }
             response = responses_receiver.recv() => {
-                let response = response.wrap_err("failed to receive response")?;
-                handle_response(response, &mut websocket_stream)
+                let response = response.ok_or_else(|| eyre!("failed to receive response"))?;
+                handle_response(response, &mut socket)
                     .await
                     .wrap_err("failed to handle response")?;
             }
@@ -160,7 +185,7 @@ async fn connection(
 }
 
 async fn handle_message(
-    command_message: Result<Message>,
+    command_message: Result<Message, Error>,
     teams: &Arc<BTreeSet<String>>,
     users: &Arc<Mutex<BTreeMap<usize, User>>>,
     talks: &Arc<Mutex<BTreeMap<usize, Talk>>>,
@@ -433,10 +458,7 @@ async fn handle_message(
     Ok(())
 }
 
-async fn handle_update(
-    update: Update,
-    stream: &mut WebSocketStream<TcpStream>,
-) -> eyre::Result<()> {
+async fn handle_update(update: Update, stream: &mut WebSocket) -> eyre::Result<()> {
     stream
         .send(Message::Text(
             to_string(&update).wrap_err("failed to serialize update")?,
@@ -445,10 +467,7 @@ async fn handle_update(
         .wrap_err("failed to send update")
 }
 
-async fn handle_response(
-    response: Response,
-    stream: &mut WebSocketStream<TcpStream>,
-) -> eyre::Result<()> {
+async fn handle_response(response: Response, stream: &mut WebSocket) -> eyre::Result<()> {
     stream
         .send(Message::Text(
             to_string(&response).wrap_err("failed to serialize response")?,

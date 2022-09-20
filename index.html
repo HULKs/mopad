@@ -15,9 +15,225 @@
     <title>
       MOPAD - Moderated Organization PAD (powerful, agile, distributed)
     </title>
+    <style type="text/css">
+      .hidden {
+        display: none;
+      }
+    </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    MOPAD
+    <div id="login">
+      <div class="centered-box">
+        <h1>MOPAD</h1>
+        <h2>Moderated Organization PAD (powerful, agile, distributed)</h2>
+        <h3>Login</h3>
+        <input id="login-name" type="text" placeholder="Your Name" />
+        <select id="login-team" placeholder="Your Team">
+          <option>Loading...</option>
+        </select>
+        <input id="login-password" type="password" placeholder="Password" />
+        <button id="login-button">Login</button>
+        <div class="no-account">
+          Don't have an account? <a href="#" id="login-to-register">Register</a>
+        </div>
+        <div class="footer">
+          Imprint/Impressum - Privacy Policy/Datenschutzerklärung
+        </div>
+      </div>
+    </div>
+    <div id="register" class="hidden">
+      <div class="centered-box">
+        <h1>MOPAD</h1>
+        <h2>Moderated Organization PAD (powerful, agile, distributed)</h2>
+        <h3>Register</h3>
+        <input id="register-name" type="text" placeholder="Your Name" />
+        <div class="hint">Unique in your team, visible to everyone</div>
+        <select id="register-team" placeholder="Your Team">
+          <option>Loading...</option>
+        </select>
+        <div class="hint">Visible to everyone</div>
+        <input id="register-password" type="password" placeholder="Password" />
+        <input id="register-i-m-not-a-nao" type="checkbox" /><label
+          for="register-i-m-not-a-nao"
+          >I'm not a NAO</label
+        >
+        <button id="register-button">Register</button>
+        <div class="no-account">
+          Already have an account? <a href="#" id="register-to-login">Login</a>
+        </div>
+        <div class="footer">
+          Imprint/Impressum - Privacy Policy/Datenschutzerklärung
+        </div>
+      </div>
+    </div>
+    <div id="talks" class="hidden">Talks</div>
+    <script>
+      let currentUserName = null;
+      let currentUserTeam = null;
+      let teams = [];
+      let users = {};
+      let talks = {};
+
+      let elements = {
+        login: document.getElementById("login"),
+        loginName: document.getElementById("login-name"),
+        loginTeam: document.getElementById("login-team"),
+        loginPassword: document.getElementById("login-password"),
+        loginButton: document.getElementById("login-button"),
+        loginToRegister: document.getElementById("login-to-register"),
+        register: document.getElementById("register"),
+        register: document.getElementById("register"),
+        registerName: document.getElementById("register-name"),
+        registerTeam: document.getElementById("register-team"),
+        registerPassword: document.getElementById("register-password"),
+        registerIMNotANao: document.getElementById("register-i-m-not-a-nao"),
+        registerButton: document.getElementById("register-button"),
+        registerToLogin: document.getElementById("register-to-login"),
+        talks: document.getElementById("talks"),
+      };
+
+      let webSocket = new WebSocket("ws://127.0.0.1:1337/api");
+      webSocket.onopen = () => {
+        console.log("open");
+      };
+      webSocket.onmessage = (message) => {
+        let parsedMessage = JSON.parse(message.data);
+        console.log("parsedMessage", parsedMessage);
+        if (parsedMessage["Teams"] !== undefined) {
+          teams = parsedMessage["Teams"]["teams"];
+          updateTeams();
+        } else if (parsedMessage["Users"] !== undefined) {
+          users = parsedMessage["Users"]["users"];
+        } else if (parsedMessage === "RegisterSuccess") {
+          currentUserName = elements.registerName.value;
+          currentUserTeam = elements.registerTeam.value;
+          show("talks");
+          elements.registerName.disabled = false;
+          elements.registerTeam.disabled = false;
+          elements.registerPassword.disabled = false;
+          elements.registerButton.disabled = false;
+          elements.loginButton.innerText = "Register";
+        } else if (parsedMessage["RegisterError"] !== undefined) {
+          alert(`Chestboard reported that we cannot register you (${parsedMessage["RegisterError"]["reason"]})`);
+          elements.registerName.disabled = false;
+          elements.registerTeam.disabled = false;
+          elements.registerPassword.disabled = false;
+          elements.registerButton.disabled = false;
+          elements.loginButton.innerText = "Register";
+        } else if (parsedMessage["LoginSuccess"] !== undefined) {
+          currentUserName = elements.loginName.value;
+          currentUserTeam = elements.loginTeam.value;
+          users = parsedMessage["LoginSuccess"]["users"];
+          show("talks");
+          elements.loginName.disabled = false;
+          elements.loginTeam.disabled = false;
+          elements.loginPassword.disabled = false;
+          elements.loginButton.disabled = false;
+          elements.loginButton.innerText = "Login";
+        } else if (parsedMessage["LoginError"] !== undefined) {
+          alert(`Chestboard reported that we cannot log you in (${parsedMessage["LoginError"]["reason"]})`);
+          elements.loginName.disabled = false;
+          elements.loginTeam.disabled = false;
+          elements.loginPassword.disabled = false;
+          elements.loginButton.disabled = false;
+          elements.loginButton.innerText = "Login";
+        }
+      };
+      webSocket.onclose = () => {
+        show("login");
+      };
+
+      elements.loginToRegister.onclick = (event) => {
+        event.preventDefault();
+        show("register");
+      };
+      elements.registerToLogin.onclick = (event) => {
+        event.preventDefault();
+        show("login");
+      };
+
+      elements.loginButton.onclick = () => {
+        elements.loginName.disabled = true;
+        elements.loginTeam.disabled = true;
+        elements.loginPassword.disabled = true;
+        elements.loginButton.disabled = true;
+        elements.loginButton.innerText = "Contacting LoLA...";
+        let name = elements.loginName.value;
+        let team = elements.loginTeam.value;
+        let password = elements.loginPassword.value;
+        webSocket.send(JSON.stringify({
+          Login: {
+            name,
+            team,
+            password,
+          },
+        }));
+      };
+      elements.registerButton.onclick = () => {
+        if (!elements.registerIMNotANao.checked) {
+          alert("NAOs are not allowed in MOPAD");
+          return;
+        }
+        elements.registerName.disabled = true;
+        elements.registerTeam.disabled = true;
+        elements.registerPassword.disabled = true;
+        elements.registerButton.disabled = true;
+        elements.registerButton.innerText = "Contacting LoLA...";
+        let name = elements.registerName.value;
+        let team = elements.registerTeam.value;
+        let password = elements.registerPassword.value;
+        webSocket.send(JSON.stringify({
+          Register: {
+            name,
+            team,
+            password,
+          },
+        }));
+      };
+
+      function show(view) {
+        switch (view) {
+          case "login": {
+            elements.login.classList.remove("hidden");
+            elements.register.classList.add("hidden");
+            elements.talks.classList.add("hidden");
+            break;
+          }
+          case "register": {
+            elements.login.classList.add("hidden");
+            elements.register.classList.remove("hidden");
+            elements.talks.classList.add("hidden");
+            break;
+          }
+          case "talks": {
+            elements.login.classList.add("hidden");
+            elements.register.classList.add("hidden");
+            elements.talks.classList.remove("hidden");
+            break;
+          }
+        }
+      }
+      function updateTeams() {
+        while (elements.loginTeam.firstChild) {
+          elements.loginTeam.removeChild(elements.loginTeam.firstChild);
+        }
+        while (elements.registerTeam.firstChild) {
+          elements.registerTeam.removeChild(elements.registerTeam.firstChild);
+        }
+        for (let team of teams) {
+          let loginOptionElement = elements.loginTeam.appendChild(
+            document.createElement("option")
+          );
+          let registerOptionElement = elements.registerTeam.appendChild(
+            document.createElement("option")
+          );
+          loginOptionElement.innerText = team;
+          registerOptionElement.innerText = team;
+        }
+      }
+      function updateUsers() {
+        usersElement.innerText = JSON.stringify(users);
+      }
+    </script>
   </body>
 </html>

@@ -200,7 +200,7 @@ async fn handle_message(
     users: &Arc<Mutex<BTreeMap<usize, User>>>,
     talks: &Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: &broadcast::Sender<Update>,
-    responses_sender: &mpsc::Sender<Response>,
+    responses_sender: &mpsc::Sender<Update>,
     current_user: &mut Option<UserWithoutHash>,
 ) -> eyre::Result<()> {
     let command_message = command_message.wrap_err("failed to receive command")?;
@@ -218,7 +218,7 @@ async fn handle_message(
                 } => {
                     if !teams.contains(&team) {
                         let _ = responses_sender
-                            .send(Response::RegisterError {
+                            .send(Update::RegisterError {
                                 reason: "unknown team".to_string(),
                             })
                             .await;
@@ -232,7 +232,7 @@ async fn handle_message(
                         .any(|user| user.name == name && user.team == team)
                     {
                         let _ = responses_sender
-                            .send(Response::RegisterError {
+                            .send(Update::RegisterError {
                                 reason: "already registered".to_string(),
                             })
                             .await;
@@ -253,11 +253,13 @@ async fn handle_message(
                             .map(|(user_id, user)| (*user_id, user.into()))
                             .collect(),
                     });
-                    let _ = responses_sender
-                        .send(Response::RegisterSuccess {
-                            talks: talks.lock().await.clone(),
-                        })
-                        .await;
+                    let _ = responses_sender.send(Update::RegisterSuccess).await;
+                    let talks = talks.lock().await;
+                    for talk in talks.values() {
+                        let _ = responses_sender
+                            .send(Update::AddTalk { talk: talk.clone() })
+                            .await;
+                    }
                     *current_user = Some((&users[&next_user_id]).into());
                 }
                 Command::Login {
@@ -273,25 +275,30 @@ async fn handle_message(
                     {
                         if user.verify(password) {
                             let _ = responses_sender
-                                .send(Response::LoginSuccess {
+                                .send(Update::LoginSuccess {
                                     users: users
                                         .iter()
                                         .map(|(user_id, user)| (*user_id, user.into()))
                                         .collect(),
-                                    talks: talks.lock().await.clone(),
                                 })
                                 .await;
+                            let talks = talks.lock().await;
+                            for talk in talks.values() {
+                                let _ = responses_sender
+                                    .send(Update::AddTalk { talk: talk.clone() })
+                                    .await;
+                            }
                             *current_user = Some(user.into());
                         } else {
                             let _ = responses_sender
-                                .send(Response::LoginError {
+                                .send(Update::LoginError {
                                     reason: "wrong password".to_string(),
                                 })
                                 .await;
                         }
                     } else {
                         let _ = responses_sender
-                            .send(Response::LoginError {
+                            .send(Update::LoginError {
                                 reason: "unknown user".to_string(),
                             })
                             .await;
@@ -302,6 +309,10 @@ async fn handle_message(
                     description,
                     duration,
                 } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let next_talk_id = talks.keys().copied().max().unwrap_or_default() + 1;
@@ -324,6 +335,10 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::AddTalk { talk });
                 }
                 Command::RemoveTalk { talk_id } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     talks.remove(&talk_id);
@@ -335,6 +350,10 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::RemoveTalk { talk_id });
                 }
                 Command::UpdateTitle { talk_id, title } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -354,6 +373,10 @@ async fn handle_message(
                     talk_id,
                     description,
                 } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -373,6 +396,10 @@ async fn handle_message(
                     });
                 }
                 Command::UpdateDuration { talk_id, duration } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -389,6 +416,10 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::UpdateDuration { talk_id, duration });
                 }
                 Command::AddNoob { talk_id, user_id } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -407,6 +438,10 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::AddNoob { talk_id, user_id });
                 }
                 Command::RemoveNoob { talk_id, user_id } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -425,6 +460,10 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::RemoveNoob { talk_id, user_id });
                 }
                 Command::AddNerd { talk_id, user_id } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -443,6 +482,10 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::AddNerd { talk_id, user_id });
                 }
                 Command::RemoveNerd { talk_id, user_id } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -477,7 +520,7 @@ async fn handle_update(update: Update, stream: &mut WebSocket) -> eyre::Result<(
         .wrap_err("failed to send update")
 }
 
-async fn handle_response(response: Response, stream: &mut WebSocket) -> eyre::Result<()> {
+async fn handle_response(response: Update, stream: &mut WebSocket) -> eyre::Result<()> {
     stream
         .send(Message::Text(
             to_string(&response).wrap_err("failed to serialize response")?,
@@ -544,6 +587,16 @@ enum Update {
     Users {
         users: BTreeMap<usize, UserWithoutHash>,
     },
+    RegisterSuccess,
+    RegisterError {
+        reason: String,
+    },
+    LoginSuccess {
+        users: BTreeMap<usize, UserWithoutHash>,
+    },
+    LoginError {
+        reason: String,
+    },
     AddTalk {
         talk: Talk,
     },
@@ -577,23 +630,6 @@ enum Update {
     RemoveNerd {
         talk_id: usize,
         user_id: usize,
-    },
-}
-
-#[derive(Clone, Debug, Serialize)]
-enum Response {
-    RegisterSuccess {
-        talks: BTreeMap<usize, Talk>,
-    },
-    RegisterError {
-        reason: String,
-    },
-    LoginSuccess {
-        users: BTreeMap<usize, UserWithoutHash>,
-        talks: BTreeMap<usize, Talk>,
-    },
-    LoginError {
-        reason: String,
     },
 }
 

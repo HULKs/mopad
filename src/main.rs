@@ -176,6 +176,7 @@ async fn connection(
                     .await
                     .wrap_err("failed to handle command message")?;
             }
+            // TODO: also not logged in connections receive updates
             update = updates_receiver.recv() => {
                 let update = update.wrap_err("failed to receive update")?;
                 handle_update(update, &mut socket)

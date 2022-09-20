@@ -400,6 +400,32 @@ async fn handle_message(
                         description,
                     });
                 }
+                Command::UpdateScheduledAt {
+                    talk_id,
+                    scheduled_at,
+                } => {
+                    if let None = current_user {
+                        return Ok(());
+                    }
+
+                    let mut talks = talks.lock().await;
+
+                    let talk = match talks.get_mut(&talk_id) {
+                        Some(talk) => talk,
+                        None => return Ok(()),
+                    };
+
+                    talk.scheduled_at = scheduled_at;
+
+                    write_to_file("talks.json", &talks.values().collect::<Vec<_>>())
+                        .await
+                        .wrap_err("failed to write talks.json")?;
+
+                    let _ = updates_sender.send(Update::UpdateScheduledAt {
+                        talk_id,
+                        scheduled_at,
+                    });
+                }
                 Command::UpdateDuration { talk_id, duration } => {
                     if let None = current_user {
                         return Ok(());
@@ -562,6 +588,10 @@ enum Command {
         talk_id: usize,
         description: String,
     },
+    UpdateScheduledAt {
+        talk_id: usize,
+        scheduled_at: Option<SystemTime>,
+    },
     UpdateDuration {
         talk_id: usize,
         duration: Duration,
@@ -618,6 +648,10 @@ enum Update {
     UpdateDescription {
         talk_id: usize,
         description: String,
+    },
+    UpdateScheduledAt {
+        talk_id: usize,
+        scheduled_at: Option<SystemTime>,
     },
     UpdateDuration {
         talk_id: usize,

@@ -315,6 +315,7 @@
           };
 
           this.titleEditElement = document.createElement("input");
+          this.titleEditElement.type = "text";
           this.titleEditElement.oninput = () => {
             webSocket.send(
               JSON.stringify({
@@ -346,6 +347,7 @@
           };
 
           this.descriptionEditElement = document.createElement("input");
+          this.descriptionEditElement.type = "text";
           this.descriptionEditElement.oninput = () => {
             webSocket.send(
               JSON.stringify({
@@ -367,11 +369,89 @@
             document.createElement("div")
           );
           this.scheduledAtElement.innerText = this.generateScheduledAt();
+          this.scheduledAtElement.onclick = () => {
+            if (this.scheduledAt) {
+              let beginDate = new Date(this.scheduledAt.secs_since_epoch * 1000);
+              this.scheduledAtEditElement.value = `${beginDate.getFullYear()}-${(beginDate.getMonth() + 1)
+              .toString()
+              .padStart(2, "0")}-${beginDate
+              .getDate()
+              .toString()
+              .padStart(2, "0")}T${beginDate
+              .getHours()
+              .toString()
+              .padStart(2, "0")}:${beginDate
+              .getMinutes()
+              .toString()
+              .padStart(2, "0")}`;
+            } else {
+              this.scheduledAtEditElement.value = "";
+            }
+            this.talkElement.replaceChild(
+              this.scheduledAtEditElement,
+              this.scheduledAtElement
+            );
+            this.scheduledAtEditElement.focus();
+          };
+
+          this.scheduledAtEditElement = document.createElement("input");
+          this.scheduledAtEditElement.type = "datetime-local";
+          this.scheduledAtEditElement.onblur = () => {
+            let scheduledAt = null;
+            if (this.scheduledAtEditElement.value.length > 0) {
+              scheduledAt = {
+                secs_since_epoch: Math.floor((new Date(this.scheduledAtEditElement.value)) / 1000),
+                nanos_since_epoch: 0,
+              };
+            }
+            webSocket.send(
+              JSON.stringify({
+                UpdateScheduledAt: {
+                  talk_id: this.id,
+                  scheduled_at: scheduledAt,
+                },
+              })
+            );
+            this.talkElement.replaceChild(
+              this.scheduledAtElement,
+              this.scheduledAtEditElement
+            );
+          };
 
           this.durationElement = this.talkElement.appendChild(
             document.createElement("div")
           );
           this.durationElement.innerText = this.generateDuration();
+          this.durationElement.onclick = () => {
+            this.durationEditElement.value = Math.floor(this.duration.secs / 60);
+            this.talkElement.replaceChild(
+              this.durationEditElement,
+              this.durationElement
+            );
+            this.durationEditElement.focus();
+          };
+
+          this.durationEditElement = document.createElement("input");
+          this.durationEditElement.type = "number";
+          this.durationEditElement.min = 1;
+          this.durationEditElement.max = 600;
+          this.durationEditElement.onblur = () => {
+            webSocket.send(
+              JSON.stringify({
+                UpdateDuration: {
+                  talk_id: this.id,
+                  duration: {
+                    secs: parseInt(this.durationEditElement.value) * 60,
+                    nanos: 0,
+                  },
+                },
+              })
+            );
+            this.talkElement.replaceChild(
+              this.durationElement,
+              this.durationEditElement
+            );
+          };
 
           this.noobsElement = this.talkElement.appendChild(
             document.createElement("div")

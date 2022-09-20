@@ -66,10 +66,27 @@
         </div>
       </div>
     </div>
-    <div id="talks" class="hidden">Talks</div>
+    <div id="talks" class="hidden">
+      <h1>MOPAD</h1>
+      <details id="talks-past">
+        <summary>Past talks</summary>
+        <div id="talks-past-cards"></div>
+      </details>
+      <details id="talks-current" open>
+        <summary>Current talks</summary>
+        <div id="talks-current-cards"></div>
+      </details>
+      <details id="talks-upcoming" open>
+        <summary>Upcoming talks</summary>
+        <div id="talks-upcoming-cards"></div>
+      </details>
+      <details id="talks-unscheduled" open>
+        <summary>Unscheduled talks</summary>
+        <div id="talks-unscheduled-cards"></div>
+      </details>
+    </div>
     <script>
-      let currentUserName = null;
-      let currentUserTeam = null;
+      let currentUserId = null;
       let teams = [];
       let users = {};
       let talks = {};
@@ -90,6 +107,16 @@
         registerButton: document.getElementById("register-button"),
         registerToLogin: document.getElementById("register-to-login"),
         talks: document.getElementById("talks"),
+        talksPast: document.getElementById("talks-past"),
+        talksPastCards: document.getElementById("talks-past-cards"),
+        talksCurrent: document.getElementById("talks-current"),
+        talksCurrentCards: document.getElementById("talks-current-cards"),
+        talksUpcoming: document.getElementById("talks-upcoming"),
+        talksUpcomingCards: document.getElementById("talks-upcoming-cards"),
+        talksUnscheduled: document.getElementById("talks-unscheduled"),
+        talksUnscheduledCards: document.getElementById(
+          "talks-unscheduled-cards"
+        ),
       };
 
       let webSocket = new WebSocket("ws://127.0.0.1:1337/api");
@@ -104,9 +131,8 @@
           updateTeams();
         } else if (parsedMessage["Users"] !== undefined) {
           users = parsedMessage["Users"]["users"];
-        } else if (parsedMessage === "RegisterSuccess") {
-          currentUserName = elements.registerName.value;
-          currentUserTeam = elements.registerTeam.value;
+        } else if (parsedMessage["RegisterSuccess"] !== undefined) {
+          currentUserId = parsedMessage["RegisterSuccess"]["user_id"];
           show("talks");
           elements.registerName.disabled = false;
           elements.registerTeam.disabled = false;
@@ -114,15 +140,16 @@
           elements.registerButton.disabled = false;
           elements.loginButton.innerText = "Register";
         } else if (parsedMessage["RegisterError"] !== undefined) {
-          alert(`Chestboard reported that we cannot register you (${parsedMessage["RegisterError"]["reason"]})`);
+          alert(
+            `Chestboard reported that we cannot register you (${parsedMessage["RegisterError"]["reason"]})`
+          );
           elements.registerName.disabled = false;
           elements.registerTeam.disabled = false;
           elements.registerPassword.disabled = false;
           elements.registerButton.disabled = false;
           elements.loginButton.innerText = "Register";
         } else if (parsedMessage["LoginSuccess"] !== undefined) {
-          currentUserName = elements.loginName.value;
-          currentUserTeam = elements.loginTeam.value;
+          currentUserId = parsedMessage["LoginSuccess"]["user_id"];
           users = parsedMessage["LoginSuccess"]["users"];
           show("talks");
           elements.loginName.disabled = false;
@@ -131,12 +158,62 @@
           elements.loginButton.disabled = false;
           elements.loginButton.innerText = "Login";
         } else if (parsedMessage["LoginError"] !== undefined) {
-          alert(`Chestboard reported that we cannot log you in (${parsedMessage["LoginError"]["reason"]})`);
+          alert(
+            `Chestboard reported that we cannot log you in (${parsedMessage["LoginError"]["reason"]})`
+          );
           elements.loginName.disabled = false;
           elements.loginTeam.disabled = false;
           elements.loginPassword.disabled = false;
           elements.loginButton.disabled = false;
           elements.loginButton.innerText = "Login";
+        } else if (parsedMessage["AddTalk"] !== undefined) {
+          let talk = parsedMessage["AddTalk"]["talk"];
+          talks[talk.id] = new Talk(talk);
+          talks[talk.id].update();
+        } else if (parsedMessage["RemoveTalk"] !== undefined) {
+          let talk_id = parsedMessage["RemoveTalk"]["talk_id"];
+          delete talks[talk_id];
+          let talkElement = document.getElementById(`talk-${talk_id}`);
+          talkElement.parentElement.removeChild(talkElement);
+        } else if (parsedMessage["UpdateTitle"] !== undefined) {
+          let talk_id = parsedMessage["UpdateTitle"]["talk_id"];
+          let title = parsedMessage["UpdateTitle"]["title"];
+          talks[talk_id].title = title;
+          talks[talk_id].update();
+        } else if (parsedMessage["UpdateDescription"] !== undefined) {
+          let talk_id = parsedMessage["UpdateDescription"]["talk_id"];
+          let description = parsedMessage["UpdateDescription"]["description"];
+          talks[talk_id].description = description;
+          talks[talk_id].update();
+        } else if (parsedMessage["UpdateDuration"] !== undefined) {
+          let talk_id = parsedMessage["UpdateDuration"]["talk_id"];
+          let duration = parsedMessage["UpdateDuration"]["duration"];
+          talks[talk_id].duration = duration;
+          talks[talk_id].update();
+        } else if (parsedMessage["AddNoob"] !== undefined) {
+          let talk_id = parsedMessage["AddNoob"]["talk_id"];
+          let user_id = parsedMessage["AddNoob"]["user_id"];
+          talks[talk_id].noobs.push(user_id);
+          talks[talk_id].update();
+        } else if (parsedMessage["RemoveNoob"] !== undefined) {
+          let talk_id = parsedMessage["RemoveNoob"]["talk_id"];
+          let user_id = parsedMessage["RemoveNoob"]["user_id"];
+          talks[talk_id].noobs = talks[talk_id].noobs.filter(
+            (noob) => noob !== user_id
+          );
+          talks[talk_id].update();
+        } else if (parsedMessage["AddNerd"] !== undefined) {
+          let talk_id = parsedMessage["AddNerd"]["talk_id"];
+          let user_id = parsedMessage["AddNerd"]["user_id"];
+          talks[talk_id].nerds.push(user_id);
+          talks[talk_id].update();
+        } else if (parsedMessage["RemoveNerd"] !== undefined) {
+          let talk_id = parsedMessage["RemoveNerd"]["talk_id"];
+          let user_id = parsedMessage["RemoveNerd"]["user_id"];
+          talks[talk_id].nerds = talks[talk_id].nerds.filter(
+            (nerd) => nerd !== user_id
+          );
+          talks[talk_id].update();
         }
       };
       webSocket.onclose = () => {
@@ -161,13 +238,15 @@
         let name = elements.loginName.value;
         let team = elements.loginTeam.value;
         let password = elements.loginPassword.value;
-        webSocket.send(JSON.stringify({
-          Login: {
-            name,
-            team,
-            password,
-          },
-        }));
+        webSocket.send(
+          JSON.stringify({
+            Login: {
+              name,
+              team,
+              password,
+            },
+          })
+        );
       };
       elements.registerButton.onclick = () => {
         if (!elements.registerIMNotANao.checked) {
@@ -182,14 +261,327 @@
         let name = elements.registerName.value;
         let team = elements.registerTeam.value;
         let password = elements.registerPassword.value;
-        webSocket.send(JSON.stringify({
-          Register: {
-            name,
-            team,
-            password,
-          },
-        }));
+        webSocket.send(
+          JSON.stringify({
+            Register: {
+              name,
+              team,
+              password,
+            },
+          })
+        );
       };
+
+      setTimeout(() => {
+        for (let talk of Object.values(talks)) {
+          talk.update();
+        }
+        setInterval(() => {
+          for (let talk of Object.values(talks)) {
+            talk.update();
+          }
+        }, 60000);
+      }, (61 - new Date().getSeconds()) * 1000);
+
+      class Talk {
+        constructor(talk) {
+          this.id = talk.id;
+          this.title = talk.title;
+          this.description = talk.description;
+          this.scheduledAt = talk.scheduled_at;
+          this.duration = talk.duration;
+          this.nerds = talk.nerds;
+          this.noobs = talk.noobs;
+
+          this.talkElement = document.createElement("div");
+          this.talkElement.id = `talk-${this.id}`;
+
+          this.titleElement = this.talkElement.appendChild(
+            document.createElement("h1")
+          );
+          this.titleElement.id = `talk-${this.id}-title`;
+          this.titleElement.innerText = this.title;
+
+          this.descriptionElement = this.talkElement.appendChild(
+            document.createElement("div")
+          );
+          this.descriptionElement.id = `talk-${this.id}-description`;
+          this.descriptionElement.innerText = this.description;
+
+          this.timingElement = this.talkElement.appendChild(
+            document.createElement("div")
+          );
+          this.timingElement.id = `talk-${this.id}-timing`;
+          this.timingElement.innerText = this.generateTiming();
+
+          this.noobsElement = this.talkElement.appendChild(
+            document.createElement("div")
+          );
+          this.noobsElement.id = `talk-${this.id}-noobs`;
+          this.noobsCheckboxElement = this.noobsElement.appendChild(
+            document.createElement("input")
+          );
+          this.noobsCheckboxElement.id = `talk-${this.id}-noobs-checkbox`;
+          this.noobsCheckboxElement.type = "checkbox";
+          this.noobsCheckboxElement.onchange = () => {
+            webSocket.send(
+              JSON.stringify({
+                [this.noobsCheckboxElement.checked ? "AddNoob" : "RemoveNoob"]: {
+                  talk_id: this.id,
+                  user_id: currentUserId,
+                },
+              })
+            );
+          };
+          this.noobsLabelElement = this.noobsElement.appendChild(
+            document.createElement("label")
+          );
+          this.noobsLabelElement.setAttribute("for", `talk-${this.id}-noobs-checkbox`);
+          this.noobsLabelElement.innerText = "Noobs";
+          this.noobsListElement = this.noobsElement.appendChild(
+            document.createElement("div")
+          );
+          this.noobsListElement.id = `talk-${this.id}-noobs-list`;
+
+          this.nerdsElement = this.talkElement.appendChild(
+            document.createElement("div")
+          );
+          this.nerdsElement.id = `talk-${this.id}-nerds`;
+          this.nerdsCheckboxElement = this.nerdsElement.appendChild(
+            document.createElement("input")
+          );
+          this.nerdsCheckboxElement.id = `talk-${this.id}-nerds-checkbox`;
+          this.nerdsCheckboxElement.type = "checkbox";
+          this.nerdsCheckboxElement.onchange = () => {
+            webSocket.send(
+              JSON.stringify({
+                [this.nerdsCheckboxElement.checked ? "AddNerd" : "RemoveNerd"]: {
+                  talk_id: this.id,
+                  user_id: currentUserId,
+                },
+              })
+            );
+          };
+          this.nerdsLabelElement = this.nerdsElement.appendChild(
+            document.createElement("label")
+          );
+          this.nerdsLabelElement.setAttribute("for", `talk-${this.id}-nerds-checkbox`);
+          this.nerdsLabelElement.innerText = "Nerds";
+          this.nerdsListElement = this.nerdsElement.appendChild(
+            document.createElement("div")
+          );
+          this.nerdsListElement.id = `talk-${this.id}-nerds-list`;
+        }
+
+        update() {
+          this.moveToCorrectSection();
+          this.applyTitle();
+          this.applyDescription();
+          this.timingElement.innerText = this.generateTiming();
+          this.updateNerds();
+          this.updateNoobs();
+        }
+
+        moveToCorrectSection() {
+          let currentSection = null;
+          if (this.talkElement.parentElement !== null) {
+            currentSection = this.talkElement.parentElement.id.slice(6, -6);
+          }
+          let targetSection = "unscheduled";
+          if (this.scheduledAt !== null) {
+            let begin = this.scheduledAt.secs_since_epoch;
+            let end = this.scheduledAt.secs_since_epoch + this.duration.secs;
+            let now = Math.floor(Date.now() / 1000);
+
+            if (now > end) {
+              targetSection = "past";
+            } else if (now < end && now > begin) {
+              targetSection = "current";
+            } else if (now < begin) {
+              targetSection = "upcoming";
+            }
+          }
+
+          if (currentSection !== targetSection) {
+            if (currentSection !== null) {
+              document
+                .getElementById(`talks-${currentSection}-cards`)
+                .removeChild(this.talkElement);
+            }
+
+            if (["past", "current", "upcoming"].includes(targetSection)) {
+              let talksInTarget = document.querySelectorAll(
+                `#talks-${targetSection}-cards > *`
+              );
+              let talkElementScheduledAfterTarget = [...talksInTarget].find(
+                (talkElement) => {
+                  let talk_id = talkElement.id.slice(5, talkElement.id.length);
+                  let talk = talks[talk_id];
+                  return (
+                    talk.scheduledAt.secs_since_epoch >
+                    this.scheduledAt.secs_since_epoch
+                  );
+                }
+              );
+
+              if (talkElementScheduledAfterTarget !== undefined) {
+                document
+                  .getElementById(`talks-${targetSection}-cards`)
+                  .insertBefore(
+                    this.talkElement,
+                    talkElementScheduledAfterTarget
+                  );
+              } else {
+                document
+                  .getElementById(`talks-${targetSection}-cards`)
+                  .appendChild(this.talkElement);
+              }
+            } else {
+              document
+                .getElementById(`talks-${targetSection}-cards`)
+                .appendChild(this.talkElement);
+            }
+          }
+        }
+
+        applyTitle() {
+          if (this.title != this.titleElement.innerText) {
+            this.titleElement.innerText = this.title;
+          }
+        }
+
+        applyDescription() {
+          if (this.description != this.descriptionElement.innerText) {
+            this.descriptionElement.innerText = this.description;
+          }
+        }
+
+        applyDuration() {
+          if (this.duration != this.durationElement.innerText) {
+            this.durationElement.innerText = this.duration;
+          }
+        }
+
+        generateTiming() {
+          if (this.scheduledAt === null) {
+            return `for ${Math.floor(this.duration.secs / 60)}, unscheduled`;
+          } else {
+            console.log(this);
+            let begin = Math.floor(this.scheduledAt.secs_since_epoch / 60);
+            let beginDate = new Date(begin * 60000);
+            let end = Math.floor(
+              (this.scheduledAt.secs_since_epoch + this.duration.secs) / 60
+            );
+            let now = Math.floor(Date.now() / 60000);
+            console.log(now);
+
+            let beginString = `${beginDate.getFullYear()}-${(
+              beginDate.getMonth() + 1
+            )
+              .toString()
+              .padStart(2, "0")}-${beginDate
+              .getDate()
+              .toString()
+              .padStart(2, "0")} ${beginDate
+              .getHours()
+              .toString()
+              .padStart(2, "0")}:${beginDate
+              .getMinutes()
+              .toString()
+              .padStart(2, "0")}`;
+            if (now > end) {
+              return `began at ${beginString} for ${end - begin} minute${
+                end - begin == 1 ? "" : "s"
+              }`;
+            } else if (now < end && now > begin) {
+              return `began at ${beginString}, ${end - now} of ${
+                end - begin
+              } minute${end - begin == 1 ? "" : "s"} left`;
+            } else if (now < begin) {
+              console.log("ok", beginString, end - begin);
+              return `begins at ${beginString} for ${end - begin} minute${
+                end - begin == 1 ? "" : "s"
+              }`;
+            }
+          }
+        }
+
+        updateNoobs() {
+          this.noobsCheckboxElement.checked = this.noobs.includes(
+            currentUserId
+          );
+
+          this.noobsLabelElement.innerText = `${this.noobs.length} Noob${
+            this.noobs.length == 1 ? "" : "s"
+          }${this.noobs.length > 0 ? ":" : ""}`;
+
+          let existingUserIds = [
+            ...document.querySelectorAll(`#talk-${this.id}-noobs-list > *`),
+          ].map((noobElement) =>
+            noobElement.id.slice(
+              `talk-${this.id}-noob-`.length,
+              noobElement.id.length
+            )
+          );
+          for (let userId of existingUserIds) {
+            if (!this.noobs.includes(userId)) {
+              this.noobsListElement.removeChild(
+                document.getElementById(`talk-${this.id}-noob-${userId}`)
+              );
+            }
+          }
+          for (let userId of this.noobs) {
+            if (
+              document.getElementById(`talk-${this.id}-noob-${userId}`) === null
+            ) {
+              let noobElement = this.noobsListElement.appendChild(
+                document.createElement(userId == currentUserId ? "b" : "span")
+              );
+              noobElement.id = `talk-${this.id}-noob-${userId}`;
+              noobElement.innerText = users[userId].name;
+              noobElement.title = users[userId].team;
+            }
+          }
+        }
+
+        updateNerds() {
+          this.nerdsCheckboxElement.checked = this.nerds.includes(
+            currentUserId
+          );
+
+          this.nerdsLabelElement.innerText = `${this.nerds.length} Nerd${
+            this.nerds.length == 1 ? "" : "s"
+          }${this.nerds.length > 0 ? ":" : ""}`;
+
+          let existingUserIds = [
+            ...document.querySelectorAll(`#talk-${this.id}-nerds-list > *`),
+          ].map((nerdElement) =>
+            nerdElement.id.slice(
+              `talk-${this.id}-nerd-`.length,
+              nerdElement.id.length
+            )
+          );
+          for (let userId of existingUserIds) {
+            if (!this.nerds.includes(userId)) {
+              this.nerdsListElement.removeChild(
+                document.getElementById(`talk-${this.id}-nerd-${userId}`)
+              );
+            }
+          }
+          for (let userId of this.nerds) {
+            if (
+              document.getElementById(`talk-${this.id}-nerd-${userId}`) === null
+            ) {
+              let nerdElement = this.nerdsListElement.appendChild(
+                document.createElement(userId == currentUserId ? "b" : "span")
+              );
+              nerdElement.id = `talk-${this.id}-nerd-${userId}`;
+              nerdElement.innerText = users[userId].name;
+              nerdElement.title = users[userId].team;
+            }
+          }
+        }
+      }
 
       function show(view) {
         switch (view) {
@@ -213,6 +605,7 @@
           }
         }
       }
+
       function updateTeams() {
         while (elements.loginTeam.firstChild) {
           elements.loginTeam.removeChild(elements.loginTeam.firstChild);
@@ -230,9 +623,6 @@
           loginOptionElement.innerText = team;
           registerOptionElement.innerText = team;
         }
-      }
-      function updateUsers() {
-        usersElement.innerText = JSON.stringify(users);
       }
     </script>
   </body>

@@ -253,7 +253,11 @@ async fn handle_message(
                             .map(|(user_id, user)| (*user_id, user.into()))
                             .collect(),
                     });
-                    let _ = responses_sender.send(Update::RegisterSuccess).await;
+                    let _ = responses_sender
+                        .send(Update::RegisterSuccess {
+                            user_id: next_user_id,
+                        })
+                        .await;
                     let talks = talks.lock().await;
                     for talk in talks.values() {
                         let _ = responses_sender
@@ -276,6 +280,7 @@ async fn handle_message(
                         if user.verify(password) {
                             let _ = responses_sender
                                 .send(Update::LoginSuccess {
+                                    user_id: user.id,
                                     users: users
                                         .iter()
                                         .map(|(user_id, user)| (*user_id, user.into()))
@@ -449,8 +454,8 @@ async fn handle_message(
                         None => return Ok(()),
                     };
 
-                    if let Some(index) = talk.noobs.iter().find(|&&noob_id| noob_id == user_id) {
-                        talk.noobs.remove(*index);
+                    if let Some(index) = talk.noobs.iter().position(|&noob_id| noob_id == user_id) {
+                        talk.noobs.remove(index);
                     }
 
                     write_to_file("talks.json", &talks.values().collect::<Vec<_>>())
@@ -493,8 +498,8 @@ async fn handle_message(
                         None => return Ok(()),
                     };
 
-                    if let Some(index) = talk.nerds.iter().find(|&&nerd_id| nerd_id == user_id) {
-                        talk.nerds.remove(*index);
+                    if let Some(index) = talk.nerds.iter().position(|&nerd_id| nerd_id == user_id) {
+                        talk.nerds.remove(index);
                     }
 
                     write_to_file("talks.json", &talks.values().collect::<Vec<_>>())
@@ -587,11 +592,14 @@ enum Update {
     Users {
         users: BTreeMap<usize, UserWithoutHash>,
     },
-    RegisterSuccess,
+    RegisterSuccess {
+        user_id: usize,
+    },
     RegisterError {
         reason: String,
     },
     LoginSuccess {
+        user_id: usize,
         users: BTreeMap<usize, UserWithoutHash>,
     },
     LoginError {

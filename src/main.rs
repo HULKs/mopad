@@ -1,6 +1,6 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fmt::Debug,
+    fmt::{Debug, Write},
     io,
     net::SocketAddr,
     path::Path,
@@ -15,7 +15,7 @@ use axum::{
         ws::{Message, WebSocket},
         WebSocketUpgrade,
     },
-    http::StatusCode,
+    http::{header::CONTENT_TYPE, StatusCode},
     response::IntoResponse,
     routing::{get, get_service},
     Router, Server,
@@ -24,6 +24,7 @@ use eyre::{eyre, WrapErr};
 use rand_core::OsRng;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{from_str, to_string};
+use time::{format_description::parse, OffsetDateTime};
 use tokio::{
     fs::{read_to_string, File},
     io::AsyncWriteExt,
@@ -60,6 +61,14 @@ async fn main() -> eyre::Result<()> {
                 let talks = talks.clone();
                 let updates_sender = updates_sender.clone();
                 move |upgrade| handle_websocket(upgrade, teams, users, talks, updates_sender)
+            }),
+        )
+        .route(
+            "/icalendar",
+            get({
+                let users = users.clone();
+                let talks = talks.clone();
+                move || handle_icalendar(users, talks)
             }),
         )
         .fallback(get_service(ServeDir::new(".")).handle_error(handle_error));
@@ -114,6 +123,71 @@ where
     file.write_all(contents.as_bytes())
         .await
         .wrap_err_with(|| format!("failed to write to {file_path:?}"))
+}
+
+async fn handle_icalendar(
+    users: Arc<Mutex<BTreeMap<usize, User>>>,
+    talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
+) -> impl IntoResponse {
+    let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:Mopad\r\nX-WR-CALNAME:Mopad\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
+    let format = parse("[year][month][day]T[hour][minute][second]Z").unwrap();
+    let now = OffsetDateTime::now_utc();
+    let users = users.lock().await;
+    let talks = talks.lock().await;
+    for talk in talks.values() {
+        if let Some(scheduled_at) = talk.scheduled_at {
+            let start = OffsetDateTime::from(scheduled_at);
+            let end = start + talk.duration;
+            write!(
+                response,
+                "BEGIN:VEVENT\r\nUID:{}\r\nDTSTAMP:{}\r\nDTSTART:{}\r\nDTEND:{}\r\nSUMMARY:{}\r\nDESCRIPTION:{}\r\n",
+                talk.id,
+                now.format(&format).unwrap(),
+                start.format(&format).unwrap(),
+                end.format(&format).unwrap(),
+                talk.title.replace('\r', "").replace('\n', ""),
+                talk.description.replace('\r', "").replace('\n', ""),
+            )
+            .unwrap();
+            for nerd in talk.nerds.iter() {
+                let user = &users[nerd];
+                write!(
+                    response,
+                    "ATTENDEE;ROLE=CHAIR;PARTSTAT=ACCEPTED;CN={} ({}):MAILTO:user{}@mopad\r\n",
+                    user.name.replace(';', "").replace('\r', "").replace('\n', ""),
+                    user.team.replace(';', "").replace('\r', "").replace('\n', ""),
+                    user.id,
+                )
+                .unwrap();
+            }
+            for noob in talk.noobs.iter() {
+                let user = &users[noob];
+                write!(
+                    response,
+                    "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN={} ({}):MAILTO:user{}@mopad\r\n",
+                    user.name.replace(';', "").replace('\r', "").replace('\n', ""),
+                    user.team.replace(';', "").replace('\r', "").replace('\n', ""),
+                    user.id,
+                )
+                .unwrap();
+            }
+            write!(
+                response,
+                "END:VEVENT\r\n",
+            )
+            .unwrap();
+        }
+    }
+    write!(
+        response,
+        "END:VCALENDAR\r\n",
+    )
+    .unwrap();
+    (
+        StatusCode::OK,
+        [(CONTENT_TYPE, "text/calendar; charset=utf-8")],
+        response,
+    )
 }
 
 async fn handle_error(error: io::Error) -> impl IntoResponse {

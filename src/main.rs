@@ -78,7 +78,7 @@ async fn main() -> eyre::Result<()> {
                 move || handle_icalendar(users, talks)
             }),
         )
-        .fallback(get_service(ServeDir::new(".")).handle_error(handle_error));
+        .fallback(get_service(ServeDir::new("./frontend")).handle_error(handle_error));
 
     Server::bind(&SocketAddr::from_str("0.0.0.0:1337").unwrap())
         .serve(application.into_make_service())

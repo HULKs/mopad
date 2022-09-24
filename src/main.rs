@@ -18,9 +18,9 @@ use axum::{
     http::{header::CONTENT_TYPE, StatusCode},
     response::IntoResponse,
     routing::{get, get_service},
-    Router, Server,
+    Json, Router, Server,
 };
-use eyre::{eyre, WrapErr};
+use eyre::WrapErr;
 use rand_core::OsRng;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{from_str, to_string};
@@ -29,7 +29,7 @@ use tokio::{
     fs::{read_to_string, File},
     io::AsyncWriteExt,
     select,
-    sync::{broadcast, mpsc, Mutex},
+    sync::{broadcast, Mutex},
 };
 use tower_http::services::ServeDir;
 
@@ -64,7 +64,14 @@ async fn main() -> eyre::Result<()> {
             }),
         )
         .route(
-            "/icalendar",
+            "/teams.json",
+            get({
+                let teams = teams.clone();
+                move || handle_teams(teams)
+            }),
+        )
+        .route(
+            "/talks.ics",
             get({
                 let users = users.clone();
                 let talks = talks.clone();
@@ -125,6 +132,10 @@ where
         .wrap_err_with(|| format!("failed to write to {file_path:?}"))
 }
 
+async fn handle_teams(teams: Arc<BTreeSet<String>>) -> Json<BTreeSet<String>> {
+    Json((*teams).clone())
+}
+
 async fn handle_icalendar(
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
@@ -154,8 +165,14 @@ async fn handle_icalendar(
                 write!(
                     response,
                     "ATTENDEE;ROLE=CHAIR;PARTSTAT=ACCEPTED;CN={} ({}):MAILTO:user{}@mopad\r\n",
-                    user.name.replace(';', "").replace('\r', "").replace('\n', ""),
-                    user.team.replace(';', "").replace('\r', "").replace('\n', ""),
+                    user.name
+                        .replace(';', "")
+                        .replace('\r', "")
+                        .replace('\n', ""),
+                    user.team
+                        .replace(';', "")
+                        .replace('\r', "")
+                        .replace('\n', ""),
                     user.id,
                 )
                 .unwrap();
@@ -171,18 +188,10 @@ async fn handle_icalendar(
                 )
                 .unwrap();
             }
-            write!(
-                response,
-                "END:VEVENT\r\n",
-            )
-            .unwrap();
+            write!(response, "END:VEVENT\r\n",).unwrap();
         }
     }
-    write!(
-        response,
-        "END:VCALENDAR\r\n",
-    )
-    .unwrap();
+    write!(response, "END:VCALENDAR\r\n",).unwrap();
     (
         StatusCode::OK,
         [(CONTENT_TYPE, "text/calendar; charset=utf-8")],
@@ -227,41 +236,55 @@ async fn connection(
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: broadcast::Sender<Update>,
 ) -> eyre::Result<()> {
-    socket
-        .send(Message::Text(
-            to_string(&Update::Teams {
-                teams: (*teams).clone(),
-            })
-            .wrap_err("failed to serialize teams update")?,
-        ))
-        .await
-        .wrap_err("failed to update teams")?;
-
     let mut updates_receiver = updates_sender.subscribe();
-    let (responses_sender, mut responses_receiver) = mpsc::channel(1337);
-    let mut current_user = None;
+
+    let users_changed = match authenticate(&mut socket, &teams, &users).await {
+        Some(users_changed) => users_changed,
+        None => return Ok(()),
+    };
+
+    let update_users = Update::Users {
+        users: users
+            .lock()
+            .await
+            .iter()
+            .map(|(user_id, user)| (*user_id, user.into()))
+            .collect(),
+    };
+    if users_changed {
+        let _ = updates_sender.send(update_users);
+    } else {
+        let _ = socket
+            .send(Message::Text(to_string(&update_users).unwrap()))
+            .await;
+    }
+
+    {
+        let talks = talks.lock().await;
+        for talk in talks.values() {
+            let _ = socket
+                .send(Message::Text(
+                    to_string(&Update::AddTalk { talk: talk.clone() }).unwrap(),
+                ))
+                .await;
+        }
+    }
+
     loop {
         select! {
             command_message = socket.recv() => {
                 if let None = command_message {
                     break;
                 }
-                handle_message(command_message.unwrap(), &teams, &users, &talks, &updates_sender, &responses_sender, &mut current_user)
+                handle_message(command_message.unwrap(), &talks, &updates_sender)
                     .await
                     .wrap_err("failed to handle command message")?;
             }
-            // TODO: also not logged in connections receive updates
             update = updates_receiver.recv() => {
                 let update = update.wrap_err("failed to receive update")?;
                 handle_update(update, &mut socket)
                     .await
                     .wrap_err("failed to handle update")?;
-            }
-            response = responses_receiver.recv() => {
-                let response = response.ok_or_else(|| eyre!("failed to receive response"))?;
-                handle_response(response, &mut socket)
-                    .await
-                    .wrap_err("failed to handle response")?;
             }
         }
     }
@@ -269,14 +292,159 @@ async fn connection(
     Ok(())
 }
 
-async fn handle_message(
-    command_message: Result<Message, axum::Error>,
+async fn authenticate(
+    socket: &mut WebSocket,
     teams: &Arc<BTreeSet<String>>,
     users: &Arc<Mutex<BTreeMap<usize, User>>>,
+) -> Option<bool> {
+    let authentication_command: AuthenticationCommand = match socket.recv().await {
+        Some(Ok(authentication_command)) => match authentication_command {
+            Message::Text(authentication_command) => match from_str(&authentication_command) {
+                Ok(authentication_command) => authentication_command,
+                Err(_) => {
+                    let _ = socket
+                        .send(Message::Text(
+                            to_string(&AuthenticationResponse::AuthenticationError {
+                                reason: "failed to deserialize from WebSocket".to_string(),
+                            })
+                            .unwrap(),
+                        ))
+                        .await;
+                    return None;
+                }
+            },
+            _ => {
+                let _ = socket
+                    .send(Message::Text(
+                        to_string(&AuthenticationResponse::AuthenticationError {
+                            reason: "expected text message from WebSocket".to_string(),
+                        })
+                        .unwrap(),
+                    ))
+                    .await;
+                return None;
+            }
+        },
+        Some(Err(_)) => {
+            let _ = socket
+                .send(Message::Text(
+                    to_string(&AuthenticationResponse::AuthenticationError {
+                        reason: "failed to read from WebSocket".to_string(),
+                    })
+                    .unwrap(),
+                ))
+                .await;
+            return None;
+        }
+        None => return None,
+    };
+
+    match authentication_command {
+        AuthenticationCommand::Register {
+            name,
+            team,
+            password,
+        } => {
+            if !teams.contains(&team) {
+                let _ = socket
+                    .send(Message::Text(
+                        to_string(&AuthenticationResponse::AuthenticationError {
+                            reason: "unknown team".to_string(),
+                        })
+                        .unwrap(),
+                    ))
+                    .await;
+                return None;
+            }
+
+            let mut users = users.lock().await;
+
+            if users
+                .values()
+                .any(|user| user.name == name && user.team == team)
+            {
+                let _ = socket
+                    .send(Message::Text(
+                        to_string(&AuthenticationResponse::AuthenticationError {
+                            reason: "already registered".to_string(),
+                        })
+                        .unwrap(),
+                    ))
+                    .await;
+                return None;
+            }
+
+            let next_user_id = users.keys().copied().max().unwrap_or_default() + 1;
+
+            users.insert(next_user_id, User::new(next_user_id, name, team, password));
+
+            write_to_file("users.json", &users.values().collect::<Vec<_>>())
+                .await
+                .expect("failed to write users.json");
+
+            let _ = socket
+                .send(Message::Text(
+                    to_string(&AuthenticationResponse::AuthenticationSuccess {
+                        user_id: next_user_id,
+                    })
+                    .unwrap(),
+                ))
+                .await;
+
+            Some(true)
+        }
+        AuthenticationCommand::Login {
+            name,
+            team,
+            password,
+        } => {
+            let users = users.lock().await;
+
+            if let Some(user) = users
+                .values()
+                .find(|user| user.name == name && user.team == team)
+            {
+                if user.verify(password) {
+                    let _ = socket
+                        .send(Message::Text(
+                            to_string(&AuthenticationResponse::AuthenticationSuccess {
+                                user_id: user.id,
+                            })
+                            .unwrap(),
+                        ))
+                        .await;
+
+                    Some(false)
+                } else {
+                    let _ = socket
+                        .send(Message::Text(
+                            to_string(&AuthenticationResponse::AuthenticationError {
+                                reason: "wrong password".to_string(),
+                            })
+                            .unwrap(),
+                        ))
+                        .await;
+                    None
+                }
+            } else {
+                let _ = socket
+                    .send(Message::Text(
+                        to_string(&AuthenticationResponse::AuthenticationError {
+                            reason: "unknown user".to_string(),
+                        })
+                        .unwrap(),
+                    ))
+                    .await;
+                None
+            }
+        }
+    }
+}
+
+async fn handle_message(
+    command_message: Result<Message, axum::Error>,
     talks: &Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: &broadcast::Sender<Update>,
-    responses_sender: &mpsc::Sender<Update>,
-    current_user: &mut Option<UserWithoutHash>,
 ) -> eyre::Result<()> {
     let command_message = command_message.wrap_err("failed to receive command")?;
 
@@ -286,113 +454,11 @@ async fn handle_message(
                 from_str(&message).wrap_err("failed to deserialize command message")?;
 
             match command {
-                Command::Register {
-                    name,
-                    team,
-                    password,
-                } => {
-                    if !teams.contains(&team) {
-                        let _ = responses_sender
-                            .send(Update::RegisterError {
-                                reason: "unknown team".to_string(),
-                            })
-                            .await;
-                        return Ok(());
-                    }
-
-                    let mut users = users.lock().await;
-
-                    if users
-                        .values()
-                        .any(|user| user.name == name && user.team == team)
-                    {
-                        let _ = responses_sender
-                            .send(Update::RegisterError {
-                                reason: "already registered".to_string(),
-                            })
-                            .await;
-                        return Ok(());
-                    }
-
-                    let next_user_id = users.keys().copied().max().unwrap_or_default() + 1;
-
-                    users.insert(next_user_id, User::new(next_user_id, name, team, password));
-
-                    write_to_file("users.json", &users.values().collect::<Vec<_>>())
-                        .await
-                        .wrap_err("failed to write users.json")?;
-
-                    let _ = updates_sender.send(Update::Users {
-                        users: users
-                            .iter()
-                            .map(|(user_id, user)| (*user_id, user.into()))
-                            .collect(),
-                    });
-                    let _ = responses_sender
-                        .send(Update::RegisterSuccess {
-                            user_id: next_user_id,
-                        })
-                        .await;
-                    let talks = talks.lock().await;
-                    for talk in talks.values() {
-                        let _ = responses_sender
-                            .send(Update::AddTalk { talk: talk.clone() })
-                            .await;
-                    }
-                    *current_user = Some((&users[&next_user_id]).into());
-                }
-                Command::Login {
-                    name,
-                    team,
-                    password,
-                } => {
-                    let users = users.lock().await;
-
-                    if let Some(user) = users
-                        .values()
-                        .find(|user| user.name == name && user.team == team)
-                    {
-                        if user.verify(password) {
-                            let _ = responses_sender
-                                .send(Update::LoginSuccess {
-                                    user_id: user.id,
-                                    users: users
-                                        .iter()
-                                        .map(|(user_id, user)| (*user_id, user.into()))
-                                        .collect(),
-                                })
-                                .await;
-                            let talks = talks.lock().await;
-                            for talk in talks.values() {
-                                let _ = responses_sender
-                                    .send(Update::AddTalk { talk: talk.clone() })
-                                    .await;
-                            }
-                            *current_user = Some(user.into());
-                        } else {
-                            let _ = responses_sender
-                                .send(Update::LoginError {
-                                    reason: "wrong password".to_string(),
-                                })
-                                .await;
-                        }
-                    } else {
-                        let _ = responses_sender
-                            .send(Update::LoginError {
-                                reason: "unknown user".to_string(),
-                            })
-                            .await;
-                    }
-                }
                 Command::AddTalk {
                     title,
                     description,
                     duration,
                 } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let next_talk_id = talks.keys().copied().max().unwrap_or_default() + 1;
@@ -415,10 +481,6 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::AddTalk { talk });
                 }
                 Command::RemoveTalk { talk_id } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     talks.remove(&talk_id);
@@ -430,10 +492,6 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::RemoveTalk { talk_id });
                 }
                 Command::UpdateTitle { talk_id, title } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -453,10 +511,6 @@ async fn handle_message(
                     talk_id,
                     description,
                 } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -479,10 +533,6 @@ async fn handle_message(
                     talk_id,
                     scheduled_at,
                 } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -502,10 +552,6 @@ async fn handle_message(
                     });
                 }
                 Command::UpdateDuration { talk_id, duration } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -522,10 +568,6 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::UpdateDuration { talk_id, duration });
                 }
                 Command::AddNoob { talk_id, user_id } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -544,10 +586,6 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::AddNoob { talk_id, user_id });
                 }
                 Command::RemoveNoob { talk_id, user_id } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -566,10 +604,6 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::RemoveNoob { talk_id, user_id });
                 }
                 Command::AddNerd { talk_id, user_id } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -588,10 +622,6 @@ async fn handle_message(
                     let _ = updates_sender.send(Update::AddNerd { talk_id, user_id });
                 }
                 Command::RemoveNerd { talk_id, user_id } => {
-                    if let None = current_user {
-                        return Ok(());
-                    }
-
                     let mut talks = talks.lock().await;
 
                     let talk = match talks.get_mut(&talk_id) {
@@ -626,17 +656,8 @@ async fn handle_update(update: Update, stream: &mut WebSocket) -> eyre::Result<(
         .wrap_err("failed to send update")
 }
 
-async fn handle_response(response: Update, stream: &mut WebSocket) -> eyre::Result<()> {
-    stream
-        .send(Message::Text(
-            to_string(&response).wrap_err("failed to serialize response")?,
-        ))
-        .await
-        .wrap_err("failed to send response")
-}
-
 #[derive(Clone, Debug, Deserialize)]
-enum Command {
+enum AuthenticationCommand {
     Register {
         name: String,
         team: String,
@@ -647,6 +668,16 @@ enum Command {
         team: String,
         password: String,
     },
+}
+
+#[derive(Clone, Debug, Serialize)]
+enum AuthenticationResponse {
+    AuthenticationSuccess { user_id: usize },
+    AuthenticationError { reason: String },
+}
+
+#[derive(Clone, Debug, Deserialize)]
+enum Command {
     AddTalk {
         title: String,
         description: String,
@@ -691,24 +722,8 @@ enum Command {
 
 #[derive(Clone, Debug, Serialize)]
 enum Update {
-    Teams {
-        teams: BTreeSet<String>,
-    },
     Users {
         users: BTreeMap<usize, UserWithoutHash>,
-    },
-    RegisterSuccess {
-        user_id: usize,
-    },
-    RegisterError {
-        reason: String,
-    },
-    LoginSuccess {
-        user_id: usize,
-        users: BTreeMap<usize, UserWithoutHash>,
-    },
-    LoginError {
-        reason: String,
     },
     AddTalk {
         talk: Talk,

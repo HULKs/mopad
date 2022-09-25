@@ -238,8 +238,8 @@ async fn connection(
 ) -> eyre::Result<()> {
     let mut updates_receiver = updates_sender.subscribe();
 
-    let users_changed = match authenticate(&mut socket, &teams, &users).await {
-        Some(users_changed) => users_changed,
+    let (current_user, users_changed) = match authenticate(&mut socket, &teams, &users).await {
+        Some((current_user, users_changed)) => (current_user, users_changed),
         None => return Ok(()),
     };
 
@@ -276,7 +276,7 @@ async fn connection(
                 if let None = command_message {
                     break;
                 }
-                handle_message(command_message.unwrap(), &talks, &updates_sender)
+                handle_message(command_message.unwrap(), &talks, &current_user, &updates_sender)
                     .await
                     .wrap_err("failed to handle command message")?;
             }
@@ -296,7 +296,7 @@ async fn authenticate(
     socket: &mut WebSocket,
     teams: &Arc<BTreeSet<String>>,
     users: &Arc<Mutex<BTreeMap<usize, User>>>,
-) -> Option<bool> {
+) -> Option<(User, bool)> {
     let authentication_command: AuthenticationCommand = match socket.recv().await {
         Some(Ok(authentication_command)) => match authentication_command {
             Message::Text(authentication_command) => match from_str(&authentication_command) {
@@ -376,7 +376,10 @@ async fn authenticate(
 
             let next_user_id = users.keys().copied().max().unwrap_or_default() + 1;
 
-            users.insert(next_user_id, User::new(next_user_id, name, team, password));
+            users.insert(
+                next_user_id,
+                User::new(next_user_id, name, team, password, BTreeSet::new()),
+            );
 
             write_to_file("users.json", &users.values().collect::<Vec<_>>())
                 .await
@@ -386,12 +389,13 @@ async fn authenticate(
                 .send(Message::Text(
                     to_string(&AuthenticationResponse::AuthenticationSuccess {
                         user_id: next_user_id,
+                        roles: users[&next_user_id].roles.clone(),
                     })
                     .unwrap(),
                 ))
                 .await;
 
-            Some(true)
+            Some((users[&next_user_id].clone(), true))
         }
         AuthenticationCommand::Login {
             name,
@@ -409,12 +413,13 @@ async fn authenticate(
                         .send(Message::Text(
                             to_string(&AuthenticationResponse::AuthenticationSuccess {
                                 user_id: user.id,
+                                roles: user.roles.clone(),
                             })
                             .unwrap(),
                         ))
                         .await;
 
-                    Some(false)
+                    Some((user.clone(), false))
                 } else {
                     let _ = socket
                         .send(Message::Text(
@@ -444,6 +449,7 @@ async fn authenticate(
 async fn handle_message(
     command_message: Result<Message, axum::Error>,
     talks: &Arc<Mutex<BTreeMap<usize, Talk>>>,
+    current_user: &User,
     updates_sender: &broadcast::Sender<Update>,
 ) -> eyre::Result<()> {
     let command_message = command_message.wrap_err("failed to receive command")?;
@@ -465,6 +471,7 @@ async fn handle_message(
 
                     let talk = Talk {
                         id: next_talk_id,
+                        creator: current_user.id,
                         title,
                         description,
                         scheduled_at: None,
@@ -483,6 +490,12 @@ async fn handle_message(
                 Command::RemoveTalk { talk_id } => {
                     let mut talks = talks.lock().await;
 
+                    if !current_user.roles.contains(&Role::Editor)
+                        && talks[&talk_id].creator != current_user.id
+                    {
+                        return Ok(());
+                    }
+
                     talks.remove(&talk_id);
 
                     write_to_file("talks.json", &talks.values().collect::<Vec<_>>())
@@ -493,6 +506,12 @@ async fn handle_message(
                 }
                 Command::UpdateTitle { talk_id, title } => {
                     let mut talks = talks.lock().await;
+
+                    if !current_user.roles.contains(&Role::Editor)
+                        && talks[&talk_id].creator != current_user.id
+                    {
+                        return Ok(());
+                    }
 
                     let talk = match talks.get_mut(&talk_id) {
                         Some(talk) => talk,
@@ -512,6 +531,12 @@ async fn handle_message(
                     description,
                 } => {
                     let mut talks = talks.lock().await;
+
+                    if !current_user.roles.contains(&Role::Editor)
+                        && talks[&talk_id].creator != current_user.id
+                    {
+                        return Ok(());
+                    }
 
                     let talk = match talks.get_mut(&talk_id) {
                         Some(talk) => talk,
@@ -535,6 +560,10 @@ async fn handle_message(
                 } => {
                     let mut talks = talks.lock().await;
 
+                    if !current_user.roles.contains(&Role::Scheduler) {
+                        return Ok(());
+                    }
+
                     let talk = match talks.get_mut(&talk_id) {
                         Some(talk) => talk,
                         None => return Ok(()),
@@ -553,6 +582,12 @@ async fn handle_message(
                 }
                 Command::UpdateDuration { talk_id, duration } => {
                     let mut talks = talks.lock().await;
+
+                    if !current_user.roles.contains(&Role::Editor)
+                        && talks[&talk_id].creator != current_user.id
+                    {
+                        return Ok(());
+                    }
 
                     let talk = match talks.get_mut(&talk_id) {
                         Some(talk) => talk,
@@ -672,8 +707,13 @@ enum AuthenticationCommand {
 
 #[derive(Clone, Debug, Serialize)]
 enum AuthenticationResponse {
-    AuthenticationSuccess { user_id: usize },
-    AuthenticationError { reason: String },
+    AuthenticationSuccess {
+        user_id: usize,
+        roles: BTreeSet<Role>,
+    },
+    AuthenticationError {
+        reason: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -771,10 +811,11 @@ struct User {
     name: String,
     team: String,
     hash: String,
+    roles: BTreeSet<Role>,
 }
 
 impl User {
-    fn new(id: usize, name: String, team: String, password: String) -> Self {
+    fn new(id: usize, name: String, team: String, password: String, roles: BTreeSet<Role>) -> Self {
         let salt = SaltString::generate(&mut OsRng);
         let hash = Argon2::default()
             .hash_password(password.as_bytes(), &salt)
@@ -785,6 +826,7 @@ impl User {
             name,
             team,
             hash: hash.to_string(),
+            roles,
         }
     }
 
@@ -796,7 +838,7 @@ impl User {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 struct UserWithoutHash {
     id: usize,
     name: String,
@@ -813,9 +855,16 @@ impl From<&User> for UserWithoutHash {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+enum Role {
+    Editor,
+    Scheduler,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Talk {
     id: usize,
+    creator: usize,
     title: String,
     description: String,
     scheduled_at: Option<SystemTime>,

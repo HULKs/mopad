@@ -1,5 +1,4 @@
 // TODO: Add/remove talks
-// TODO: permissions
 // TODO: styling
 // TODO: Login/Reconnection/Persistence/Robustness
 
@@ -82,8 +81,9 @@ class Mopad {
     this.webSocket.addEventListener("message", (event) => {
       let message = JSON.parse(event.data);
       if (message["AuthenticationSuccess"] !== undefined) {
-        this.talks.setCurrentUserId(
-          message["AuthenticationSuccess"]["user_id"]
+        this.talks.setCurrentUserIdAndRoles(
+          message["AuthenticationSuccess"]["user_id"],
+          message["AuthenticationSuccess"]["roles"]
         );
         this.login.enable();
         this.register.enable();
@@ -504,8 +504,9 @@ class Talks {
     }
   }
 
-  setCurrentUserId(currentUserId) {
+  setCurrentUserIdAndRoles(currentUserId, roles) {
     this.currentUserId = currentUserId;
+    this.roles = roles;
   }
 
   sectionNameToSectionElement(name) {
@@ -573,6 +574,7 @@ class Talks {
       talk,
       this.users,
       this.currentUserId,
+      this.roles,
       this.sendMessage
     );
     const sectionElement = this.sectionNameToSectionElement(
@@ -628,11 +630,12 @@ class Talks {
 }
 
 class Talk {
-  constructor(talk, users, currentUserId, sendMessage) {
+  constructor(talk, users, currentUserId, roles, sendMessage) {
     this.element = document.createElement("div");
     this.element.classList.add("talk");
 
     this.id = talk.id;
+    this.creator = talk.creator;
     this.title = talk.title;
     this.description = talk.description;
     this.scheduledAt = talk.scheduled_at;
@@ -642,140 +645,159 @@ class Talk {
 
     this.users = users;
     this.currentUserId = currentUserId;
+    this.roles = roles;
 
     this.titleElement = this.element.appendChild(document.createElement("h1"));
     this.titleElement.innerText = this.title;
-    this.titleElement.addEventListener("click", () => {
-      this.titleEditElement.value = this.title;
-      this.element.replaceChild(this.titleEditElement, this.titleElement);
-      this.titleEditElement.focus();
-    });
-
-    this.titleEditElement = document.createElement("input");
-    this.titleEditElement.type = "text";
-    this.titleEditElement.addEventListener("input", () => {
-      sendMessage({
-        UpdateTitle: {
-          talk_id: this.id,
-          title: this.titleEditElement.value,
-        },
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      this.titleElement.classList.add("editable");
+      this.titleElement.addEventListener("click", () => {
+        this.titleEditElement.value = this.title;
+        this.element.replaceChild(this.titleEditElement, this.titleElement);
+        this.titleEditElement.focus();
       });
-    });
-    this.titleEditElement.addEventListener("blur", () => {
-      this.element.replaceChild(this.titleElement, this.titleEditElement);
-    });
+
+      this.titleEditElement = document.createElement("input");
+      this.titleEditElement.type = "text";
+      this.titleEditElement.addEventListener("input", () => {
+        sendMessage({
+          UpdateTitle: {
+            talk_id: this.id,
+            title: this.titleEditElement.value,
+          },
+        });
+      });
+      this.titleEditElement.addEventListener("blur", () => {
+        this.element.replaceChild(this.titleElement, this.titleEditElement);
+      });
+    }
 
     this.descriptionElement = this.element.appendChild(
       document.createElement("div")
     );
     this.descriptionElement.innerText = this.description;
-    this.descriptionElement.addEventListener("click", () => {
-      this.descriptionEditElement.value = this.description;
-      this.element.replaceChild(
-        this.descriptionEditElement,
-        this.descriptionElement
-      );
-      this.descriptionEditElement.focus();
-    });
-
-    this.descriptionEditElement = document.createElement("input");
-    this.descriptionEditElement.type = "text";
-    this.descriptionEditElement.addEventListener("input", () => {
-      sendMessage({
-        UpdateDescription: {
-          talk_id: this.id,
-          description: this.descriptionEditElement.value,
-        },
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      this.descriptionElement.classList.add("editable");
+      this.descriptionElement.addEventListener("click", () => {
+        this.descriptionEditElement.value = this.description;
+        this.element.replaceChild(
+          this.descriptionEditElement,
+          this.descriptionElement
+        );
+        this.descriptionEditElement.focus();
       });
-    });
-    this.descriptionEditElement.addEventListener("blur", () => {
-      this.element.replaceChild(
-        this.descriptionElement,
-        this.descriptionEditElement
-      );
-    });
+
+      this.descriptionEditElement = document.createElement("input");
+      this.descriptionEditElement.type = "text";
+      this.descriptionEditElement.addEventListener("input", () => {
+        sendMessage({
+          UpdateDescription: {
+            talk_id: this.id,
+            description: this.descriptionEditElement.value,
+          },
+        });
+      });
+      this.descriptionEditElement.addEventListener("blur", () => {
+        this.element.replaceChild(
+          this.descriptionElement,
+          this.descriptionEditElement
+        );
+      });
+    }
 
     this.scheduledAtElement = this.element.appendChild(
       document.createElement("div")
     );
     this.scheduledAtElement.innerText = this.generateScheduledAt();
-    this.scheduledAtElement.addEventListener("click", () => {
-      if (this.scheduledAt) {
-        let beginDate = new Date(this.scheduledAt.secs_since_epoch * 1000);
-        this.scheduledAtEditElement.value = `${beginDate.getFullYear()}-${(
-          beginDate.getMonth() + 1
-        )
-          .toString()
-          .padStart(2, "0")}-${beginDate
-          .getDate()
-          .toString()
-          .padStart(2, "0")}T${beginDate
-          .getHours()
-          .toString()
-          .padStart(2, "0")}:${beginDate
-          .getMinutes()
-          .toString()
-          .padStart(2, "0")}`;
-      } else {
-        this.scheduledAtEditElement.value = "";
-      }
-      this.element.replaceChild(
-        this.scheduledAtEditElement,
-        this.scheduledAtElement
-      );
-      this.scheduledAtEditElement.focus();
-    });
-
-    this.scheduledAtEditElement = document.createElement("input");
-    this.scheduledAtEditElement.type = "datetime-local";
-    this.scheduledAtEditElement.addEventListener("blur", () => {
-      let scheduledAt = null;
-      if (this.scheduledAtEditElement.value.length > 0) {
-        scheduledAt = {
-          secs_since_epoch: Math.floor(
-            new Date(this.scheduledAtEditElement.value) / 1000
-          ),
-          nanos_since_epoch: 0,
-        };
-      }
-      sendMessage({
-        UpdateScheduledAt: {
-          talk_id: this.id,
-          scheduled_at: scheduledAt,
-        },
+    if (this.roles.includes("Scheduler")) {
+      this.scheduledAtElement.classList.add("editable");
+      this.scheduledAtElement.addEventListener("click", () => {
+        if (this.scheduledAt) {
+          let beginDate = new Date(this.scheduledAt.secs_since_epoch * 1000);
+          this.scheduledAtEditElement.value = `${beginDate.getFullYear()}-${(
+            beginDate.getMonth() + 1
+          )
+            .toString()
+            .padStart(2, "0")}-${beginDate
+            .getDate()
+            .toString()
+            .padStart(2, "0")}T${beginDate
+            .getHours()
+            .toString()
+            .padStart(2, "0")}:${beginDate
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}`;
+        } else {
+          this.scheduledAtEditElement.value = "";
+        }
+        this.element.replaceChild(
+          this.scheduledAtEditElement,
+          this.scheduledAtElement
+        );
+        this.scheduledAtEditElement.focus();
       });
-      this.element.replaceChild(
-        this.scheduledAtElement,
-        this.scheduledAtEditElement
-      );
-    });
+
+      this.scheduledAtEditElement = document.createElement("input");
+      this.scheduledAtEditElement.type = "datetime-local";
+      this.scheduledAtEditElement.addEventListener("blur", () => {
+        let scheduledAt = null;
+        if (this.scheduledAtEditElement.value.length > 0) {
+          scheduledAt = {
+            secs_since_epoch: Math.floor(
+              new Date(this.scheduledAtEditElement.value) / 1000
+            ),
+            nanos_since_epoch: 0,
+          };
+        }
+        sendMessage({
+          UpdateScheduledAt: {
+            talk_id: this.id,
+            scheduled_at: scheduledAt,
+          },
+        });
+        this.element.replaceChild(
+          this.scheduledAtElement,
+          this.scheduledAtEditElement
+        );
+      });
+    }
 
     this.durationElement = this.element.appendChild(
       document.createElement("div")
     );
     this.durationElement.innerText = this.generateDuration();
-    this.durationElement.addEventListener("click", () => {
-      this.durationEditElement.value = Math.floor(this.duration.secs / 60);
-      this.element.replaceChild(this.durationEditElement, this.durationElement);
-      this.durationEditElement.focus();
-    });
-
-    this.durationEditElement = document.createElement("input");
-    this.durationEditElement.type = "number";
-    this.durationEditElement.min = 1;
-    this.durationEditElement.max = 600;
-    this.durationEditElement.addEventListener("blur", () => {
-      sendMessage({
-        UpdateDuration: {
-          talk_id: this.id,
-          duration: {
-            secs: parseInt(this.durationEditElement.value) * 60,
-            nanos: 0,
-          },
-        },
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      this.durationElement.classList.add("editable");
+      this.durationElement.addEventListener("click", () => {
+        this.durationEditElement.value = Math.floor(this.duration.secs / 60);
+        this.element.replaceChild(
+          this.durationEditElement,
+          this.durationElement
+        );
+        this.durationEditElement.focus();
       });
-      this.element.replaceChild(this.durationElement, this.durationEditElement);
-    });
+
+      this.durationEditElement = document.createElement("input");
+      this.durationEditElement.type = "number";
+      this.durationEditElement.min = 1;
+      this.durationEditElement.max = 600;
+      this.durationEditElement.addEventListener("blur", () => {
+        sendMessage({
+          UpdateDuration: {
+            talk_id: this.id,
+            duration: {
+              secs: parseInt(this.durationEditElement.value) * 60,
+              nanos: 0,
+            },
+          },
+        });
+        this.element.replaceChild(
+          this.durationElement,
+          this.durationEditElement
+        );
+      });
+    }
 
     this.noobsElement = this.element.appendChild(document.createElement("div"));
     this.noobsCheckboxElement = this.noobsElement.appendChild(

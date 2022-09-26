@@ -6,7 +6,8 @@
 
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url(./fonts/roboto/Roboto-BlackItalic.ttf) format("truetype");
+  src: local("Roboto"),
+    url(./fonts/roboto/Roboto-BlackItalic.ttf) format("truetype");
   font-weight: 900;
   font-style: italic;
 }
@@ -19,7 +20,8 @@
 
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url(./fonts/roboto/Roboto-BoldItalic.ttf) format("truetype");
+  src: local("Roboto"),
+    url(./fonts/roboto/Roboto-BoldItalic.ttf) format("truetype");
   font-weight: 700;
   font-style: italic;
 }
@@ -38,7 +40,8 @@
 
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url(./fonts/roboto/Roboto-LightItalic.ttf) format("truetype");
+  src: local("Roboto"),
+    url(./fonts/roboto/Roboto-LightItalic.ttf) format("truetype");
   font-weight: 300;
   font-style: italic;
 }
@@ -51,14 +54,16 @@
 
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url(./fonts/roboto/Roboto-MediumItalic.ttf) format("truetype");
+  src: local("Roboto"),
+    url(./fonts/roboto/Roboto-MediumItalic.ttf) format("truetype");
   font-weight: 500;
   font-style: italic;
 }
 
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url(./fonts/roboto/Roboto-Regular.ttf) format("truetype");
+  src: local("Roboto"),
+    url(./fonts/roboto/Roboto-Regular.ttf) format("truetype");
   font-weight: 400;
 }
 
@@ -70,16 +75,29 @@
 
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url(./fonts/roboto/Roboto-ThinItalic.ttf) format("truetype");
+  src: local("Roboto"),
+    url(./fonts/roboto/Roboto-ThinItalic.ttf) format("truetype");
   font-weight: 100;
   font-style: italic;
 }
 
-html, body {
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+html,
+body {
   width: 100vw;
   height: 100vh;
   margin: 0;
-  font-family: Roboto, sans-serif;
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f2f2f2;
 }
 
 body.center {
@@ -90,11 +108,298 @@ body.center {
   align-items: center;
 }
 
-#loading {
+#loading h1,
+#login h1,
+#register h1 {
+  font-size: 3rem;
+  font-weight: 500;
+  color: #000;
+  margin: 0;
+}
+
+#loading div {
+  font-size: 0.85rem;
+  color: #888;
+  font-weight: 500;
+}
+
+#loading,
+#login,
+#register {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+}
+
+#login h2,
+#register h2 {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #888;
+  margin: 0;
+}
+
+#login h3,
+#register h3 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #000;
+  margin: 1rem 0 0.5rem 0;
+}
+
+#login input,
+#register input,
+#login select,
+#register select,
+#login button,
+#register button {
+  width: 20rem;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  box-sizing: border-box;
+  font-family: inherit;
+  accent-color: #388e3c;
+}
+
+#register .hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin: -0.25rem 0 0.5rem 0;
+  width: 20rem;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+}
+
+#login button,
+#register button {
+  cursor: pointer;
+  color: #fff;
+  background-color: #388e3c;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
+}
+
+#login button:hover,
+#register button:hover {
+  color: #fff;
+  background-color: #43a047;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.25);
+}
+
+#login button[disabled],
+#register button[disabled] {
+  cursor: initial;
+  color: #fff;
+  background-color: #aaa;
+  box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
+}
+
+#register .i-am-not-a-nao {
+  margin: 0.5rem 0;
+  width: 20rem;
+}
+
+#register .i-am-not-a-nao input {
+  width: initial;
+  margin: 0 0.5rem 0 0;
+  padding: 0;
+}
+
+#register .i-am-not-a-nao label {
+  font-size: 0.9rem;
+}
+
+#login .login-register-switcher,
+#register .login-register-switcher {
+  margin: 0.5rem 0 1rem 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+#login .login-register-switcher a,
+#register .login-register-switcher a {
+  color: #388e3c;
+}
+
+#login .footer a,
+#register .footer a {
+  display: block;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #388e3c;
   text-align: center;
 }
 
-#loading h1 {
-  font-size: 3rem;
+#talks > h1 {
+  font-size: 2.5rem;
   font-weight: 500;
+  color: #000;
+  padding: 1rem 1rem 0 1rem;
+}
+
+#talks .heading {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+#talks .heading h2 {
+  flex-grow: 1;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #000;
+  margin: 0.25rem 0;
+}
+
+#talks .heading button {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  box-sizing: border-box;
+  accent-color: #388e3c;
+  color: #888;
+  background-color: transparent;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  font-family: inherit;
+  font-weight: 500;
+  border: 0.125rem solid #aaa;
+  border-radius: 0.25rem;
+}
+
+#talks .heading button:hover {
+  color: #000;
+  border-color: #000;
+}
+
+#talks .talks {
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 100vw;
+  grid-auto-rows: min-content;
+  box-sizing: border-box;
+}
+
+#talks .talks .talk {
+  display: grid;
+  width: calc(100vw - 2rem);
+  grid-template-columns: calc(100vw - 2rem);
+  grid-template-rows: min-content min-content min-content min-content min-content min-content;
+  margin: 0.5rem 0;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+#talks .talks .talk .title {
+  font-size: 1.25rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #000;
+  padding: 1rem 1rem 0.25rem 1rem;
+}
+
+#talks .talks .talk .scheduled-at,
+#talks .talks .talk .duration,
+#talks .talks .talk .description,
+#talks .talks .talk .noobs,
+#talks .talks .talk .nerds {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+#talks .talks .talk .scheduled-at {
+  padding: 0.25rem 1rem 0 1rem;
+}
+
+#talks .talks .talk .duration {
+  padding: 0 1rem 0.25rem 1rem;
+}
+
+#talks .talks .talk .description {
+  padding: 0.25rem 1rem 0.25rem 1rem;
+}
+
+#talks .talks .talk .editable {
+  cursor: pointer;
+}
+
+#talks .talks .talk .editable:hover {
+  background-color: #eee;
+}
+
+#talks .talks .talk .participation {
+  padding: 0.25rem 1rem 1rem 1rem;
+  text-align: end;
+}
+
+#talks .talks .talk .participation button {
+  cursor: pointer;
+  color: #388e3c;
+  background-color: transparent;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  font-family: inherit;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  box-sizing: border-box;
+  border: none;
+  border: 0.125rem solid #c8e6c9;
+  border-radius: 0.25rem;
+}
+
+#talks .talks .talk .participation button:first-child {
+  margin-right: 1rem;
+}
+
+#talks .talks .talk .participation button:hover {
+  color: #388e3c;
+  border-color: #388e3c;
+}
+
+#talks .talks .talk.participating {
+  background-color: #388e3c;
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .talks .talk.participating h1 {
+  color: #fff;
+}
+
+#talks .talks .talk.participating .scheduled-at,
+#talks .talks .talk.participating .duration,
+#talks .talks .talk.participating .description,
+#talks .talks .talk.participating .noobs,
+#talks .talks .talk.participating .nerds {
+  color: #c8e6c9;
+}
+
+#talks .talks .talk.participating .editable:hover {
+  background-color: #43a047;
+}
+
+#talks .talks .talk.participating .participation button {
+  border: 0.125rem solid #c8e6c9;
+  color: #c8e6c9;
+  box-shadow: none;
+}
+
+#talks .talks .talk.participating .participation button:hover {
+  background-color: #43a047;
+}
+
+#talks .talks .talk.participating .participation button.participating {
+  border: 0.125rem solid transparent;
+  color: #388e3c;
+  background-color: #fff;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .talks .talk.participating .participation button.participating:hover {
+  background-color: #c8e6c9;
 }

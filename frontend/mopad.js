@@ -15,6 +15,7 @@ class Mopad {
       () => {
         this.root.removeChild(this.login.element);
         this.root.appendChild(this.register.element);
+        this.root.classList.add("center");
       }
     );
     this.register = new Register(
@@ -25,6 +26,7 @@ class Mopad {
       () => {
         this.root.removeChild(this.register.element);
         this.root.appendChild(this.login.element);
+        this.root.classList.add("center");
       }
     );
     this.talks = new Talks((message) => {
@@ -32,8 +34,9 @@ class Mopad {
     });
 
     this.root.appendChild(this.loading.element);
+    this.root.classList.add("center");
 
-    this.retrieveTeams();
+    // this.retrieveTeams();
   }
 
   async retrieveTeams() {
@@ -45,6 +48,7 @@ class Mopad {
 
     this.root.removeChild(this.loading.element);
     this.root.appendChild(this.login.element);
+    this.root.classList.add("center");
   }
 
   connectWebSocket(authenticationCommand, name, team, password) {
@@ -75,6 +79,7 @@ class Mopad {
           this.root.removeChild(this.talks.element); // TODO: this errors because this.talks.element is not a child when getting AuthenticationError for Login
         }
         this.root.appendChild(this.login.element);
+        this.root.classList.add("center");
       }
       this.webSocket = null;
     });
@@ -93,6 +98,7 @@ class Mopad {
             : this.register.element
         );
         this.root.appendChild(this.talks.element);
+        this.root.classList.remove("center");
       } else if (message["AuthenticationError"] !== undefined) {
         alert(
           `Chestboard reported that we cannot ${
@@ -162,7 +168,13 @@ class Mopad {
 class Loading {
   constructor() {
     this.element = document.createElement("div");
-    this.element.innerText = "Booting chestboard...";
+    this.element.id = "loading";
+
+    const heading = this.element.appendChild(document.createElement("h1"));
+    heading.innerText = "MOPAD";
+
+    const loading = this.element.appendChild(document.createElement("div"));
+    loading.innerText = "Booting chestboard...";
   }
 }
 

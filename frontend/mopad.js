@@ -1002,6 +1002,14 @@ class Talk {
     );
     this.noobsButtonElement.innerText = "Noob";
     this.noobsButtonElement.addEventListener("click", () => {
+      if (this.nerds.includes(this.currentUserId)) {
+        sendMessage({
+          RemoveNerd: {
+            talk_id: this.id,
+            user_id: currentUserId,
+          },
+        });
+      }
       sendMessage({
         [this.noobs.includes(this.currentUserId) ? "RemoveNoob" : "AddNoob"]: {
           talk_id: this.id,
@@ -1015,6 +1023,14 @@ class Talk {
     );
     this.nerdsButtonElement.innerText = "Nerd";
     this.nerdsButtonElement.addEventListener("click", () => {
+      if (this.noobs.includes(this.currentUserId)) {
+        sendMessage({
+          RemoveNoob: {
+            talk_id: this.id,
+            user_id: currentUserId,
+          },
+        });
+      }
       sendMessage({
         [this.nerds.includes(this.currentUserId) ? "RemoveNerd" : "AddNerd"]: {
           talk_id: this.id,

@@ -1,5 +1,5 @@
 // TODO: Add/remove talks
-// TODO: styling
+// TODO: styling (remove unused fonts, wide screens)
 // TODO: Login/Reconnection/Persistence/Robustness
 
 class Mopad {
@@ -16,6 +16,7 @@ class Mopad {
         this.root.removeChild(this.login.element);
         this.root.appendChild(this.register.element);
         this.root.classList.add("center");
+        this.register.focus();
       }
     );
     this.register = new Register(
@@ -27,6 +28,7 @@ class Mopad {
         this.root.removeChild(this.register.element);
         this.root.appendChild(this.login.element);
         this.root.classList.add("center");
+        this.login.focus();
       }
     );
     this.talks = new Talks((message) => {
@@ -36,7 +38,7 @@ class Mopad {
     this.root.appendChild(this.loading.element);
     this.root.classList.add("center");
 
-    // this.retrieveTeams();
+    this.retrieveTeams();
   }
 
   async retrieveTeams() {
@@ -49,6 +51,7 @@ class Mopad {
     this.root.removeChild(this.loading.element);
     this.root.appendChild(this.login.element);
     this.root.classList.add("center");
+    this.login.focus();
   }
 
   connectWebSocket(authenticationCommand, name, team, password) {
@@ -80,6 +83,7 @@ class Mopad {
         }
         this.root.appendChild(this.login.element);
         this.root.classList.add("center");
+        this.login.focus();
       }
       this.webSocket = null;
     });
@@ -183,44 +187,46 @@ class Login {
     this.element = document.createElement("div");
     this.element.id = "login";
 
-    const centeredBoxElement = this.element.appendChild(
-      document.createElement("div")
-    );
-    centeredBoxElement.classList.add("centered-box");
-
-    const heading1Element = centeredBoxElement.appendChild(
+    const heading1Element = this.element.appendChild(
       document.createElement("h1")
     );
     heading1Element.innerText = "MOPAD";
 
-    const heading2Element = centeredBoxElement.appendChild(
+    const heading2Element = this.element.appendChild(
       document.createElement("h2")
     );
     heading2Element.innerText =
       "Moderated Organization PAD (powerful, agile, distributed)";
 
-    const heading3Element = centeredBoxElement.appendChild(
+    const heading3Element = this.element.appendChild(
       document.createElement("h3")
     );
     heading3Element.innerText = "Login";
 
-    this.nameElement = centeredBoxElement.appendChild(
+    this.nameElement = this.element.appendChild(
       document.createElement("input")
     );
     this.nameElement.type = "text";
     this.nameElement.placeholder = "Your Name";
+    this.nameElement.autofocus = true;
+    this.nameElement.addEventListener("input", () => {
+      this.enableButton();
+    });
 
-    this.teamElement = centeredBoxElement.appendChild(
+    this.teamElement = this.element.appendChild(
       document.createElement("select")
     );
 
-    this.passwordElement = centeredBoxElement.appendChild(
+    this.passwordElement = this.element.appendChild(
       document.createElement("input")
     );
     this.passwordElement.type = "password";
     this.passwordElement.placeholder = "Your Password";
+    this.passwordElement.addEventListener("input", () => {
+      this.enableButton();
+    });
 
-    this.buttonElement = centeredBoxElement.appendChild(
+    this.buttonElement = this.element.appendChild(
       document.createElement("button")
     );
     this.buttonElement.innerText = "Login";
@@ -232,7 +238,9 @@ class Login {
       );
     });
 
-    const noAccountElement = centeredBoxElement.appendChild(
+    this.enableButton();
+
+    const noAccountElement = this.element.appendChild(
       document.createElement("div")
     );
     noAccountElement.classList.add("login-register-switcher");
@@ -244,19 +252,37 @@ class Login {
     const switchToRegisterElement = noAccountElement.appendChild(
       document.createElement("a")
     );
-    switchToRegisterElement.href = "#";
+    switchToRegisterElement.href = "#register";
     switchToRegisterElement.innerText = "Register";
     switchToRegisterElement.addEventListener("click", (event) => {
       event.preventDefault();
       switchToRegister();
     });
 
-    const footerElement = centeredBoxElement.appendChild(
+    const footerElement = this.element.appendChild(
       document.createElement("div")
     );
     footerElement.classList.add("footer");
-    footerElement.innerText =
-      "Imprint/Impressum - Privacy Policy/Datenschutzerklärung";
+
+    const imprintElement = footerElement.appendChild(
+      document.createElement("a")
+    );
+    imprintElement.href = "https://rohow.de/2020/de/imprint.html";
+    imprintElement.target = "_blank";
+    imprintElement.rel = "noreferrer";
+    imprintElement.innerText = "Imprint/Impressum";
+
+    const privacyPolicyElement = footerElement.appendChild(
+      document.createElement("a")
+    );
+    privacyPolicyElement.href = "https://rohow.de/2020/de/privacy_policy.html";
+    privacyPolicyElement.target = "_blank";
+    privacyPolicyElement.rel = "noreferrer";
+    privacyPolicyElement.innerText = "Privacy Policy/Datenschutzerklärung";
+  }
+
+  focus() {
+    this.nameElement.focus();
   }
 
   enable() {
@@ -271,6 +297,12 @@ class Login {
     this.teamElement.disabled = true;
     this.passwordElement.disabled = true;
     this.buttonElement.disabled = true;
+  }
+
+  enableButton() {
+    this.buttonElement.disabled =
+      this.nameElement.value.length === 0 ||
+      this.passwordElement.value.length === 0;
   }
 
   updateTeams(teams) {
@@ -292,68 +324,78 @@ class Register {
     this.element = document.createElement("div");
     this.element.id = "register";
 
-    const centeredBoxElement = this.element.appendChild(
-      document.createElement("div")
-    );
-    centeredBoxElement.classList.add("centered-box");
-
-    const heading1Element = centeredBoxElement.appendChild(
+    const heading1Element = this.element.appendChild(
       document.createElement("h1")
     );
     heading1Element.innerText = "MOPAD";
 
-    const heading2Element = centeredBoxElement.appendChild(
+    const heading2Element = this.element.appendChild(
       document.createElement("h2")
     );
     heading2Element.innerText =
       "Moderated Organization PAD (powerful, agile, distributed)";
 
-    const heading3Element = centeredBoxElement.appendChild(
+    const heading3Element = this.element.appendChild(
       document.createElement("h3")
     );
     heading3Element.innerText = "Register";
 
-    this.nameElement = centeredBoxElement.appendChild(
+    this.nameElement = this.element.appendChild(
       document.createElement("input")
     );
     this.nameElement.type = "text";
     this.nameElement.placeholder = "Your Name";
+    this.nameElement.autofocus = true;
+    this.nameElement.addEventListener("input", () => {
+      this.enableButton();
+    });
 
-    const nameHintElement = centeredBoxElement.appendChild(
+    const nameHintElement = this.element.appendChild(
       document.createElement("div")
     );
     nameHintElement.classList.add("hint");
     nameHintElement.innerText = "Unique in your team, visible to everyone";
 
-    this.teamElement = centeredBoxElement.appendChild(
+    this.teamElement = this.element.appendChild(
       document.createElement("select")
     );
 
-    const teamHintElement = centeredBoxElement.appendChild(
+    const teamHintElement = this.element.appendChild(
       document.createElement("div")
     );
     teamHintElement.classList.add("hint");
     teamHintElement.innerText = "Visible to everyone";
 
-    this.passwordElement = centeredBoxElement.appendChild(
+    this.passwordElement = this.element.appendChild(
       document.createElement("input")
     );
     this.passwordElement.type = "password";
     this.passwordElement.placeholder = "Your Password";
+    this.passwordElement.addEventListener("input", () => {
+      this.enableButton();
+    });
 
-    this.iAmNotANaoElement = centeredBoxElement.appendChild(
+    const iAmNotANaoBoxElement = this.element.appendChild(
+      document.createElement("div")
+    );
+    iAmNotANaoBoxElement.classList.add("i-am-not-a-nao");
+
+    this.iAmNotANaoElement = iAmNotANaoBoxElement.appendChild(
       document.createElement("input")
     );
     this.iAmNotANaoElement.type = "checkbox";
     this.iAmNotANaoElement.id = "i-am-not-a-nao";
+    this.iAmNotANaoElement.addEventListener("input", () => {
+      this.enableButton();
+    });
 
-    const iAmNotANaoLabelElement = centeredBoxElement.appendChild(
+    const iAmNotANaoLabelElement = iAmNotANaoBoxElement.appendChild(
       document.createElement("label")
     );
     iAmNotANaoLabelElement.setAttribute("for", "i-am-not-a-nao");
     iAmNotANaoLabelElement.innerText = "I'm not a NAO";
 
-    this.buttonElement = centeredBoxElement.appendChild(
+    this.buttonElement = this.element.appendChild(
       document.createElement("button")
     );
     this.buttonElement.innerText = "Register";
@@ -369,31 +411,51 @@ class Register {
       );
     });
 
-    const noAccountElement = centeredBoxElement.appendChild(
+    this.enableButton();
+
+    const existingAccountElement = this.element.appendChild(
       document.createElement("div")
     );
-    noAccountElement.classList.add("login-register-switcher");
+    existingAccountElement.classList.add("login-register-switcher");
 
-    noAccountElement.appendChild(
+    existingAccountElement.appendChild(
       document.createTextNode("Already have an account? ")
     );
 
-    const switchToLoginElement = noAccountElement.appendChild(
+    const switchToLoginElement = existingAccountElement.appendChild(
       document.createElement("a")
     );
-    switchToLoginElement.href = "#";
+    switchToLoginElement.href = "#login";
     switchToLoginElement.innerText = "Login";
     switchToLoginElement.addEventListener("click", (event) => {
       event.preventDefault();
       switchToLogin();
     });
 
-    const footerElement = centeredBoxElement.appendChild(
+    const footerElement = this.element.appendChild(
       document.createElement("div")
     );
     footerElement.classList.add("footer");
-    footerElement.innerText =
-      "Imprint/Impressum - Privacy Policy/Datenschutzerklärung";
+
+    const imprintElement = footerElement.appendChild(
+      document.createElement("a")
+    );
+    imprintElement.href = "https://rohow.de/2020/de/imprint.html";
+    imprintElement.target = "_blank";
+    imprintElement.rel = "noreferrer";
+    imprintElement.innerText = "Imprint/Impressum";
+
+    const privacyPolicyElement = footerElement.appendChild(
+      document.createElement("a")
+    );
+    privacyPolicyElement.href = "https://rohow.de/2020/de/privacy_policy.html";
+    privacyPolicyElement.target = "_blank";
+    privacyPolicyElement.rel = "noreferrer";
+    privacyPolicyElement.innerText = "Privacy Policy/Datenschutzerklärung";
+  }
+
+  focus() {
+    this.nameElement.focus();
   }
 
   enable() {
@@ -410,6 +472,13 @@ class Register {
     this.passwordElement.disabled = true;
     this.iAmNotANaoElement.disabled = true;
     this.buttonElement.disabled = true;
+  }
+
+  enableButton() {
+    this.buttonElement.disabled =
+      this.nameElement.value.length === 0 ||
+      this.passwordElement.value.length === 0 ||
+      !this.iAmNotANaoElement.checked;
   }
 
   updateTeams(teams) {
@@ -437,68 +506,89 @@ class Talks {
     this.sectionElementsOfTalks = {};
     this.users = {};
 
+    this.pastExpanded = false;
+    this.currentExpanded = true;
+    this.upcomingExpanded = true;
+    this.unscheduledExpanded = true;
+
     const headingElement = this.element.appendChild(
       document.createElement("h1")
     );
     headingElement.innerText = "MOPAD";
 
-    const pastDetailsElement = this.element.appendChild(
-      document.createElement("details")
-    );
+    this.pastHeadingElement = document.createElement("div");
+    this.pastHeadingElement.classList.add("heading");
 
-    const pastSummaryElement = pastDetailsElement.appendChild(
-      document.createElement("summary")
+    const pastHeading2Element = this.pastHeadingElement.appendChild(
+      document.createElement("h2")
     );
-    pastSummaryElement.innerText = "Past talks";
+    pastHeading2Element.innerText = "Past talks";
 
-    this.pastTalksElement = pastDetailsElement.appendChild(
-      document.createElement("div")
+    this.pastButtonElement = this.pastHeadingElement.appendChild(
+      document.createElement("button")
     );
+    this.pastButtonElement.addEventListener("click", () => {
+      this.pastExpanded = !this.pastExpanded;
+      this.updateVisibleSections();
+    });
+
+    this.pastTalksElement = document.createElement("div");
     this.pastTalksElement.classList.add("talks");
 
-    const currentDetailsElement = this.element.appendChild(
-      document.createElement("details")
-    );
-    currentDetailsElement.open = true;
+    this.currentHeadingElement = document.createElement("div");
+    this.currentHeadingElement.classList.add("heading");
 
-    const currentSummaryElement = currentDetailsElement.appendChild(
-      document.createElement("summary")
+    const currentHeading2Element = this.currentHeadingElement.appendChild(
+      document.createElement("h2")
     );
-    currentSummaryElement.innerText = "Current talks";
+    currentHeading2Element.innerText = "Current talks";
 
-    this.currentTalksElement = currentDetailsElement.appendChild(
-      document.createElement("div")
+    this.currentButtonElement = this.currentHeadingElement.appendChild(
+      document.createElement("button")
     );
+    this.currentButtonElement.addEventListener("click", () => {
+      this.currentExpanded = !this.currentExpanded;
+      this.updateVisibleSections();
+    });
+
+    this.currentTalksElement = document.createElement("div");
     this.currentTalksElement.classList.add("talks");
 
-    const upcomingDetailsElement = this.element.appendChild(
-      document.createElement("details")
-    );
-    upcomingDetailsElement.open = true;
+    this.upcomingHeadingElement = document.createElement("div");
+    this.upcomingHeadingElement.classList.add("heading");
 
-    const upcomingSummaryElement = upcomingDetailsElement.appendChild(
-      document.createElement("summary")
+    const upcomingHeading2Element = this.upcomingHeadingElement.appendChild(
+      document.createElement("h2")
     );
-    upcomingSummaryElement.innerText = "Upcoming talks";
+    upcomingHeading2Element.innerText = "Upcoming talks";
 
-    this.upcomingTalksElement = upcomingDetailsElement.appendChild(
-      document.createElement("div")
+    this.upcomingButtonElement = this.upcomingHeadingElement.appendChild(
+      document.createElement("button")
     );
+    this.upcomingButtonElement.addEventListener("click", () => {
+      this.upcomingExpanded = !this.upcomingExpanded;
+      this.updateVisibleSections();
+    });
+
+    this.upcomingTalksElement = document.createElement("div");
     this.upcomingTalksElement.classList.add("talks");
 
-    const unscheduledDetailsElement = this.element.appendChild(
-      document.createElement("details")
-    );
-    unscheduledDetailsElement.open = true;
+    this.unscheduledHeadingElement = document.createElement("div");
+    this.unscheduledHeadingElement.classList.add("heading");
 
-    const unscheduledSummaryElement = unscheduledDetailsElement.appendChild(
-      document.createElement("summary")
-    );
-    unscheduledSummaryElement.innerText = "Unscheduled talks";
+    const unscheduledHeading2Element =
+      this.unscheduledHeadingElement.appendChild(document.createElement("h2"));
+    unscheduledHeading2Element.innerText = "Unscheduled talks";
 
-    this.unscheduledTalksElement = unscheduledDetailsElement.appendChild(
-      document.createElement("div")
+    this.unscheduledButtonElement = this.unscheduledHeadingElement.appendChild(
+      document.createElement("button")
     );
+    this.unscheduledButtonElement.addEventListener("click", () => {
+      this.unscheduledExpanded = !this.unscheduledExpanded;
+      this.updateVisibleSections();
+    });
+
+    this.unscheduledTalksElement = document.createElement("div");
     this.unscheduledTalksElement.classList.add("talks");
   }
 
@@ -514,6 +604,7 @@ class Talks {
       }
       this.talks[talkId].minuteTick();
     }
+    this.updateVisibleSections();
   }
 
   setCurrentUserIdAndRoles(currentUserId, roles) {
@@ -571,6 +662,86 @@ class Talks {
     this.sectionElementsOfTalks[talkId] = sectionElement;
   }
 
+  updateVisibleSections() {
+    if (this.pastHeadingElement.parentElement === this.element) {
+      this.element.removeChild(this.pastHeadingElement);
+    }
+    if (this.pastTalksElement.parentElement === this.element) {
+      this.element.removeChild(this.pastTalksElement);
+    }
+    const pastTalks = Object.values(this.sectionElementsOfTalks).filter(
+      (sectionElementOfTalk) => sectionElementOfTalk == this.pastTalksElement
+    ).length;
+    if (pastTalks > 0) {
+      this.element.appendChild(this.pastHeadingElement);
+      if (this.pastExpanded) {
+        this.element.appendChild(this.pastTalksElement);
+        this.pastButtonElement.innerText = "Hide past";
+      } else {
+        this.pastButtonElement.innerText = `Show ${pastTalks} past`;
+      }
+    }
+
+    if (this.currentHeadingElement.parentElement === this.element) {
+      this.element.removeChild(this.currentHeadingElement);
+    }
+    if (this.currentTalksElement.parentElement === this.element) {
+      this.element.removeChild(this.currentTalksElement);
+    }
+    const currentTalks = Object.values(this.sectionElementsOfTalks).filter(
+      (sectionElementOfTalk) => sectionElementOfTalk == this.currentTalksElement
+    ).length;
+    if (currentTalks > 0) {
+      this.element.appendChild(this.currentHeadingElement);
+      if (this.currentExpanded) {
+        this.element.appendChild(this.currentTalksElement);
+        this.currentButtonElement.innerText = "Hide current";
+      } else {
+        this.currentButtonElement.innerText = `Show ${currentTalks} current`;
+      }
+    }
+
+    if (this.upcomingHeadingElement.parentElement === this.element) {
+      this.element.removeChild(this.upcomingHeadingElement);
+    }
+    if (this.upcomingTalksElement.parentElement === this.element) {
+      this.element.removeChild(this.upcomingTalksElement);
+    }
+    const upcomingTalks = Object.values(this.sectionElementsOfTalks).filter(
+      (sectionElementOfTalk) =>
+        sectionElementOfTalk == this.upcomingTalksElement
+    ).length;
+    if (upcomingTalks > 0) {
+      this.element.appendChild(this.upcomingHeadingElement);
+      if (this.upcomingExpanded) {
+        this.element.appendChild(this.upcomingTalksElement);
+        this.upcomingButtonElement.innerText = "Hide upcoming";
+      } else {
+        this.upcomingButtonElement.innerText = `Show ${upcomingTalks} upcoming`;
+      }
+    }
+
+    if (this.unscheduledHeadingElement.parentElement === this.element) {
+      this.element.removeChild(this.unscheduledHeadingElement);
+    }
+    if (this.unscheduledTalksElement.parentElement === this.element) {
+      this.element.removeChild(this.unscheduledTalksElement);
+    }
+    const unscheduledTalks = Object.values(this.sectionElementsOfTalks).filter(
+      (sectionElementOfTalk) =>
+        sectionElementOfTalk == this.unscheduledTalksElement
+    ).length;
+    if (unscheduledTalks > 0) {
+      this.element.appendChild(this.unscheduledHeadingElement);
+      if (this.unscheduledExpanded) {
+        this.element.appendChild(this.unscheduledTalksElement);
+        this.unscheduledButtonElement.innerText = "Hide unscheduled";
+      } else {
+        this.unscheduledButtonElement.innerText = `Show ${unscheduledTalks} unscheduled`;
+      }
+    }
+  }
+
   updateUsers(users) {
     this.users = users;
     for (const talk of Object.values(this.talks)) {
@@ -593,6 +764,7 @@ class Talks {
       this.talks[talk.id].getTargetSectionName()
     );
     this.insertTalkIntoSectionElement(talk.id, sectionElement);
+    this.updateVisibleSections();
   }
 
   removeTalk(talkId) {
@@ -617,6 +789,7 @@ class Talks {
     if (currentSectionElement !== targetSectionElement) {
       currentSectionElement.removeChild(this.talks[talkId].element);
       this.insertTalkIntoSectionElement(talkId, targetSectionElement);
+      this.updateVisibleSections();
     }
   }
 
@@ -660,6 +833,7 @@ class Talk {
     this.roles = roles;
 
     this.titleElement = this.element.appendChild(document.createElement("h1"));
+    this.titleElement.classList.add("title");
     this.titleElement.innerText = this.title;
     if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
       this.titleElement.classList.add("editable");
@@ -670,6 +844,7 @@ class Talk {
       });
 
       this.titleEditElement = document.createElement("input");
+      this.titleEditElement.classList.add("title");
       this.titleEditElement.type = "text";
       this.titleEditElement.addEventListener("input", () => {
         sendMessage({
@@ -684,48 +859,16 @@ class Talk {
       });
     }
 
-    this.descriptionElement = this.element.appendChild(
-      document.createElement("div")
-    );
-    this.descriptionElement.innerText = this.description;
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
-      this.descriptionElement.classList.add("editable");
-      this.descriptionElement.addEventListener("click", () => {
-        this.descriptionEditElement.value = this.description;
-        this.element.replaceChild(
-          this.descriptionEditElement,
-          this.descriptionElement
-        );
-        this.descriptionEditElement.focus();
-      });
-
-      this.descriptionEditElement = document.createElement("input");
-      this.descriptionEditElement.type = "text";
-      this.descriptionEditElement.addEventListener("input", () => {
-        sendMessage({
-          UpdateDescription: {
-            talk_id: this.id,
-            description: this.descriptionEditElement.value,
-          },
-        });
-      });
-      this.descriptionEditElement.addEventListener("blur", () => {
-        this.element.replaceChild(
-          this.descriptionElement,
-          this.descriptionEditElement
-        );
-      });
-    }
-
     this.scheduledAtElement = this.element.appendChild(
       document.createElement("div")
     );
+    this.scheduledAtElement.classList.add("scheduled-at");
     this.scheduledAtElement.innerText = this.generateScheduledAt();
     if (this.roles.includes("Scheduler")) {
       this.scheduledAtElement.classList.add("editable");
       this.scheduledAtElement.addEventListener("click", () => {
         if (this.scheduledAt) {
-          let beginDate = new Date(this.scheduledAt.secs_since_epoch * 1000);
+          const beginDate = new Date(this.scheduledAt.secs_since_epoch * 1000);
           this.scheduledAtEditElement.value = `${beginDate.getFullYear()}-${(
             beginDate.getMonth() + 1
           )
@@ -751,6 +894,7 @@ class Talk {
       });
 
       this.scheduledAtEditElement = document.createElement("input");
+      this.scheduledAtEditElement.classList.add("scheduled-at");
       this.scheduledAtEditElement.type = "datetime-local";
       this.scheduledAtEditElement.addEventListener("blur", () => {
         let scheduledAt = null;
@@ -778,6 +922,7 @@ class Talk {
     this.durationElement = this.element.appendChild(
       document.createElement("div")
     );
+    this.durationElement.classList.add("duration");
     this.durationElement.innerText = this.generateDuration();
     if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
       this.durationElement.classList.add("editable");
@@ -791,6 +936,7 @@ class Talk {
       });
 
       this.durationEditElement = document.createElement("input");
+      this.durationEditElement.classList.add("duration");
       this.durationEditElement.type = "number";
       this.durationEditElement.min = 1;
       this.durationEditElement.max = 600;
@@ -811,59 +957,72 @@ class Talk {
       });
     }
 
-    this.noobsElement = this.element.appendChild(document.createElement("div"));
-    this.noobsCheckboxElement = this.noobsElement.appendChild(
-      document.createElement("input")
-    );
-    this.noobsCheckboxElement.id = `talk-${this.id}-noobs-checkbox`;
-    this.noobsCheckboxElement.type = "checkbox";
-    this.noobsCheckboxElement.addEventListener("change", () => {
-      sendMessage({
-        [this.noobsCheckboxElement.checked ? "AddNoob" : "RemoveNoob"]: {
-          talk_id: this.id,
-          user_id: currentUserId,
-        },
-      });
-    });
-    this.noobsLabelElement = this.noobsElement.appendChild(
-      document.createElement("label")
-    );
-    this.noobsLabelElement.setAttribute(
-      "for",
-      `talk-${this.id}-noobs-checkbox`
-    );
-    this.noobsLabelElement.innerText = "Noobs";
-    this.noobsListElement = this.noobsElement.appendChild(
+    this.descriptionElement = this.element.appendChild(
       document.createElement("div")
     );
-    this.updateNoobs();
+    this.descriptionElement.classList.add("description");
+    this.descriptionElement.innerText = this.description;
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      this.descriptionElement.classList.add("editable");
+      this.descriptionElement.addEventListener("click", () => {
+        this.descriptionEditElement.value = this.description;
+        this.element.replaceChild(
+          this.descriptionEditElement,
+          this.descriptionElement
+        );
+        this.descriptionEditElement.focus();
+      });
 
-    this.nerdsElement = this.element.appendChild(document.createElement("div"));
-    this.nerdsCheckboxElement = this.nerdsElement.appendChild(
-      document.createElement("input")
+      this.descriptionEditElement = document.createElement("input");
+      this.descriptionEditElement.classList.add("description");
+      this.descriptionEditElement.type = "text";
+      this.descriptionEditElement.addEventListener("input", () => {
+        sendMessage({
+          UpdateDescription: {
+            talk_id: this.id,
+            description: this.descriptionEditElement.value,
+          },
+        });
+      });
+      this.descriptionEditElement.addEventListener("blur", () => {
+        this.element.replaceChild(
+          this.descriptionElement,
+          this.descriptionEditElement
+        );
+      });
+    }
+
+    const participationElement = this.element.appendChild(
+      document.createElement("div")
     );
-    this.nerdsCheckboxElement.id = `talk-${this.id}-nerds-checkbox`;
-    this.nerdsCheckboxElement.type = "checkbox";
-    this.nerdsCheckboxElement.addEventListener("change", () => {
+    participationElement.classList.add("participation");
+
+    this.noobsButtonElement = participationElement.appendChild(
+      document.createElement("button")
+    );
+    this.noobsButtonElement.innerText = "Noob";
+    this.noobsButtonElement.addEventListener("click", () => {
       sendMessage({
-        [this.nerdsCheckboxElement.checked ? "AddNerd" : "RemoveNerd"]: {
+        [this.noobs.includes(this.currentUserId) ? "RemoveNoob" : "AddNoob"]: {
           talk_id: this.id,
           user_id: currentUserId,
         },
       });
     });
-    this.nerdsLabelElement = this.nerdsElement.appendChild(
-      document.createElement("label")
+
+    this.nerdsButtonElement = participationElement.appendChild(
+      document.createElement("button")
     );
-    this.nerdsLabelElement.setAttribute(
-      "for",
-      `talk-${this.id}-nerds-checkbox`
-    );
-    this.nerdsLabelElement.innerText = "Nerds";
-    this.nerdsListElement = this.nerdsElement.appendChild(
-      document.createElement("div")
-    );
-    this.updateNerds();
+    this.nerdsButtonElement.innerText = "Nerd";
+    this.nerdsButtonElement.addEventListener("click", () => {
+      sendMessage({
+        [this.nerds.includes(this.currentUserId) ? "RemoveNerd" : "AddNerd"]: {
+          talk_id: this.id,
+          user_id: currentUserId,
+        },
+      });
+    });
+    this.updateParticipation();
   }
 
   minuteTick() {
@@ -873,11 +1032,11 @@ class Talk {
 
   getTargetSectionName() {
     if (this.scheduledAt !== null) {
-      let beginMinutes = Math.floor(this.scheduledAt.secs_since_epoch / 60);
-      let endMinutes = Math.floor(
+      const beginMinutes = Math.floor(this.scheduledAt.secs_since_epoch / 60);
+      const endMinutes = Math.floor(
         (this.scheduledAt.secs_since_epoch + this.duration.secs) / 60
       );
-      let nowMinutes = Math.floor(Date.now() / 60000);
+      const nowMinutes = Math.floor(Date.now() / 60000);
 
       if (nowMinutes >= endMinutes) {
         return "past";
@@ -893,8 +1052,7 @@ class Talk {
 
   updateUsers(users) {
     this.users = users;
-    this.updateNoobs();
-    this.updateNerds();
+    this.updateParticipation();
   }
 
   updateTitle(title) {
@@ -921,30 +1079,30 @@ class Talk {
 
   addNoob(userId) {
     this.noobs.push(userId);
-    this.updateNoobs();
+    this.updateParticipation();
   }
 
   removeNoob(userId) {
     this.noobs = this.noobs.filter((noob) => noob !== userId);
-    this.updateNoobs();
+    this.updateParticipation();
   }
 
   addNerd(userId) {
     this.nerds.push(userId);
-    this.updateNerds();
+    this.updateParticipation();
   }
 
   removeNerd(userId) {
     this.nerds = this.nerds.filter((nerd) => nerd !== userId);
-    this.updateNerds();
+    this.updateParticipation();
   }
 
   generateScheduledAt() {
     if (this.scheduledAt !== null) {
-      let beginMinutes = Math.floor(this.scheduledAt.secs_since_epoch / 60);
-      let beginDate = new Date(beginMinutes * 60000);
-      let durationMinutes = Math.floor(this.duration.secs / 60);
-      let nowMinutes = Math.floor(Date.now() / 60000);
+      const beginMinutes = Math.floor(this.scheduledAt.secs_since_epoch / 60);
+      const beginDate = new Date(beginMinutes * 60000);
+      const durationMinutes = Math.floor(this.duration.secs / 60);
+      const nowMinutes = Math.floor(Date.now() / 60000);
       let relativeSuffix = "";
       if (
         nowMinutes < beginMinutes &&
@@ -981,23 +1139,23 @@ class Talk {
   }
 
   updateScheduledAtElement() {
-    let scheduledAtString = this.generateScheduledAt();
+    const scheduledAtString = this.generateScheduledAt();
     if (scheduledAtString !== this.scheduledAtElement.innerText) {
       this.scheduledAtElement.innerText = scheduledAtString;
     }
   }
 
   generateDuration() {
-    let durationMinutes = Math.floor(this.duration.secs / 60);
+    const durationMinutes = Math.floor(this.duration.secs / 60);
     let relativeSuffix = "";
     if (this.scheduledAt !== null) {
-      let beginMinutes = Math.floor(this.scheduledAt.secs_since_epoch / 60);
-      let nowMinutes = Math.floor(Date.now() / 60000);
+      const beginMinutes = Math.floor(this.scheduledAt.secs_since_epoch / 60);
+      const nowMinutes = Math.floor(Date.now() / 60000);
       if (
         beginMinutes <= nowMinutes &&
         nowMinutes - beginMinutes < durationMinutes
       ) {
-        let leftMinutes = durationMinutes - (nowMinutes - beginMinutes);
+        const leftMinutes = durationMinutes - (nowMinutes - beginMinutes);
         relativeSuffix = ` (${leftMinutes} minute${
           leftMinutes === 1 ? "" : "s"
         } left)`;
@@ -1010,49 +1168,33 @@ class Talk {
   }
 
   updateDurationElement() {
-    let durationString = this.generateDuration();
+    const durationString = this.generateDuration();
     if (durationString !== this.durationElement.innerText) {
       this.durationElement.innerText = durationString;
     }
   }
 
-  updateNoobs() {
-    this.noobsCheckboxElement.checked = this.noobs.includes(this.currentUserId);
-
-    this.noobsLabelElement.innerText = `${this.noobs.length} Noob${
-      this.noobs.length == 1 ? "" : "s"
-    }${this.noobs.length > 0 ? ":" : ""}`;
-
-    while (this.noobsListElement.firstChild) {
-      this.noobsListElement.removeChild(this.noobsListElement.firstChild);
+  updateParticipation() {
+    const participatingAsNoob = this.noobs.includes(this.currentUserId);
+    const participatingAsNerd = this.nerds.includes(this.currentUserId);
+    if (participatingAsNoob) {
+      this.noobsButtonElement.classList.add("participating");
+    } else {
+      this.noobsButtonElement.classList.remove("participating");
     }
-
-    for (let userId of this.noobs) {
-      let noobElement = this.noobsListElement.appendChild(
-        document.createElement(userId == this.currentUserId ? "b" : "span")
-      );
-      noobElement.innerText = this.users[userId].name;
-      noobElement.title = this.users[userId].team;
+    this.noobsButtonElement.innerText = `Noob (${this.noobs.length})`;
+    this.noobsButtonElement.title = `${this.noobs.map((userId) => `${this.users[userId].name} (${this.users[userId].team})`).join(", ")}`;
+    if (participatingAsNerd) {
+      this.nerdsButtonElement.classList.add("participating");
+    } else {
+      this.nerdsButtonElement.classList.remove("participating");
     }
-  }
-
-  updateNerds() {
-    this.nerdsCheckboxElement.checked = this.nerds.includes(this.currentUserId);
-
-    this.nerdsLabelElement.innerText = `${this.nerds.length} Nerd${
-      this.nerds.length == 1 ? "" : "s"
-    }${this.nerds.length > 0 ? ":" : ""}`;
-
-    while (this.nerdsListElement.firstChild) {
-      this.nerdsListElement.removeChild(this.nerdsListElement.firstChild);
-    }
-
-    for (let userId of this.nerds) {
-      let nerdElement = this.nerdsListElement.appendChild(
-        document.createElement(userId == this.currentUserId ? "b" : "span")
-      );
-      nerdElement.innerText = this.users[userId].name;
-      nerdElement.title = this.users[userId].team;
+    this.nerdsButtonElement.innerText = `Nerd (${this.nerds.length})`;
+    this.nerdsButtonElement.title = `${this.nerds.map((userId) => `${this.users[userId].name} (${this.users[userId].team})`).join(", ")}`;
+    if (participatingAsNoob || participatingAsNerd) {
+      this.element.classList.add("participating");
+    } else {
+      this.element.classList.remove("participating");
     }
   }
 }

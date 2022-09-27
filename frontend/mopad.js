@@ -669,9 +669,18 @@ class Talks {
       (
         [leftTalkId, _leftSectionElement],
         [rightTalkId, _rightSectionElement]
-      ) =>
-        this.talks[leftTalkId].scheduledAt.secs_since_epoch -
-        this.talks[rightTalkId].scheduledAt.secs_since_epoch
+      ) => {
+        if (
+          this.talks[leftTalkId].scheduledAt === null ||
+          this.talks[rightTalkId].scheduledAt === null
+        ) {
+          return 0;
+        }
+        return (
+          this.talks[leftTalkId].scheduledAt.secs_since_epoch -
+          this.talks[rightTalkId].scheduledAt.secs_since_epoch
+        );
+      }
     );
     const talkOfLaterScheduledAt = otherTalksInSection.find(
       ([otherTalkId, _sectionElement]) =>

@@ -490,8 +490,9 @@ async fn handle_message(
                 Command::RemoveTalk { talk_id } => {
                     let mut talks = talks.lock().await;
 
-                    if !current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id
+                    if !talks.contains_key(&talk_id)
+                        || (!current_user.roles.contains(&Role::Editor)
+                            && talks[&talk_id].creator != current_user.id)
                     {
                         return Ok(());
                     }
@@ -507,8 +508,9 @@ async fn handle_message(
                 Command::UpdateTitle { talk_id, title } => {
                     let mut talks = talks.lock().await;
 
-                    if !current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id
+                    if !talks.contains_key(&talk_id)
+                        || (!current_user.roles.contains(&Role::Editor)
+                            && talks[&talk_id].creator != current_user.id)
                     {
                         return Ok(());
                     }
@@ -532,8 +534,9 @@ async fn handle_message(
                 } => {
                     let mut talks = talks.lock().await;
 
-                    if !current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id
+                    if !talks.contains_key(&talk_id)
+                        || (!current_user.roles.contains(&Role::Editor)
+                            && talks[&talk_id].creator != current_user.id)
                     {
                         return Ok(());
                     }
@@ -560,7 +563,9 @@ async fn handle_message(
                 } => {
                     let mut talks = talks.lock().await;
 
-                    if !current_user.roles.contains(&Role::Scheduler) {
+                    if !talks.contains_key(&talk_id)
+                        || !current_user.roles.contains(&Role::Scheduler)
+                    {
                         return Ok(());
                     }
 
@@ -583,8 +588,9 @@ async fn handle_message(
                 Command::UpdateDuration { talk_id, duration } => {
                     let mut talks = talks.lock().await;
 
-                    if !current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id
+                    if !talks.contains_key(&talk_id)
+                        || (!current_user.roles.contains(&Role::Editor)
+                            && talks[&talk_id].creator != current_user.id)
                     {
                         return Ok(());
                     }

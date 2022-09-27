@@ -13,7 +13,7 @@ use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, Pa
 use axum::{
     extract::{
         ws::{Message, WebSocket},
-        WebSocketUpgrade,
+        Query, WebSocketUpgrade,
     },
     http::{header::CONTENT_TYPE, StatusCode},
     response::IntoResponse,
@@ -77,7 +77,7 @@ async fn main() -> eyre::Result<()> {
             get({
                 let users = users.clone();
                 let talks = talks.clone();
-                move || handle_icalendar(users, talks)
+                move |parameters| handle_icalendar(parameters, users, talks)
             }),
         )
         .fallback(get_service(ServeDir::new("./frontend")).handle_error(handle_error));
@@ -277,7 +277,13 @@ async fn handle_teams(teams: Arc<Mutex<BTreeSet<String>>>) -> Json<BTreeSet<Stri
     Json(teams.lock().await.clone())
 }
 
+#[derive(Deserialize)]
+struct ICalendarParameters {
+    user_id: Option<usize>,
+}
+
 async fn handle_icalendar(
+    parameters: Query<ICalendarParameters>,
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
 ) -> impl IntoResponse {
@@ -287,6 +293,12 @@ async fn handle_icalendar(
     let users = users.lock().await;
     let talks = talks.lock().await;
     for talk in talks.values() {
+        match parameters.user_id {
+            Some(user_id) if !talk.noobs.contains(&user_id) && !talk.nerds.contains(&user_id) => {
+                continue
+            }
+            _ => {}
+        }
         if let Some(scheduled_at) = talk.scheduled_at {
             let start = OffsetDateTime::from(scheduled_at);
             let end = start + talk.duration;

@@ -1031,9 +1031,9 @@ class Talk {
         this.descriptionEditElement.focus();
       });
 
-      this.descriptionEditElement = document.createElement("input");
+      this.descriptionEditElement = document.createElement("textarea");
       this.descriptionEditElement.classList.add("description");
-      this.descriptionEditElement.type = "text";
+      this.descriptionEditElement.rows = 4;
       this.descriptionEditElement.addEventListener("input", () => {
         sendMessage({
           UpdateDescription: {

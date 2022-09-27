@@ -187,7 +187,8 @@ body.center {
   box-sizing: border-box;
   border: none;
   border-radius: 2rem;
-  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25), 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25),
+    0 0.5rem 1rem rgba(0, 0, 0, 0.25);
 }
 
 #talks .add:hover {
@@ -293,9 +294,7 @@ body.center {
 
 #talks .talks .talk .scheduled-at,
 #talks .talks .talk .duration,
-#talks .talks .talk .description,
-#talks .talks .talk .noobs,
-#talks .talks .talk .nerds {
+#talks .talks .talk .description {
   font-size: 0.9rem;
   color: #666;
 }
@@ -322,6 +321,18 @@ body.center {
 
 #talks .talks .talk .editable:hover {
   background-color: #eee;
+}
+
+#talks .talks .talk input.title,
+#talks .talks .talk input.scheduled-at,
+#talks .talks .talk input.duration,
+#talks .talks .talk textarea.description {
+  color: #000;
+  font-family: inherit;
+}
+
+#talks .talks .talk textarea.description {
+  resize: vertical;
 }
 
 #talks .talks .talk .operation {
@@ -365,15 +376,13 @@ body.center {
   box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
 }
 
-#talks .talks .talk.participating h1 {
+#talks .talks .talk.participating h1.title {
   color: #fff;
 }
 
-#talks .talks .talk.participating .scheduled-at,
-#talks .talks .talk.participating .duration,
-#talks .talks .talk.participating .description,
-#talks .talks .talk.participating .noobs,
-#talks .talks .talk.participating .nerds {
+#talks .talks .talk.participating div.scheduled-at,
+#talks .talks .talk.participating div.duration,
+#talks .talks .talk.participating div.description {
   color: #c8e6c9;
 }
 

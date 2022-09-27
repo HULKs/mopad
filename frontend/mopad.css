@@ -154,6 +154,7 @@ body.center {
 #register select,
 #login button,
 #register button {
+  white-space: nowrap;
   width: 20rem;
   padding: 0.5rem;
   margin: 0.5rem 0;
@@ -258,6 +259,7 @@ body.center {
 
 #talks .heading button {
   cursor: pointer;
+  white-space: nowrap;
   padding: 0.5rem 0.75rem;
   box-sizing: border-box;
   accent-color: #388e3c;
@@ -291,7 +293,7 @@ body.center {
   grid-template-rows: min-content min-content min-content min-content min-content min-content;
   margin: 0.5rem 0;
   background-color: #fff;
-  border-radius: 0.5rem;
+  border-radius: 1rem;
   box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
@@ -333,13 +335,16 @@ body.center {
   background-color: #eee;
 }
 
-#talks .talks .talk .participation {
+#talks .talks .talk .operation {
   padding: 0.25rem 1rem 1rem 1rem;
-  text-align: end;
+  display: grid;
+  grid-template-columns: 1fr min-content min-content;
+  grid-template-rows: min-content;
 }
 
-#talks .talks .talk .participation button {
+#talks .talks .talk .operation button {
   cursor: pointer;
+  white-space: nowrap;
   color: #388e3c;
   background-color: transparent;
   text-transform: uppercase;
@@ -353,13 +358,32 @@ body.center {
   border-radius: 0.25rem;
 }
 
-#talks .talks .talk .participation button:first-child {
+#talks .talks .talk .operation button.delete {
+  color: #e64a19;
+  border-color: #ffccbc;
+  grid-column: 1 / 2;
+  justify-self: start;
+}
+
+#talks .talks .talk .operation button.delete,
+#talks .talks .talk .operation button.noob {
   margin-right: 1rem;
 }
 
-#talks .talks .talk .participation button:hover {
-  color: #388e3c;
+#talks .talks .talk .operation button.noob {
+  grid-column: 2 / 3;
+}
+
+#talks .talks .talk .operation button.nerd {
+  grid-column: 3 / 4;
+}
+
+#talks .talks .talk .operation button:hover {
   border-color: #388e3c;
+}
+
+#talks .talks .talk .operation button.delete:hover {
+  border-color: #e64a19;
 }
 
 #talks .talks .talk.participating {
@@ -383,23 +407,27 @@ body.center {
   background-color: #43a047;
 }
 
-#talks .talks .talk.participating .participation button {
-  border: 0.125rem solid #c8e6c9;
+#talks .talks .talk.participating .operation button {
+  border-color: #c8e6c9;
   color: #c8e6c9;
   box-shadow: none;
 }
 
-#talks .talks .talk.participating .participation button:hover {
+#talks .talks .talk.participating .operation button:hover {
   background-color: #43a047;
 }
 
-#talks .talks .talk.participating .participation button.participating {
-  border: 0.125rem solid transparent;
+#talks .talks .talk.participating .operation button.delete:hover {
+  border-color: #c8e6c9;
+}
+
+#talks .talks .talk.participating .operation button.participating {
+  border-color: transparent;
   color: #388e3c;
   background-color: #fff;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.25);
 }
 
-#talks .talks .talk.participating .participation button.participating:hover {
+#talks .talks .talk.participating .operation button.participating:hover {
   background-color: #c8e6c9;
 }

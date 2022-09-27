@@ -992,14 +992,32 @@ class Talk {
       });
     }
 
-    const participationElement = this.element.appendChild(
+    const operationElement = this.element.appendChild(
       document.createElement("div")
     );
-    participationElement.classList.add("participation");
+    operationElement.classList.add("operation");
 
-    this.noobsButtonElement = participationElement.appendChild(
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      this.deleteButtonElement = operationElement.appendChild(
+        document.createElement("button")
+      );
+      this.deleteButtonElement.classList.add("delete");
+      this.deleteButtonElement.innerText = "Delete";
+      this.deleteButtonElement.addEventListener("click", () => {
+        if (confirm("Do you really want to delete?")) {
+          sendMessage({
+            RemoveTalk: {
+              talk_id: this.id,
+            },
+          });
+        }
+      });
+    }
+
+    this.noobsButtonElement = operationElement.appendChild(
       document.createElement("button")
     );
+    this.noobsButtonElement.classList.add("noob");
     this.noobsButtonElement.innerText = "Noob";
     this.noobsButtonElement.addEventListener("click", () => {
       if (this.nerds.includes(this.currentUserId)) {
@@ -1018,9 +1036,10 @@ class Talk {
       });
     });
 
-    this.nerdsButtonElement = participationElement.appendChild(
+    this.nerdsButtonElement = operationElement.appendChild(
       document.createElement("button")
     );
+    this.nerdsButtonElement.classList.add("nerd");
     this.nerdsButtonElement.innerText = "Nerd";
     this.nerdsButtonElement.addEventListener("click", () => {
       if (this.noobs.includes(this.currentUserId)) {
@@ -1199,14 +1218,22 @@ class Talk {
       this.noobsButtonElement.classList.remove("participating");
     }
     this.noobsButtonElement.innerText = `Noob (${this.noobs.length})`;
-    this.noobsButtonElement.title = `${this.noobs.map((userId) => `${this.users[userId].name} (${this.users[userId].team})`).join(", ")}`;
+    this.noobsButtonElement.title = `${this.noobs
+      .map(
+        (userId) => `${this.users[userId].name} (${this.users[userId].team})`
+      )
+      .join(", ")}`;
     if (participatingAsNerd) {
       this.nerdsButtonElement.classList.add("participating");
     } else {
       this.nerdsButtonElement.classList.remove("participating");
     }
     this.nerdsButtonElement.innerText = `Nerd (${this.nerds.length})`;
-    this.nerdsButtonElement.title = `${this.nerds.map((userId) => `${this.users[userId].name} (${this.users[userId].team})`).join(", ")}`;
+    this.nerdsButtonElement.title = `${this.nerds
+      .map(
+        (userId) => `${this.users[userId].name} (${this.users[userId].team})`
+      )
+      .join(", ")}`;
     if (participatingAsNoob || participatingAsNerd) {
       this.element.classList.add("participating");
     } else {

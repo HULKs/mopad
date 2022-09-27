@@ -172,7 +172,7 @@ body.center {
 
 #talks .add {
   position: fixed;
-  z-index: 1;
+  z-index: 2;
   right: 1rem;
   bottom: 1rem;
   cursor: pointer;
@@ -195,11 +195,101 @@ body.center {
   background-color: #43a047;
 }
 
-#talks .title {
+#talks > .calendar-dialog {
+  display: none;
+  position: fixed;
+  z-index: 3;
+  background-color: rgba(0, 0, 0, 0.5);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+#talks > .calendar-dialog.open {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  justify-items: center;
+  align-items: center;
+}
+
+#talks > .calendar-dialog .box {
+  background-color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+  padding: 1rem;
+  width: calc(100vw - 3rem);
+  box-sizing: border-box;
+}
+
+#talks > .calendar-dialog .box h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #000;
+}
+
+#talks > .calendar-dialog .box h2 {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #888;
+  margin: 0 0 1rem 0;
+}
+
+#talks > .calendar-dialog .box .description {
+  color: #444;
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+}
+
+#talks > .calendar-dialog .box a {
+  display: block;
+  font-size: 0.9rem;
+  color: #388e3c;
+  margin: 0 0 0.5rem 0;
+}
+
+#talks > .calendar-dialog .box .personalization {
+  margin: 0 0 0.5rem 0;
+}
+
+#talks > .calendar-dialog .box .personalization input {
+  margin: 0 0.5rem 0 0;
+  padding: 0;
+  accent-color: #388e3c;
+}
+
+#talks > .calendar-dialog .box .personalization label {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+#talks > .calendar-dialog .box .hint {
+  color: #444;
+  font-size: 0.9rem;
+}
+
+#talks > .title {
+  padding: 1rem 1rem 0 1rem;
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  grid-template-rows: min-content;
+  column-gap: 1rem;
+  align-items: center;
+}
+
+#talks > .title h1 {
   font-size: 2.5rem;
   font-weight: 500;
   color: #000;
-  padding: 1rem 1rem 0 1rem;
+}
+
+#talks > .title .calendar {
+  font-size: 0.9rem;
+  color: #388e3c;
+  white-space: nowrap;
+  padding: 0.5rem 0;
+  justify-self: end;
 }
 
 #talks .heading {
@@ -261,6 +351,7 @@ body.center {
 
 #talks .talks .talk .delete {
   position: absolute;
+  z-index: 1;
   cursor: pointer;
   top: -0.75rem;
   right: -0.75rem;
@@ -412,6 +503,10 @@ body.center {
 }
 
 @media (min-width: 32em) {
+  #talks > .calendar-dialog .box {
+    width: 25rem;
+  }
+
   #talks .talks {
     grid-template-columns: repeat(2, calc((100vw - 3rem) / 2));
   }

@@ -29,17 +29,19 @@ use tokio::{
     fs::{read_to_string, File},
     io::AsyncWriteExt,
     select,
+    signal::unix::{signal, SignalKind},
+    spawn,
     sync::{broadcast, Mutex},
 };
 use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    let teams: Arc<BTreeSet<String>> = Arc::new(
+    let teams: Arc<Mutex<BTreeSet<String>>> = Arc::new(Mutex::new(
         read_from_file("teams.json")
             .await
             .wrap_err("failed to read teams.json")?,
-    );
+    ));
     let users = Arc::new(Mutex::new(
         read_users("users.json")
             .await
@@ -79,6 +81,14 @@ async fn main() -> eyre::Result<()> {
             }),
         )
         .fallback(get_service(ServeDir::new("./frontend")).handle_error(handle_error));
+
+    spawn({
+        let teams = teams.clone();
+        let users = users.clone();
+        let talks = talks.clone();
+        let updates_sender = updates_sender.clone();
+        refresh_files_from_disk_on_signal(teams, users, talks, updates_sender)
+    });
 
     Server::bind(&SocketAddr::from_str("0.0.0.0:1337").unwrap())
         .serve(application.into_make_service())
@@ -132,8 +142,139 @@ where
         .wrap_err_with(|| format!("failed to write to {file_path:?}"))
 }
 
-async fn handle_teams(teams: Arc<BTreeSet<String>>) -> Json<BTreeSet<String>> {
-    Json((*teams).clone())
+async fn refresh_files_from_disk_on_signal(
+    teams: Arc<Mutex<BTreeSet<String>>>,
+    users: Arc<Mutex<BTreeMap<usize, User>>>,
+    talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
+    updates_sender: broadcast::Sender<Update>,
+) {
+    let mut received_signals =
+        signal(SignalKind::user_defined1()).expect("failed to register SIGUSR1 handler");
+
+    loop {
+        received_signals.recv().await;
+        eprintln!("Refreshing files from disk...");
+
+        let mut teams = teams.lock().await;
+        let mut users = users.lock().await;
+        let mut talks = talks.lock().await;
+
+        let refreshed_teams: BTreeSet<String> = match read_from_file("teams.json").await {
+            Ok(teams) => teams,
+            Err(error) => {
+                eprintln!("Failed to read teams.json: {error:?}");
+                continue;
+            }
+        };
+
+        let refreshed_users = match read_users("users.json").await {
+            Ok(users) => users,
+            Err(error) => {
+                eprintln!("Failed to read users: {error:?}");
+                continue;
+            }
+        };
+
+        let refreshed_talks = match read_talks("talks.json").await {
+            Ok(talks) => talks,
+            Err(error) => {
+                eprintln!("Failed to read talks: {error:?}");
+                continue;
+            }
+        };
+
+        *teams = refreshed_teams;
+
+        if refreshed_users != *users {
+            *users = refreshed_users;
+            let _ = updates_sender.send(Update::Users {
+                users: users
+                    .iter()
+                    .map(|(user_id, user)| (*user_id, user.into()))
+                    .collect(),
+            });
+        }
+
+        for talk_id in talks
+            .keys()
+            .filter(|talk_id| !refreshed_talks.contains_key(talk_id))
+        {
+            let _ = updates_sender.send(Update::RemoveTalk { talk_id: *talk_id });
+        }
+        for (talk_id, refreshed_talk) in refreshed_talks.iter() {
+            if let Some(existing_talk) = talks.get(talk_id) {
+                if refreshed_talk.title != existing_talk.title {
+                    let _ = updates_sender.send(Update::UpdateTitle {
+                        talk_id: *talk_id,
+                        title: refreshed_talk.title.clone(),
+                    });
+                }
+                if refreshed_talk.description != existing_talk.description {
+                    let _ = updates_sender.send(Update::UpdateDescription {
+                        talk_id: *talk_id,
+                        description: refreshed_talk.description.clone(),
+                    });
+                }
+                if refreshed_talk.scheduled_at != existing_talk.scheduled_at {
+                    let _ = updates_sender.send(Update::UpdateScheduledAt {
+                        talk_id: *talk_id,
+                        scheduled_at: refreshed_talk.scheduled_at.clone(),
+                    });
+                }
+                if refreshed_talk.duration != existing_talk.duration {
+                    let _ = updates_sender.send(Update::UpdateDuration {
+                        talk_id: *talk_id,
+                        duration: refreshed_talk.duration.clone(),
+                    });
+                }
+                for user_id in existing_talk
+                    .noobs
+                    .iter()
+                    .filter(|user_id| !refreshed_talk.noobs.contains(user_id))
+                {
+                    let _ = updates_sender.send(Update::RemoveNoob {
+                        talk_id: *talk_id,
+                        user_id: *user_id,
+                    });
+                }
+                for user_id in refreshed_talk.noobs.iter() {
+                    if !existing_talk.noobs.contains(user_id) {
+                        let _ = updates_sender.send(Update::AddNoob {
+                            talk_id: *talk_id,
+                            user_id: *user_id,
+                        });
+                    }
+                }
+                for user_id in existing_talk
+                    .nerds
+                    .iter()
+                    .filter(|user_id| !refreshed_talk.nerds.contains(user_id))
+                {
+                    let _ = updates_sender.send(Update::RemoveNerd {
+                        talk_id: *talk_id,
+                        user_id: *user_id,
+                    });
+                }
+                for user_id in refreshed_talk.nerds.iter() {
+                    if !existing_talk.nerds.contains(user_id) {
+                        let _ = updates_sender.send(Update::AddNerd {
+                            talk_id: *talk_id,
+                            user_id: *user_id,
+                        });
+                    }
+                }
+            } else {
+                let _ = updates_sender.send(Update::AddTalk {
+                    talk: refreshed_talk.clone(),
+                });
+            }
+        }
+        *talks = refreshed_talks;
+    }
+}
+
+async fn handle_teams(teams: Arc<Mutex<BTreeSet<String>>>) -> Json<BTreeSet<String>> {
+    Json(teams.lock().await.clone())
 }
 
 async fn handle_icalendar(
@@ -206,7 +347,7 @@ async fn handle_error(error: io::Error) -> impl IntoResponse {
 
 async fn handle_websocket(
     upgrade: WebSocketUpgrade,
-    teams: Arc<BTreeSet<String>>,
+    teams: Arc<Mutex<BTreeSet<String>>>,
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: broadcast::Sender<Update>,
@@ -218,7 +359,7 @@ async fn handle_websocket(
 
 async fn handle_upgraded_websocket(
     socket: WebSocket,
-    teams: Arc<BTreeSet<String>>,
+    teams: Arc<Mutex<BTreeSet<String>>>,
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: broadcast::Sender<Update>,
@@ -231,7 +372,7 @@ async fn handle_upgraded_websocket(
 
 async fn connection(
     mut socket: WebSocket,
-    teams: Arc<BTreeSet<String>>,
+    teams: Arc<Mutex<BTreeSet<String>>>,
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
     updates_sender: broadcast::Sender<Update>,
@@ -294,7 +435,7 @@ async fn connection(
 
 async fn authenticate(
     socket: &mut WebSocket,
-    teams: &Arc<BTreeSet<String>>,
+    teams: &Arc<Mutex<BTreeSet<String>>>,
     users: &Arc<Mutex<BTreeMap<usize, User>>>,
 ) -> Option<(User, bool)> {
     let authentication_command: AuthenticationCommand = match socket.recv().await {
@@ -345,7 +486,7 @@ async fn authenticate(
             team,
             password,
         } => {
-            if !teams.contains(&team) {
+            if !teams.lock().await.contains(&team) {
                 let _ = socket
                     .send(Message::Text(
                         to_string(&AuthenticationResponse::AuthenticationError {
@@ -811,7 +952,7 @@ enum Update {
     },
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 struct User {
     id: usize,
     name: String,

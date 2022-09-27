@@ -538,11 +538,74 @@ class Talks {
       });
     });
 
+    this.calendarDialogElement = this.element.appendChild(
+      document.createElement("div")
+    );
+    this.calendarDialogElement.classList.add("calendar-dialog");
+    this.calendarDialogElement.addEventListener("click", (event) => {
+      if (event.target === event.currentTarget) {
+        this.calendarDialogElement.classList.remove("open");
+      }
+    });
+
+    const calendarDialogBoxElement = this.calendarDialogElement.appendChild(document.createElement("div"));
+    calendarDialogBoxElement.classList.add("box");
+
+    const calendarHeading1Element = calendarDialogBoxElement.appendChild(document.createElement("h1"));
+    calendarHeading1Element.innerText = "Subscribe talks as calendar";
+
+    const calendarHeading2Element = calendarDialogBoxElement.appendChild(document.createElement("h2"));
+    calendarHeading2Element.innerText = "Nerds might know it as iCalendar/ICS";
+
+    this.calendarDescriptionElement = calendarDialogBoxElement.appendChild(document.createElement("div"));
+    this.calendarDescriptionElement.classList.add("description");
+    this.calendarDescriptionElement.innerText = "Use this address in external calendar applications to show your subscribed talks:";
+
+    this.calendarLinkElement = calendarDialogBoxElement.appendChild(document.createElement("a"));
+    this.calendarLinkElement.href = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
+    this.calendarLinkElement.target = "_blank";
+    this.calendarLinkElement.rel = "noreferrer";
+    this.calendarLinkElement.innerText = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
+
+    const calendarPersonalizationElement = calendarDialogBoxElement.appendChild(document.createElement("div"));
+    calendarPersonalizationElement.classList.add("personalization");
+
+    this.calendarPersonalizationCheckboxElement = calendarPersonalizationElement.appendChild(document.createElement("input"));
+    this.calendarPersonalizationCheckboxElement.id = "calendar-checkbox";
+    this.calendarPersonalizationCheckboxElement.type = "checkbox";
+    this.calendarPersonalizationCheckboxElement.checked = true;
+    this.calendarPersonalizationCheckboxElement.addEventListener("input", () => {
+      this.updateCalendarElements();
+    });
+
+    const calendarPersonalizationLabelElement = calendarPersonalizationElement.appendChild(document.createElement("label"));
+    calendarPersonalizationLabelElement.setAttribute("for", "calendar-checkbox");
+    calendarPersonalizationLabelElement.innerText = "Only include your NERDed and NOOBed talks";
+
+    const calendarHintElement = calendarDialogBoxElement.appendChild(document.createElement("div"));
+    calendarHintElement.classList.add("hint");
+    calendarHintElement.innerText = "The calendar will only contain scheduled talks.";
+
     const headingElement = this.element.appendChild(
-      document.createElement("h1")
+      document.createElement("div")
     );
     headingElement.classList.add("title");
-    headingElement.innerText = "MOPAD";
+
+    const heading1Element = headingElement.appendChild(
+      document.createElement("h1")
+    );
+    heading1Element.innerText = "MOPAD";
+
+    const calendarLinkElement = headingElement.appendChild(
+      document.createElement("a")
+    );
+    calendarLinkElement.classList.add("calendar");
+    calendarLinkElement.href = "#calendar";
+    calendarLinkElement.innerText = "Subscribe as calendar";
+    calendarLinkElement.addEventListener("click", (event) => {
+      event.preventDefault();
+      this.calendarDialogElement.classList.add("open");
+    });
 
     this.pastHeadingElement = document.createElement("div");
     this.pastHeadingElement.classList.add("heading");
@@ -638,6 +701,19 @@ class Talks {
   setCurrentUserIdAndRoles(currentUserId, roles) {
     this.currentUserId = currentUserId;
     this.roles = roles;
+    this.updateCalendarElements();
+  }
+
+  updateCalendarElements() {
+    if (this.calendarPersonalizationCheckboxElement.checked) {
+      this.calendarDescriptionElement.innerText = "Use this address in external calendar applications to show your subscribed talks:";
+      this.calendarLinkElement.href = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
+      this.calendarLinkElement.innerText = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
+    } else {
+      this.calendarDescriptionElement.innerText = "Use this address in external calendar applications to show the talks:";
+      this.calendarLinkElement.href = `${window.location.protocol}//${window.location.host}/talks.ics`;
+      this.calendarLinkElement.innerText = `${window.location.protocol}//${window.location.host}/talks.ics`;
+    }
   }
 
   sectionNameToSectionElement(name) {

@@ -1,10 +1,10 @@
-// TODO: Add/remove talks
-// TODO: styling (remove unused fonts, wide screens)
 // TODO: Login/Reconnection/Persistence/Robustness
 
 class Mopad {
   constructor(root) {
     this.root = root;
+
+    this.users = {};
 
     this.loading = new Loading();
     this.login = new Login(
@@ -90,6 +90,7 @@ class Mopad {
     this.webSocket.addEventListener("message", (event) => {
       let message = JSON.parse(event.data);
       if (message["AuthenticationSuccess"] !== undefined) {
+        this.currentUserId = message["AuthenticationSuccess"]["user_id"];
         this.talks.setCurrentUserIdAndRoles(
           message["AuthenticationSuccess"]["user_id"],
           message["AuthenticationSuccess"]["roles"]
@@ -115,9 +116,19 @@ class Mopad {
         this.register.element.enable();
         this.socketReceivedError = true;
       } else if (message["Users"] !== undefined) {
+        this.users = message["Users"]["users"];
         this.talks.updateUsers(message["Users"]["users"]);
       } else if (message["AddTalk"] !== undefined) {
         this.talks.addTalk(message["AddTalk"]["talk"]);
+        if (
+          message["AddTalk"]["talk"]["title"] ===
+          `The talk from ${this.users[this.currentUserId].name}`
+        ) {
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth",
+          });
+        }
       } else if (message["RemoveTalk"] !== undefined) {
         this.talks.removeTalk(message["RemoveTalk"]["talk_id"]);
       } else if (message["UpdateTitle"] !== undefined) {
@@ -511,9 +522,26 @@ class Talks {
     this.upcomingExpanded = true;
     this.unscheduledExpanded = true;
 
+    const addButtonElement = this.element.appendChild(
+      document.createElement("div")
+    );
+    addButtonElement.classList.add("add");
+    addButtonElement.innerText = "+";
+    addButtonElement.addEventListener("click", () => {
+      sendMessage({
+        AddTalk: {
+          title: `The talk from ${this.users[this.currentUserId].name}`,
+          description:
+            "You can change the title, duration, and description by clicking on them",
+          duration: { secs: 30 * 60, nanos: 0 },
+        },
+      });
+    });
+
     const headingElement = this.element.appendChild(
       document.createElement("h1")
     );
+    headingElement.classList.add("title");
     headingElement.innerText = "MOPAD";
 
     this.pastHeadingElement = document.createElement("div");
@@ -647,8 +675,10 @@ class Talks {
     );
     const talkOfLaterScheduledAt = otherTalksInSection.find(
       ([otherTalkId, _sectionElement]) =>
+        this.talks[otherTalkId].scheduledAt !== null &&
+        this.talks[talkId].scheduledAt !== null &&
         this.talks[otherTalkId].scheduledAt.secs_since_epoch >
-        this.talks[talkId].scheduledAt.secs_since_epoch
+          this.talks[talkId].scheduledAt.secs_since_epoch
     );
     if (talkOfLaterScheduledAt !== undefined) {
       const [talkIdOfLaterScheduledAt, _] = talkOfLaterScheduledAt;
@@ -769,6 +799,8 @@ class Talks {
 
   removeTalk(talkId) {
     this.sectionElementsOfTalks[talkId].removeChild(this.talks[talkId].element);
+    delete this.sectionElementsOfTalks[talkId];
+    this.updateVisibleSections();
     delete this.talks[talkId];
   }
 
@@ -831,6 +863,23 @@ class Talk {
     this.users = users;
     this.currentUserId = currentUserId;
     this.roles = roles;
+
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      const deleteButtonElement = this.element.appendChild(
+        document.createElement("div")
+      );
+      deleteButtonElement.classList.add("delete");
+      deleteButtonElement.innerText = "\u2015";
+      deleteButtonElement.addEventListener("click", () => {
+        if (confirm("Do you really want to delete this talk?")) {
+          sendMessage({
+            RemoveTalk: {
+              talk_id: this.id,
+            },
+          });
+        }
+      });
+    }
 
     this.titleElement = this.element.appendChild(document.createElement("h1"));
     this.titleElement.classList.add("title");
@@ -997,23 +1046,6 @@ class Talk {
     );
     operationElement.classList.add("operation");
 
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
-      this.deleteButtonElement = operationElement.appendChild(
-        document.createElement("button")
-      );
-      this.deleteButtonElement.classList.add("delete");
-      this.deleteButtonElement.innerText = "Delete";
-      this.deleteButtonElement.addEventListener("click", () => {
-        if (confirm("Do you really want to delete?")) {
-          sendMessage({
-            RemoveTalk: {
-              talk_id: this.id,
-            },
-          });
-        }
-      });
-    }
-
     this.noobsButtonElement = operationElement.appendChild(
       document.createElement("button")
     );
@@ -1143,25 +1175,27 @@ class Talk {
         nowMinutes < beginMinutes &&
         beginMinutes - nowMinutes <= durationMinutes
       ) {
-        relativeSuffix = ` (in ${beginMinutes - nowMinutes} minute${
+        relativeSuffix = `\u00a0\u00a0(in ${beginMinutes - nowMinutes} minute${
           beginMinutes - nowMinutes === 1 ? "" : "s"
         })`;
       } else if (beginMinutes == nowMinutes) {
-        relativeSuffix = " (now)";
+        relativeSuffix = "\u00a0\u00a0(now)";
       } else if (
         beginMinutes <= nowMinutes &&
         nowMinutes - beginMinutes < durationMinutes
       ) {
-        relativeSuffix = ` (${nowMinutes - beginMinutes} minute${
+        relativeSuffix = `\u00a0\u00a0(${nowMinutes - beginMinutes} minute${
           nowMinutes - beginMinutes === 1 ? "" : "s"
         } ago)`;
       }
-      return `at ${beginDate.getFullYear()}-${(beginDate.getMonth() + 1)
+      return `at\u00a0\u00a0${beginDate.getFullYear()}-${(
+        beginDate.getMonth() + 1
+      )
         .toString()
         .padStart(2, "0")}-${beginDate
         .getDate()
         .toString()
-        .padStart(2, "0")} ${beginDate
+        .padStart(2, "0")}\u00a0\u00a0${beginDate
         .getHours()
         .toString()
         .padStart(2, "0")}:${beginDate
@@ -1191,13 +1225,13 @@ class Talk {
         nowMinutes - beginMinutes < durationMinutes
       ) {
         const leftMinutes = durationMinutes - (nowMinutes - beginMinutes);
-        relativeSuffix = ` (${leftMinutes} minute${
+        relativeSuffix = `\u00a0\u00a0(${leftMinutes} minute${
           leftMinutes === 1 ? "" : "s"
         } left)`;
       }
     }
 
-    return `for ${durationMinutes} minute${
+    return `for\u00a0\u00a0${durationMinutes} minute${
       durationMinutes === 1 ? "" : "s"
     }${relativeSuffix}`;
   }

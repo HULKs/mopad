@@ -476,7 +476,7 @@ async fn handle_message(
                         description,
                         scheduled_at: None,
                         duration,
-                        nerds: vec![],
+                        nerds: vec![current_user.id],
                         noobs: vec![],
                     };
                     talks.insert(next_talk_id, talk.clone());

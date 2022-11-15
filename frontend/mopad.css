@@ -384,6 +384,11 @@ body.center {
   padding: 1rem 1rem 0.25rem 1rem;
 }
 
+#talks .talks .talk .title.empty {
+  font-style: italic;
+  color: #666;
+}
+
 #talks .talks .talk .scheduled-at,
 #talks .talks .talk .duration,
 #talks .talks .talk .description {

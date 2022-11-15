@@ -90,7 +90,7 @@ async fn main() -> eyre::Result<()> {
         refresh_files_from_disk_on_signal(teams, users, talks, updates_sender)
     });
 
-    Server::bind(&SocketAddr::from_str("0.0.0.0:1337").unwrap())
+    Server::bind(&SocketAddr::from_str("[::]:1337").unwrap())
         .serve(application.into_make_service())
         .await
         .wrap_err("failed to server")

@@ -403,6 +403,11 @@ body.center {
   padding: 0.25rem 1rem 0.25rem 1rem;
 }
 
+#talks .talks .talk .description.empty {
+  font-style: italic;
+  color: #aaa;
+}
+
 #talks .talks .talk .editable {
   cursor: pointer;
 }

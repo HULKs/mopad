@@ -254,6 +254,15 @@ class Login {
     this.nameElement.addEventListener("input", () => {
       this.enableButton();
     });
+    this.nameElement.addEventListener("keydown", (event) => {
+      if (event.code === "Enter") {
+        login(
+          this.nameElement.value,
+          this.teamElement.value,
+          this.passwordElement.value
+        );
+      }
+    });
 
     this.teamElement = this.element.appendChild(
       document.createElement("select")
@@ -268,6 +277,15 @@ class Login {
     this.passwordElement.placeholder = "Your Password";
     this.passwordElement.addEventListener("input", () => {
       this.enableButton();
+    });
+    this.passwordElement.addEventListener("keydown", (event) => {
+      if (event.code === "Enter") {
+        login(
+          this.nameElement.value,
+          this.teamElement.value,
+          this.passwordElement.value
+        );
+      }
     });
 
     this.buttonElement = this.element.appendChild(
@@ -396,6 +414,15 @@ class Register {
     this.nameElement.addEventListener("input", () => {
       this.enableButton();
     });
+    this.nameElement.addEventListener("keydown", (event) => {
+      if (event.code === "Enter") {
+        register(
+          this.nameElement.value,
+          this.teamElement.value,
+          this.passwordElement.value
+        );
+      }
+    });
 
     const nameHintElement = this.element.appendChild(
       document.createElement("div")
@@ -422,6 +449,15 @@ class Register {
     this.passwordElement.placeholder = "Your Password";
     this.passwordElement.addEventListener("input", () => {
       this.enableButton();
+    });
+    this.passwordElement.addEventListener("keydown", (event) => {
+      if (event.code === "Enter") {
+        register(
+          this.nameElement.value,
+          this.teamElement.value,
+          this.passwordElement.value
+        );
+      }
     });
 
     const iAmNotANaoBoxElement = this.element.appendChild(

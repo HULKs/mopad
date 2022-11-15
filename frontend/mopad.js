@@ -69,19 +69,16 @@ class Mopad {
     if (this.webSocket === null) {
       const reloginToken = localStorage.getItem("reloginToken");
       if (reloginToken !== null) {
-        console.log("Trying relogin");
         this.connectWebSocket({ Relogin: { token: reloginToken } });
       } else if (
         this.connectMessage !== null &&
         this.connectMessage["Login"] !== undefined
       ) {
-        console.log("Trying normal login");
         this.connectWebSocket(this.connectMessage);
       } else if (
         this.connectMessage !== null &&
         this.connectMessage["Register"] !== undefined
       ) {
-        console.log("Trying normal login from register");
         this.connectWebSocket({
           Register: {
             name: this.connectMessage["Register"]["name"],
@@ -1132,8 +1129,10 @@ class Talk {
       this.scheduledAtEditElement = document.createElement("input");
       this.scheduledAtEditElement.classList.add("scheduled-at");
       this.scheduledAtEditElement.type = "datetime-local";
-      this.scheduledAtEditElement.addEventListener("keypress", (event) => {
-        if (event.code === "Enter") {
+      this.scheduledAtEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Enter" || event.code === "Esc") {
+          event.target.blur();
+        } else if (event.code === "Esc") {
           event.target.blur();
         }
       });
@@ -1245,6 +1244,64 @@ class Talk {
           this.descriptionElement,
           this.descriptionEditElement
         );
+      });
+    }
+
+    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+      this.titleEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Tab") {
+          event.preventDefault();
+          event.target.blur();
+          if (!event.shiftKey) {
+            if (this.roles.includes("Scheduler")) {
+              this.scheduledAtElement.click();
+            } else {
+              this.durationElement.click();
+            }
+          }
+        }
+      });
+      this.durationEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Tab") {
+          event.preventDefault();
+          event.target.blur();
+          if (event.shiftKey) {
+            if (this.roles.includes("Scheduler")) {
+              this.scheduledAtElement.click();
+            } else {
+              this.titleElement.click();
+            }
+          } else {
+            this.descriptionElement.click();
+          }
+        }
+      });
+      this.descriptionEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Tab") {
+          event.preventDefault();
+          event.target.blur();
+          if (event.shiftKey) {
+            this.durationElement.click();
+          }
+        }
+      });
+    }
+    if (this.roles.includes("Scheduler")) {
+      this.scheduledAtEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Tab") {
+          event.preventDefault();
+          event.target.blur();
+          if (event.shiftKey) {
+            this.titleElement.click();
+          } else {
+            if (
+              this.roles.includes("Editor") ||
+              this.creator === this.currentUserId
+            ) {
+              this.durationElement.click();
+            }
+          }
+        }
       });
     }
 

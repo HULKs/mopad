@@ -248,6 +248,7 @@ class Login {
       document.createElement("input")
     );
     this.nameElement.type = "text";
+    this.nameElement.type = "name";
     this.nameElement.placeholder = "Your Name";
     this.nameElement.autofocus = true;
     this.nameElement.addEventListener("input", () => {
@@ -257,10 +258,12 @@ class Login {
     this.teamElement = this.element.appendChild(
       document.createElement("select")
     );
+    this.teamElement.name = "team";
 
     this.passwordElement = this.element.appendChild(
       document.createElement("input")
     );
+    this.passwordElement.type = "password";
     this.passwordElement.type = "password";
     this.passwordElement.placeholder = "Your Password";
     this.passwordElement.addEventListener("input", () => {
@@ -387,6 +390,7 @@ class Register {
       document.createElement("input")
     );
     this.nameElement.type = "text";
+    this.nameElement.name = "name";
     this.nameElement.placeholder = "Your Name";
     this.nameElement.autofocus = true;
     this.nameElement.addEventListener("input", () => {
@@ -402,6 +406,7 @@ class Register {
     this.teamElement = this.element.appendChild(
       document.createElement("select")
     );
+    this.teamElement.name = "team";
 
     const teamHintElement = this.element.appendChild(
       document.createElement("div")
@@ -413,6 +418,7 @@ class Register {
       document.createElement("input")
     );
     this.passwordElement.type = "password";
+    this.passwordElement.name = "password";
     this.passwordElement.placeholder = "Your Password";
     this.passwordElement.addEventListener("input", () => {
       this.enableButton();

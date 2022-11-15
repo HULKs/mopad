@@ -538,11 +538,29 @@ async fn authenticate(
                 .await
                 .expect("failed to write users.json");
 
+            let mut tokens: BTreeMap<String, StoredToken> = read_from_file("tokens.json")
+                .await
+                .expect("failed to read tokens.json");
+            let token = SaltString::generate(&mut OsRng).to_string();
+            let now = SystemTime::now();
+            tokens.insert(
+                token.clone(),
+                StoredToken {
+                    user_id: next_user_id,
+                    expires_at: now + Duration::from_secs(60 * 60 * 24 * 7),
+                },
+            );
+            tokens.retain(|_token, stored_token| stored_token.expires_at >= now);
+            write_to_file("tokens.json", &tokens)
+                .await
+                .expect("failed to write tokens.json");
+
             let _ = socket
                 .send(Message::Text(
                     to_string(&AuthenticationResponse::AuthenticationSuccess {
                         user_id: next_user_id,
                         roles: users[&next_user_id].roles.clone(),
+                        token,
                     })
                     .unwrap(),
                 ))
@@ -562,11 +580,29 @@ async fn authenticate(
                 .find(|user| user.name == name && user.team == team)
             {
                 if user.verify(password) {
+                    let mut tokens: BTreeMap<String, StoredToken> = read_from_file("tokens.json")
+                        .await
+                        .expect("failed to read tokens.json");
+                    let token = SaltString::generate(&mut OsRng).to_string();
+                    let now = SystemTime::now();
+                    tokens.insert(
+                        token.clone(),
+                        StoredToken {
+                            user_id: user.id,
+                            expires_at: now + Duration::from_secs(60 * 60 * 24 * 7),
+                        },
+                    );
+                    tokens.retain(|_token, stored_token| stored_token.expires_at >= now);
+                    write_to_file("tokens.json", &tokens)
+                        .await
+                        .expect("failed to write tokens.json");
+
                     let _ = socket
                         .send(Message::Text(
                             to_string(&AuthenticationResponse::AuthenticationSuccess {
                                 user_id: user.id,
                                 roles: user.roles.clone(),
+                                token,
                             })
                             .unwrap(),
                         ))
@@ -869,6 +905,7 @@ enum AuthenticationResponse {
     AuthenticationSuccess {
         user_id: usize,
         roles: BTreeSet<Role>,
+        token: String,
     },
     AuthenticationError {
         reason: String,
@@ -1030,4 +1067,10 @@ pub struct Talk {
     duration: Duration,
     nerds: Vec<usize>,
     noobs: Vec<usize>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct StoredToken {
+    user_id: usize,
+    expires_at: SystemTime,
 }

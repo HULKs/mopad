@@ -1109,7 +1109,13 @@ class Talk {
 
     this.titleElement = this.element.appendChild(document.createElement("h1"));
     this.titleElement.classList.add("title");
-    this.titleElement.innerText = this.title;
+    if (this.title.length === 0) {
+      this.titleElement.classList.add("empty");
+      this.titleElement.innerText = "No title";
+    } else {
+      this.titleElement.classList.remove("empty");
+      this.titleElement.innerText = this.title;
+    }
     if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
       this.titleElement.classList.add("editable");
       this.titleElement.addEventListener("click", () => {
@@ -1437,7 +1443,13 @@ class Talk {
 
   updateTitle(title) {
     this.title = title;
-    this.titleElement.innerText = this.title;
+    if (this.title.length === 0) {
+      this.titleElement.classList.add("empty");
+      this.titleElement.innerText = "No title";
+    } else {
+      this.titleElement.classList.remove("empty");
+      this.titleElement.innerText = this.title;
+    }
   }
 
   updateDescription(description) {

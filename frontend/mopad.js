@@ -1209,7 +1209,13 @@ class Talk {
       document.createElement("div")
     );
     this.descriptionElement.classList.add("description");
-    this.descriptionElement.innerText = this.description;
+    if (this.description.length === 0) {
+      this.descriptionElement.classList.add("empty");
+      this.descriptionElement.innerText = "No description";
+    } else {
+      this.descriptionElement.classList.remove("empty");
+      this.descriptionElement.innerText = this.description;
+    }
     if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
       this.descriptionElement.classList.add("editable");
       this.descriptionElement.addEventListener("click", () => {
@@ -1394,7 +1400,13 @@ class Talk {
 
   updateDescription(description) {
     this.description = description;
-    this.descriptionElement.innerText = this.description;
+    if (this.description.length === 0) {
+      this.descriptionElement.classList.add("empty");
+      this.descriptionElement.innerText = "No description";
+    } else {
+      this.descriptionElement.classList.remove("empty");
+      this.descriptionElement.innerText = this.description;
+    }
   }
 
   updateScheduledAt(scheduledAt) {

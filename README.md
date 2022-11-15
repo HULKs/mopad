@@ -1,70 +1,56 @@
-# Getting Started with Create React App
+# Moderated Organization PAD (powerful, agile, distributed)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Web application for managing talks (title, description, duration, scheduling).
 
-## Available Scripts
+## How to deploy
 
-In the project directory, you can run:
+Example `docker-compose.yaml`:
 
-### `yarn start`
+```yaml
+version: "3"
+services:
+  mopad:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./talks.json:/mopad/talks.json
+      - ./teams.json:/mopad/teams.json
+      - ./tokens.json:/mopad/tokens.json
+      - ./users.json:/mopad/users.json
+    ports:
+      - "1337:1337"
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+You may want to add a reverse proxy for TLS-termination.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Create empty data store with teams `Alpha` and `Bravo`:
 
-### `yarn test`
+```bash
+echo '[]' > talks.json
+echo '["Alpha", "Bravo"]' > teams.json
+echo '{}' > tokens.json
+echo '[]' > users.json
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Then build with `docker compose build mopad` and start the container with `docker compose up -d`.
 
-### `yarn build`
+Navigate to `http://localhost:1337` to view the MOPAD.
+The first step is to register yourself by clicking the "Register" link on the login page.
+Once registered, you are logged in and can start to manage talks.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Give Editor and Scheduler roles to users
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+In MOPAD, users can have roles: `Editor` and `Scheduler`.
+They are disjoint which means, users can have multiple roles, one of them, or none.
+Normal users do not have any roles.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The `Editor` role allows the user to edit talks created by other users.
+Normally users can only edit their own talks.
 
-### `yarn eject`
+The `Scheduler` role allows the user to set the scheduling time of talks.
+Only schedulers can edit these times.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `yarn build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+You can change the roles in the `users.json` file.
+Each user has a `"roles"` array field where the roles can be added as string e.g. `"roles": ["Editor", "Scheduler"]`.
+Changes made in all JSON files need to be announced to a running server instance by sending it a `SIGUSR1` signal e.g. with `docker compose kill -s SIGUSR1 mopad`.
+You can also restart the server but this will disconnect all connected clients (but they should™ reconnect).

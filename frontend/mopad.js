@@ -1129,13 +1129,6 @@ class Talk {
       this.scheduledAtEditElement = document.createElement("input");
       this.scheduledAtEditElement.classList.add("scheduled-at");
       this.scheduledAtEditElement.type = "datetime-local";
-      this.scheduledAtEditElement.addEventListener("keydown", (event) => {
-        if (event.code === "Enter" || event.code === "Esc") {
-          event.target.blur();
-        } else if (event.code === "Esc") {
-          event.target.blur();
-        }
-      });
       this.scheduledAtEditElement.addEventListener("blur", () => {
         let scheduledAt = null;
         if (this.scheduledAtEditElement.value.length > 0) {
@@ -1259,6 +1252,8 @@ class Talk {
               this.durationElement.click();
             }
           }
+        } else if (event.code === "Enter" || event.code === "Escape") {
+          event.target.blur();
         }
       });
       this.durationEditElement.addEventListener("keydown", (event) => {
@@ -1274,6 +1269,8 @@ class Talk {
           } else {
             this.descriptionElement.click();
           }
+        } else if (event.code === "Enter" || event.code === "Escape") {
+          event.target.blur();
         }
       });
       this.descriptionEditElement.addEventListener("keydown", (event) => {
@@ -1283,6 +1280,8 @@ class Talk {
           if (event.shiftKey) {
             this.durationElement.click();
           }
+        } else if (event.code === "Enter" || event.code === "Escape") {
+          event.target.blur();
         }
       });
     }
@@ -1301,6 +1300,8 @@ class Talk {
               this.durationElement.click();
             }
           }
+        } else if (event.code === "Enter" || event.code === "Escape") {
+          event.target.blur();
         }
       });
     }

@@ -1,16 +1,16 @@
-// TODO: Login/Reconnection/Persistence/Robustness
-
 class Mopad {
   constructor(root) {
     this.root = root;
+    this.webSocket = null;
+    this.connectMessage = null;
 
     this.users = {};
 
     this.loading = new Loading();
     this.login = new Login(
       (name, team, password) => {
-        this.login.disable();
-        this.connectWebSocket("Login", name, team, password);
+        this.connectMessage = { Login: { name, team, password } };
+        this.connectWebSocket(this.connectMessage);
       },
       () => {
         this.root.removeChild(this.login.element);
@@ -21,8 +21,8 @@ class Mopad {
     );
     this.register = new Register(
       (name, team, password) => {
-        this.register.disable();
-        this.connectWebSocket("Register", name, team, password);
+        this.connectMessage = { Register: { name, team, password } };
+        this.connectWebSocket(this.connectMessage);
       },
       () => {
         this.root.removeChild(this.register.element);
@@ -31,9 +31,18 @@ class Mopad {
         this.login.focus();
       }
     );
-    this.talks = new Talks((message) => {
-      this.webSocket.send(JSON.stringify(message));
-    });
+    this.talks = new Talks(
+      (message) => {
+        this.webSocket.send(JSON.stringify(message));
+      },
+      () => {
+        localStorage.removeItem("reloginToken");
+        this.root.removeChild(this.talks.element);
+        this.root.appendChild(this.login.element);
+        this.root.classList.add("center");
+        this.login.focus();
+      }
+    );
 
     this.root.appendChild(this.loading.element);
     this.root.classList.add("center");
@@ -52,69 +61,93 @@ class Mopad {
     this.root.appendChild(this.login.element);
     this.root.classList.add("center");
     this.login.focus();
+
+    this.tryRelogin();
   }
 
-  connectWebSocket(authenticationCommand, name, team, password) {
-    this.socketReceivedError = false;
+  tryRelogin() {
+    if (this.webSocket === null) {
+      const reloginToken = localStorage.getItem("reloginToken");
+      if (reloginToken !== null) {
+        console.log("Trying relogin");
+        this.connectWebSocket({ Relogin: { token: reloginToken } });
+      } else if (
+        this.connectMessage !== null &&
+        this.connectMessage["Login"] !== undefined
+      ) {
+        console.log("Trying normal login");
+        this.connectWebSocket(this.connectMessage);
+      } else if (
+        this.connectMessage !== null &&
+        this.connectMessage["Register"] !== undefined
+      ) {
+        console.log("Trying normal login from register");
+        this.connectWebSocket({
+          Register: {
+            name: this.connectMessage["Register"]["name"],
+            team: this.connectMessage["Register"]["team"],
+            password: this.connectMessage["Register"]["password"],
+          },
+        });
+      }
+    }
+  }
+
+  connectWebSocket(connectMessage) {
+    this.login.disable();
+    this.register.disable();
     this.webSocket = new WebSocket(
       `ws${window.location.protocol === "https:" ? "s" : ""}://${
         window.location.host
       }/api`
     );
     this.webSocket.addEventListener("open", () => {
-      this.webSocket.send(
-        JSON.stringify({
-          [authenticationCommand]: {
-            name,
-            team,
-            password,
-          },
-        })
-      );
+      this.webSocket.send(JSON.stringify(connectMessage));
     });
     this.webSocket.addEventListener("close", () => {
-      this.login.enable();
-      this.register.enable();
-      if (!this.socketReceivedError) {
-        if (authenticationCommand === "Register") {
-          this.root.removeChild(this.register.element);
-        } else {
-          this.root.removeChild(this.talks.element); // TODO: this errors because this.talks.element is not a child when getting AuthenticationError for Login
-        }
+      if (this.talks.element.parentElement === this.root) {
+        this.root.removeChild(this.talks.element);
         this.root.appendChild(this.login.element);
         this.root.classList.add("center");
-        this.login.focus();
       }
+      this.login.enable();
+      this.register.enable();
+      this.login.focus();
       this.webSocket = null;
     });
     this.webSocket.addEventListener("message", (event) => {
       let message = JSON.parse(event.data);
       if (message["AuthenticationSuccess"] !== undefined) {
         this.currentUserId = message["AuthenticationSuccess"]["user_id"];
+        localStorage.setItem(
+          "reloginToken",
+          message["AuthenticationSuccess"]["token"]
+        );
         this.talks.setCurrentUserIdAndRoles(
           message["AuthenticationSuccess"]["user_id"],
           message["AuthenticationSuccess"]["roles"]
         );
         this.login.enable();
         this.register.enable();
-        this.root.removeChild(
-          authenticationCommand === "Login"
-            ? this.login.element
-            : this.register.element
-        );
+        while (this.root.firstChild) {
+          this.root.removeChild(this.root.firstChild);
+        }
         this.root.appendChild(this.talks.element);
         this.root.classList.remove("center");
       } else if (message["AuthenticationError"] !== undefined) {
-        alert(
-          `Chestboard reported that we cannot ${
-            authenticationCommand === "Login" ? "log" : "register"
-          } you ${authenticationCommand === "Login" ? "in" : ""} (${
-            message["AuthenticationError"]["reason"]
-          })`
-        );
-        this.login.element.enable();
-        this.register.element.enable();
-        this.socketReceivedError = true;
+        if (connectMessage["Relogin"] === undefined) {
+          alert(
+            `Chestboard reported that we cannot ${
+              authenticationCommand === "Login" ? "log" : "register"
+            } you${authenticationCommand === "Login" ? " in" : ""} (${
+              message["AuthenticationError"]["reason"]
+            })`
+          );
+        } else {
+          localStorage.removeItem("reloginToken");
+        }
+        this.login.enable();
+        this.register.enable();
       } else if (message["Users"] !== undefined) {
         this.users = message["Users"]["users"];
         this.talks.updateUsers(message["Users"]["users"]);
@@ -267,7 +300,9 @@ class Login {
     switchToRegisterElement.innerText = "Register";
     switchToRegisterElement.addEventListener("click", (event) => {
       event.preventDefault();
-      switchToRegister();
+      if (!this.nameElement.disabled) {
+        switchToRegister();
+      }
     });
 
     const footerElement = this.element.appendChild(
@@ -440,7 +475,9 @@ class Register {
     switchToLoginElement.innerText = "Login";
     switchToLoginElement.addEventListener("click", (event) => {
       event.preventDefault();
-      switchToLogin();
+      if (!this.nameElement.disabled) {
+        switchToRegister();
+      }
     });
 
     const footerElement = this.element.appendChild(
@@ -507,7 +544,7 @@ class Register {
 }
 
 class Talks {
-  constructor(sendMessage) {
+  constructor(sendMessage, logout) {
     this.element = document.createElement("div");
     this.element.id = "talks";
 
@@ -548,43 +585,72 @@ class Talks {
       }
     });
 
-    const calendarDialogBoxElement = this.calendarDialogElement.appendChild(document.createElement("div"));
+    const calendarDialogBoxElement = this.calendarDialogElement.appendChild(
+      document.createElement("div")
+    );
     calendarDialogBoxElement.classList.add("box");
 
-    const calendarHeading1Element = calendarDialogBoxElement.appendChild(document.createElement("h1"));
+    const calendarHeading1Element = calendarDialogBoxElement.appendChild(
+      document.createElement("h1")
+    );
     calendarHeading1Element.innerText = "Subscribe talks as calendar";
 
-    const calendarHeading2Element = calendarDialogBoxElement.appendChild(document.createElement("h2"));
+    const calendarHeading2Element = calendarDialogBoxElement.appendChild(
+      document.createElement("h2")
+    );
     calendarHeading2Element.innerText = "Nerds might know it as iCalendar/ICS";
 
-    this.calendarDescriptionElement = calendarDialogBoxElement.appendChild(document.createElement("div"));
+    this.calendarDescriptionElement = calendarDialogBoxElement.appendChild(
+      document.createElement("div")
+    );
     this.calendarDescriptionElement.classList.add("description");
-    this.calendarDescriptionElement.innerText = "Use this address in external calendar applications to show your subscribed talks:";
+    this.calendarDescriptionElement.innerText =
+      "Use this address in external calendar applications to show your subscribed talks:";
 
-    this.calendarLinkElement = calendarDialogBoxElement.appendChild(document.createElement("a"));
+    this.calendarLinkElement = calendarDialogBoxElement.appendChild(
+      document.createElement("a")
+    );
     this.calendarLinkElement.href = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
     this.calendarLinkElement.target = "_blank";
     this.calendarLinkElement.rel = "noreferrer";
     this.calendarLinkElement.innerText = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
 
-    const calendarPersonalizationElement = calendarDialogBoxElement.appendChild(document.createElement("div"));
+    const calendarPersonalizationElement = calendarDialogBoxElement.appendChild(
+      document.createElement("div")
+    );
     calendarPersonalizationElement.classList.add("personalization");
 
-    this.calendarPersonalizationCheckboxElement = calendarPersonalizationElement.appendChild(document.createElement("input"));
+    this.calendarPersonalizationCheckboxElement =
+      calendarPersonalizationElement.appendChild(
+        document.createElement("input")
+      );
     this.calendarPersonalizationCheckboxElement.id = "calendar-checkbox";
     this.calendarPersonalizationCheckboxElement.type = "checkbox";
     this.calendarPersonalizationCheckboxElement.checked = true;
-    this.calendarPersonalizationCheckboxElement.addEventListener("input", () => {
-      this.updateCalendarElements();
-    });
+    this.calendarPersonalizationCheckboxElement.addEventListener(
+      "input",
+      () => {
+        this.updateCalendarElements();
+      }
+    );
 
-    const calendarPersonalizationLabelElement = calendarPersonalizationElement.appendChild(document.createElement("label"));
-    calendarPersonalizationLabelElement.setAttribute("for", "calendar-checkbox");
-    calendarPersonalizationLabelElement.innerText = "Only include your NERDed and NOOBed talks";
+    const calendarPersonalizationLabelElement =
+      calendarPersonalizationElement.appendChild(
+        document.createElement("label")
+      );
+    calendarPersonalizationLabelElement.setAttribute(
+      "for",
+      "calendar-checkbox"
+    );
+    calendarPersonalizationLabelElement.innerText =
+      "Only include your NERDed and NOOBed talks";
 
-    const calendarHintElement = calendarDialogBoxElement.appendChild(document.createElement("div"));
+    const calendarHintElement = calendarDialogBoxElement.appendChild(
+      document.createElement("div")
+    );
     calendarHintElement.classList.add("hint");
-    calendarHintElement.innerText = "The calendar will only contain scheduled talks.";
+    calendarHintElement.innerText =
+      "The calendar will only contain scheduled talks.";
 
     const headingElement = this.element.appendChild(
       document.createElement("div")
@@ -681,6 +747,35 @@ class Talks {
 
     this.unscheduledTalksElement = document.createElement("div");
     this.unscheduledTalksElement.classList.add("talks");
+
+    this.footerElement = document.createElement("div");
+    this.footerElement.classList.add("footer");
+
+    const logoutElement = this.footerElement.appendChild(
+      document.createElement("a")
+    );
+    logoutElement.href = "#logout";
+    logoutElement.innerText = "Logout from MOPAD";
+    logoutElement.addEventListener("click", (event) => {
+      event.preventDefault();
+      logout();
+    });
+
+    const imprintElement = this.footerElement.appendChild(
+      document.createElement("a")
+    );
+    imprintElement.href = "https://rohow.de/2020/de/imprint.html";
+    imprintElement.target = "_blank";
+    imprintElement.rel = "noreferrer";
+    imprintElement.innerText = "Imprint/Impressum";
+
+    const privacyPolicyElement = this.footerElement.appendChild(
+      document.createElement("a")
+    );
+    privacyPolicyElement.href = "https://rohow.de/2020/de/privacy_policy.html";
+    privacyPolicyElement.target = "_blank";
+    privacyPolicyElement.rel = "noreferrer";
+    privacyPolicyElement.innerText = "Privacy Policy/Datenschutzerklärung";
   }
 
   minuteTick() {
@@ -706,11 +801,13 @@ class Talks {
 
   updateCalendarElements() {
     if (this.calendarPersonalizationCheckboxElement.checked) {
-      this.calendarDescriptionElement.innerText = "Use this address in external calendar applications to show your subscribed talks:";
+      this.calendarDescriptionElement.innerText =
+        "Use this address in external calendar applications to show your subscribed talks:";
       this.calendarLinkElement.href = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
       this.calendarLinkElement.innerText = `${window.location.protocol}//${window.location.host}/talks.ics?user_id=${this.currentUserId}`;
     } else {
-      this.calendarDescriptionElement.innerText = "Use this address in external calendar applications to show the talks:";
+      this.calendarDescriptionElement.innerText =
+        "Use this address in external calendar applications to show the talks:";
       this.calendarLinkElement.href = `${window.location.protocol}//${window.location.host}/talks.ics`;
       this.calendarLinkElement.innerText = `${window.location.protocol}//${window.location.host}/talks.ics`;
     }
@@ -855,6 +952,11 @@ class Talks {
         this.unscheduledButtonElement.innerText = `Show ${unscheduledTalks} unscheduled`;
       }
     }
+
+    if (this.footerElement.parentElement === this.element) {
+      this.element.removeChild(this.footerElement);
+    }
+    this.element.appendChild(this.footerElement);
   }
 
   updateUsers(users) {
@@ -1373,3 +1475,17 @@ setTimeout(() => {
     mopad.minuteTick();
   }, 60000);
 }, (60 - new Date().getSeconds()) * 1000);
+
+let reloginInterval = null;
+const triggerRelogin = () => {
+  if (document.visibilityState === "visible") {
+    mopad.tryRelogin();
+    reloginInterval = setInterval(() => {
+      mopad.tryRelogin();
+    }, 10000);
+  } else {
+    clearInterval(reloginInterval);
+  }
+};
+triggerRelogin();
+document.addEventListener("visibilitychange", triggerRelogin);

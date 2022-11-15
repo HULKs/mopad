@@ -158,7 +158,8 @@ body.center {
 }
 
 #login .footer a,
-#register .footer a {
+#register .footer a,
+#talks .footer a {
   display: block;
   margin: 0.25rem 0;
   font-size: 0.9rem;
@@ -166,8 +167,8 @@ body.center {
   text-align: center;
 }
 
-#talks {
-  padding: 0 0 5.5rem 0;
+#talks .footer {
+  padding: 0.75rem;
 }
 
 #talks .add {

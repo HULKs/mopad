@@ -632,6 +632,62 @@ async fn authenticate(
                 None
             }
         }
+        AuthenticationCommand::Relogin { token } => {
+            let users = users.lock().await;
+
+            let mut tokens: BTreeMap<String, StoredToken> = read_from_file("tokens.json")
+                .await
+                .expect("failed to read tokens.json");
+            let now = SystemTime::now();
+            let amount_of_tokens = tokens.len();
+            tokens.retain(|_token, stored_token| stored_token.expires_at >= now);
+            let amount_of_tokens_changed = amount_of_tokens != tokens.len();
+            let result = match tokens.get(&token) {
+                Some(stored_token) => match users.get(&stored_token.user_id) {
+                    Some(user) => {
+                        let _ = socket
+                            .send(Message::Text(
+                                to_string(&AuthenticationResponse::AuthenticationSuccess {
+                                    user_id: user.id,
+                                    roles: user.roles.clone(),
+                                    token,
+                                })
+                                .unwrap(),
+                            ))
+                            .await;
+                        Some((user.clone(), false))
+                    }
+                    None => {
+                        let _ = socket
+                            .send(Message::Text(
+                                to_string(&AuthenticationResponse::AuthenticationError {
+                                    reason: "unknown user from token".to_string(),
+                                })
+                                .unwrap(),
+                            ))
+                            .await;
+                        None
+                    }
+                },
+                None => {
+                    let _ = socket
+                        .send(Message::Text(
+                            to_string(&AuthenticationResponse::AuthenticationError {
+                                reason: "unknown token".to_string(),
+                            })
+                            .unwrap(),
+                        ))
+                        .await;
+                    None
+                }
+            };
+            if amount_of_tokens_changed {
+                write_to_file("tokens.json", &tokens)
+                    .await
+                    .expect("failed to write tokens.json");
+            }
+            result
+        }
     }
 }
 
@@ -897,6 +953,9 @@ enum AuthenticationCommand {
         name: String,
         team: String,
         password: String,
+    },
+    Relogin {
+        token: String,
     },
 }
 

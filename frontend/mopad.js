@@ -1132,6 +1132,11 @@ class Talk {
       this.scheduledAtEditElement = document.createElement("input");
       this.scheduledAtEditElement.classList.add("scheduled-at");
       this.scheduledAtEditElement.type = "datetime-local";
+      this.scheduledAtEditElement.addEventListener("keypress", (event) => {
+        if (event.code === "Enter") {
+          event.target.blur();
+        }
+      });
       this.scheduledAtEditElement.addEventListener("blur", () => {
         let scheduledAt = null;
         if (this.scheduledAtEditElement.value.length > 0) {
@@ -1176,16 +1181,31 @@ class Talk {
       this.durationEditElement.type = "number";
       this.durationEditElement.min = 1;
       this.durationEditElement.max = 600;
+      this.durationEditElement.addEventListener("keypress", (event) => {
+        if (event.code === "Enter") {
+          event.target.blur();
+        }
+      });
       this.durationEditElement.addEventListener("blur", () => {
-        sendMessage({
-          UpdateDuration: {
-            talk_id: this.id,
-            duration: {
-              secs: parseInt(this.durationEditElement.value) * 60,
-              nanos: 0,
+        const minutes = parseInt(this.durationEditElement.value);
+        if (
+          typeof minutes !== "number" ||
+          isNaN(minutes) ||
+          minutes <= 0 ||
+          minutes > 10 * 60
+        ) {
+          alert("Duration must be between 1 and 10*60 minutes");
+        } else {
+          sendMessage({
+            UpdateDuration: {
+              talk_id: this.id,
+              duration: {
+                secs: minutes * 60,
+                nanos: 0,
+              },
             },
-          },
-        });
+          });
+        }
         this.element.replaceChild(
           this.durationElement,
           this.durationEditElement

@@ -4,23 +4,7 @@ Web application for managing talks (title, description, duration, scheduling).
 
 ## How to deploy
 
-Example `docker-compose.yaml`:
-
-```yaml
-version: "3"
-services:
-  mopad:
-    build: .
-    restart: unless-stopped
-    volumes:
-      - ./talks.json:/mopad/talks.json
-      - ./teams.json:/mopad/teams.json
-      - ./tokens.json:/mopad/tokens.json
-      - ./users.json:/mopad/users.json
-    ports:
-      - "1337:1337"
-```
-
+Use the example `docker-compose.yaml` of this repository.
 You may want to add a reverse proxy for TLS-termination.
 
 Create empty data store with teams `Alpha` and `Bravo`:

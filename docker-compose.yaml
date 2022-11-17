@@ -1,0 +1,12 @@
+version: "3"
+services:
+  mopad:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./talks.json:/mopad/talks.json
+      - ./teams.json:/mopad/teams.json
+      - ./tokens.json:/mopad/tokens.json
+      - ./users.json:/mopad/users.json
+    ports:
+      - "1337:1337"

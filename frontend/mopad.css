@@ -157,18 +157,15 @@ body.center {
   color: #388e3c;
 }
 
-#login .footer a,
-#register .footer a,
-#talks .footer a {
-  display: block;
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
-  color: #388e3c;
+.footer {
+  line-height: 1.5rem;
   text-align: center;
+  padding: 0.75rem;
 }
 
-#talks .footer {
-  padding: 0.75rem;
+.footer a {
+  font-size: 0.9rem;
+  color: #388e3c;
 }
 
 #talks .add {

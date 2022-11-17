@@ -333,6 +333,8 @@ class Login {
     imprintElement.rel = "noreferrer";
     imprintElement.innerText = "Imprint/Impressum";
 
+    footerElement.appendChild(document.createElement("br"));
+
     const privacyPolicyElement = footerElement.appendChild(
       document.createElement("a")
     );
@@ -512,7 +514,7 @@ class Register {
     switchToLoginElement.addEventListener("click", (event) => {
       event.preventDefault();
       if (!this.nameElement.disabled) {
-        switchToRegister();
+        switchToLogin();
       }
     });
 
@@ -528,6 +530,8 @@ class Register {
     imprintElement.target = "_blank";
     imprintElement.rel = "noreferrer";
     imprintElement.innerText = "Imprint/Impressum";
+
+    footerElement.appendChild(document.createElement("br"));
 
     const privacyPolicyElement = footerElement.appendChild(
       document.createElement("a")
@@ -797,6 +801,8 @@ class Talks {
       logout();
     });
 
+    this.footerElement.appendChild(document.createElement("br"));
+
     const imprintElement = this.footerElement.appendChild(
       document.createElement("a")
     );
@@ -804,6 +810,8 @@ class Talks {
     imprintElement.target = "_blank";
     imprintElement.rel = "noreferrer";
     imprintElement.innerText = "Imprint/Impressum";
+
+    this.footerElement.appendChild(document.createElement("br"));
 
     const privacyPolicyElement = this.footerElement.appendChild(
       document.createElement("a")

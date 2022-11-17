@@ -37,10 +37,7 @@ class Mopad {
       },
       () => {
         localStorage.removeItem("reloginToken");
-        this.root.removeChild(this.talks.element);
-        this.root.appendChild(this.login.element);
-        this.root.classList.add("center");
-        this.login.focus();
+        this.webSocket.close();
       }
     );
 

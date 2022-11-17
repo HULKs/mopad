@@ -382,6 +382,7 @@ body.center {
   font-weight: 500;
   color: #000;
   padding: 1rem 1rem 0.25rem 1rem;
+  overflow-wrap: break-word;
 }
 
 #talks .talks .talk .title.empty {
@@ -394,6 +395,7 @@ body.center {
 #talks .talks .talk .description {
   font-size: 0.9rem;
   color: #666;
+  overflow-wrap: break-word;
 }
 
 #talks .talks .talk .scheduled-at {

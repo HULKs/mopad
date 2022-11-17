@@ -1334,7 +1334,7 @@ class Talk {
           if (event.shiftKey) {
             this.durationElement.click();
           }
-        } else if (event.code === "Enter" || event.code === "Escape") {
+        } else if (event.code === "Escape") {
           event.target.blur();
         }
       });

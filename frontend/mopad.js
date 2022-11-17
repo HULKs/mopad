@@ -132,11 +132,12 @@ class Mopad {
         if (connectMessage["Relogin"] === undefined) {
           alert(
             `Chestboard reported that we cannot ${
-              authenticationCommand === "Login" ? "log" : "register"
-            } you${authenticationCommand === "Login" ? " in" : ""} (${
+              connectMessage["Login"] !== undefined ? "log" : "register"
+            } you${connectMessage["Login"] !== undefined ? " in" : ""} (${
               message["AuthenticationError"]["reason"]
             })`
           );
+          this.connectMessage = null;
         } else {
           localStorage.removeItem("reloginToken");
         }

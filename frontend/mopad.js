@@ -876,6 +876,8 @@ class Talks {
   insertTalkIntoSectionElement(talkId, sectionElement) {
     if (sectionElement === this.unscheduledTalksElement) {
       sectionElement.appendChild(this.talks[talkId].element);
+      this.sectionElementsOfTalks[talkId] = sectionElement;
+      return;
     }
     const otherTalksInSection = Object.entries(
       this.sectionElementsOfTalks
@@ -920,88 +922,156 @@ class Talks {
   }
 
   updateVisibleSections() {
-    if (this.pastHeadingElement.parentElement === this.element) {
-      this.element.removeChild(this.pastHeadingElement);
-    }
-    if (this.pastTalksElement.parentElement === this.element) {
-      this.element.removeChild(this.pastTalksElement);
-    }
+    let elementsAfterwardsNeedAppending = false;
     const pastTalks = Object.values(this.sectionElementsOfTalks).filter(
       (sectionElementOfTalk) => sectionElementOfTalk == this.pastTalksElement
     ).length;
     if (pastTalks > 0) {
-      this.element.appendChild(this.pastHeadingElement);
+      if (
+        elementsAfterwardsNeedAppending ||
+        this.pastHeadingElement.parentElement !== this.element
+      ) {
+        this.element.appendChild(this.pastHeadingElement);
+        elementsAfterwardsNeedAppending = true;
+      }
       if (this.pastExpanded) {
-        this.element.appendChild(this.pastTalksElement);
+        if (
+          elementsAfterwardsNeedAppending ||
+          this.pastTalksElement.parentElement !== this.element
+        ) {
+          this.element.appendChild(this.pastTalksElement);
+          elementsAfterwardsNeedAppending = true;
+        }
         this.pastButtonElement.innerText = "Hide past";
       } else {
+        if (this.pastTalksElement.parentElement === this.element) {
+          this.element.removeChild(this.pastTalksElement);
+        }
         this.pastButtonElement.innerText = `Show ${pastTalks} past`;
+      }
+    } else {
+      if (this.pastHeadingElement.parentElement === this.element) {
+        this.element.removeChild(this.pastHeadingElement);
+      }
+      if (this.pastTalksElement.parentElement === this.element) {
+        this.element.removeChild(this.pastTalksElement);
       }
     }
 
-    if (this.currentHeadingElement.parentElement === this.element) {
-      this.element.removeChild(this.currentHeadingElement);
-    }
-    if (this.currentTalksElement.parentElement === this.element) {
-      this.element.removeChild(this.currentTalksElement);
-    }
     const currentTalks = Object.values(this.sectionElementsOfTalks).filter(
       (sectionElementOfTalk) => sectionElementOfTalk == this.currentTalksElement
     ).length;
     if (currentTalks > 0) {
-      this.element.appendChild(this.currentHeadingElement);
+      if (
+        elementsAfterwardsNeedAppending ||
+        this.currentHeadingElement.parentElement !== this.element
+      ) {
+        this.element.appendChild(this.currentHeadingElement);
+        elementsAfterwardsNeedAppending = true;
+      }
       if (this.currentExpanded) {
-        this.element.appendChild(this.currentTalksElement);
+        if (
+          elementsAfterwardsNeedAppending ||
+          this.currentTalksElement.parentElement !== this.element
+        ) {
+          this.element.appendChild(this.currentTalksElement);
+          elementsAfterwardsNeedAppending = true;
+        }
         this.currentButtonElement.innerText = "Hide current";
       } else {
+        if (this.currentTalksElement.parentElement === this.element) {
+          this.element.removeChild(this.currentTalksElement);
+        }
         this.currentButtonElement.innerText = `Show ${currentTalks} current`;
+      }
+    } else {
+      if (this.currentHeadingElement.parentElement === this.element) {
+        this.element.removeChild(this.currentHeadingElement);
+      }
+      if (this.currentTalksElement.parentElement === this.element) {
+        this.element.removeChild(this.currentTalksElement);
       }
     }
 
-    if (this.upcomingHeadingElement.parentElement === this.element) {
-      this.element.removeChild(this.upcomingHeadingElement);
-    }
-    if (this.upcomingTalksElement.parentElement === this.element) {
-      this.element.removeChild(this.upcomingTalksElement);
-    }
     const upcomingTalks = Object.values(this.sectionElementsOfTalks).filter(
       (sectionElementOfTalk) =>
         sectionElementOfTalk == this.upcomingTalksElement
     ).length;
     if (upcomingTalks > 0) {
-      this.element.appendChild(this.upcomingHeadingElement);
+      if (
+        elementsAfterwardsNeedAppending ||
+        this.upcomingHeadingElement.parentElement !== this.element
+      ) {
+        this.element.appendChild(this.upcomingHeadingElement);
+        elementsAfterwardsNeedAppending = true;
+      }
       if (this.upcomingExpanded) {
-        this.element.appendChild(this.upcomingTalksElement);
+        if (
+          elementsAfterwardsNeedAppending ||
+          this.upcomingTalksElement.parentElement !== this.element
+        ) {
+          this.element.appendChild(this.upcomingTalksElement);
+          elementsAfterwardsNeedAppending = true;
+        }
         this.upcomingButtonElement.innerText = "Hide upcoming";
       } else {
+        if (this.upcomingTalksElement.parentElement === this.element) {
+          this.element.removeChild(this.upcomingTalksElement);
+        }
         this.upcomingButtonElement.innerText = `Show ${upcomingTalks} upcoming`;
+      }
+    } else {
+      if (this.upcomingHeadingElement.parentElement === this.element) {
+        this.element.removeChild(this.upcomingHeadingElement);
+      }
+      if (this.upcomingTalksElement.parentElement === this.element) {
+        this.element.removeChild(this.upcomingTalksElement);
       }
     }
 
-    if (this.unscheduledHeadingElement.parentElement === this.element) {
-      this.element.removeChild(this.unscheduledHeadingElement);
-    }
-    if (this.unscheduledTalksElement.parentElement === this.element) {
-      this.element.removeChild(this.unscheduledTalksElement);
-    }
     const unscheduledTalks = Object.values(this.sectionElementsOfTalks).filter(
       (sectionElementOfTalk) =>
         sectionElementOfTalk == this.unscheduledTalksElement
     ).length;
     if (unscheduledTalks > 0) {
-      this.element.appendChild(this.unscheduledHeadingElement);
+      if (
+        elementsAfterwardsNeedAppending ||
+        this.unscheduledHeadingElement.parentElement !== this.element
+      ) {
+        this.element.appendChild(this.unscheduledHeadingElement);
+        elementsAfterwardsNeedAppending = true;
+      }
       if (this.unscheduledExpanded) {
-        this.element.appendChild(this.unscheduledTalksElement);
+        if (
+          elementsAfterwardsNeedAppending ||
+          this.unscheduledTalksElement.parentElement !== this.element
+        ) {
+          this.element.appendChild(this.unscheduledTalksElement);
+          elementsAfterwardsNeedAppending = true;
+        }
         this.unscheduledButtonElement.innerText = "Hide unscheduled";
       } else {
+        if (this.unscheduledTalksElement.parentElement === this.element) {
+          this.element.removeChild(this.unscheduledTalksElement);
+        }
         this.unscheduledButtonElement.innerText = `Show ${unscheduledTalks} unscheduled`;
+      }
+    } else {
+      if (this.unscheduledHeadingElement.parentElement === this.element) {
+        this.element.removeChild(this.unscheduledHeadingElement);
+      }
+      if (this.unscheduledTalksElement.parentElement === this.element) {
+        this.element.removeChild(this.unscheduledTalksElement);
       }
     }
 
-    if (this.footerElement.parentElement === this.element) {
-      this.element.removeChild(this.footerElement);
+    if (
+      elementsAfterwardsNeedAppending ||
+      this.footerElement.parentElement !== this.element
+    ) {
+      this.element.appendChild(this.footerElement);
+      elementsAfterwardsNeedAppending = true;
     }
-    this.element.appendChild(this.footerElement);
   }
 
   updateUsers(users) {

@@ -389,6 +389,7 @@ body.center {
 
 #talks .talks .talk .scheduled-at,
 #talks .talks .talk .duration,
+#talks .talks .talk .location,
 #talks .talks .talk .description {
   font-size: 0.9rem;
   color: #666;
@@ -400,6 +401,10 @@ body.center {
 }
 
 #talks .talks .talk .duration {
+  padding: 0 1rem 0 1rem;
+}
+
+#talks .talks .talk .location {
   padding: 0 1rem 0.25rem 1rem;
 }
 
@@ -427,6 +432,7 @@ body.center {
 #talks .talks .talk input.title,
 #talks .talks .talk input.scheduled-at,
 #talks .talks .talk input.duration,
+#talks .talks .talk input.location,
 #talks .talks .talk textarea.description {
   color: #000;
   font-family: inherit;
@@ -483,6 +489,7 @@ body.center {
 
 #talks .talks .talk.participating div.scheduled-at,
 #talks .talks .talk.participating div.duration,
+#talks .talks .talk.participating div.location,
 #talks .talks .talk.participating div.description {
   color: #c8e6c9;
 }

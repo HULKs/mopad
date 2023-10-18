@@ -721,6 +721,7 @@ async fn handle_message(
                         description,
                         scheduled_at: None,
                         duration,
+                        location: None,
                         nerds: vec![current_user.id],
                         noobs: vec![],
                     };
@@ -852,6 +853,29 @@ async fn handle_message(
                         .wrap_err("failed to write talks.json")?;
 
                     let _ = updates_sender.send(Update::UpdateDuration { talk_id, duration });
+                }
+                Command::UpdateLocation { talk_id, location } => {
+                    let mut talks = talks.lock().await;
+
+                    if !talks.contains_key(&talk_id)
+                        || (!current_user.roles.contains(&Role::Scheduler)
+                            && talks[&talk_id].creator != current_user.id)
+                    {
+                        return Ok(());
+                    }
+
+                    let talk = match talks.get_mut(&talk_id) {
+                        Some(talk) => talk,
+                        None => return Ok(()),
+                    };
+
+                    talk.location = location.clone();
+
+                    write_to_file("talks.json", &talks.values().collect::<Vec<_>>())
+                        .await
+                        .wrap_err("failed to write talks.json")?;
+
+                    let _ = updates_sender.send(Update::UpdateLocation { talk_id, location });
                 }
                 Command::AddNoob { talk_id, user_id } => {
                     let mut talks = talks.lock().await;
@@ -997,6 +1021,10 @@ enum Command {
         talk_id: usize,
         duration: Duration,
     },
+    UpdateLocation {
+        talk_id: usize,
+        location: Option<String>,
+    },
     AddNoob {
         talk_id: usize,
         user_id: usize,
@@ -1041,6 +1069,10 @@ enum Update {
     UpdateDuration {
         talk_id: usize,
         duration: Duration,
+    },
+    UpdateLocation {
+        talk_id: usize,
+        location: Option<String>,
     },
     AddNoob {
         talk_id: usize,
@@ -1124,6 +1156,7 @@ pub struct Talk {
     description: String,
     scheduled_at: Option<SystemTime>,
     duration: Duration,
+    location: Option<String>,
     nerds: Vec<usize>,
     noobs: Vec<usize>,
 }

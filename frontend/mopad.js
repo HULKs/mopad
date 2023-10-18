@@ -179,6 +179,11 @@ class Mopad {
           message["UpdateDuration"]["talk_id"],
           message["UpdateDuration"]["duration"]
         );
+      } else if (message["UpdateLocation"] !== undefined) {
+        this.talks.updateLocation(
+          message["UpdateLocation"]["talk_id"],
+          message["UpdateLocation"]["location"]
+        );
       } else if (message["AddNoob"] !== undefined) {
         this.talks.addNoob(
           message["AddNoob"]["talk_id"],
@@ -1131,6 +1136,10 @@ class Talks {
     this.talks[talkId].updateDuration(duration);
   }
 
+  updateLocation(talkId, location) {
+    this.talks[talkId].updateLocation(location);
+  }
+
   addNoob(talkId, userId) {
     this.talks[talkId].addNoob(userId);
   }
@@ -1159,6 +1168,7 @@ class Talk {
     this.description = talk.description;
     this.scheduledAt = talk.scheduled_at;
     this.duration = talk.duration;
+    this.location = talk.location;
     this.noobs = talk.noobs;
     this.nerds = talk.nerds;
 
@@ -1329,6 +1339,48 @@ class Talk {
       });
     }
 
+    this.locationElement = this.element.appendChild(
+      document.createElement("div")
+    );
+    this.locationElement.classList.add("location");
+    this.locationElement.innerText = this.generateLocation();
+    if (
+      this.roles.includes("Scheduler") ||
+      this.creator === this.currentUserId
+    ) {
+      this.locationElement.classList.add("editable");
+      this.locationElement.addEventListener("click", () => {
+        this.locationEditElement.value = this.location;
+        this.element.replaceChild(
+          this.locationEditElement,
+          this.locationElement
+        );
+        this.locationEditElement.focus();
+      });
+
+      this.locationEditElement = document.createElement("input");
+      this.locationEditElement.classList.add("location");
+      this.locationEditElement.type = "text";
+      this.locationEditElement.addEventListener("input", () => {
+        const location =
+          this.locationEditElement.value.length === 0
+            ? null
+            : this.locationEditElement.value;
+        sendMessage({
+          UpdateLocation: {
+            talk_id: this.id,
+            location,
+          },
+        });
+      });
+      this.locationEditElement.addEventListener("blur", () => {
+        this.element.replaceChild(
+          this.locationElement,
+          this.locationEditElement
+        );
+      });
+    }
+
     this.descriptionElement = this.element.appendChild(
       document.createElement("div")
     );
@@ -1397,6 +1449,23 @@ class Talk {
               this.titleElement.click();
             }
           } else {
+            if (this.roles.includes("Scheduler")) {
+              this.locationElement.click();
+            } else {
+              this.descriptionElement.click();
+            }
+          }
+        } else if (event.code === "Enter" || event.code === "Escape") {
+          event.target.blur();
+        }
+      });
+      this.locationEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Tab") {
+          event.preventDefault();
+          event.target.blur();
+          if (event.shiftKey) {
+            this.durationElement.click();
+          } else {
             this.descriptionElement.click();
           }
         } else if (event.code === "Enter" || event.code === "Escape") {
@@ -1408,7 +1477,11 @@ class Talk {
           event.preventDefault();
           event.target.blur();
           if (event.shiftKey) {
-            this.durationElement.click();
+            if (this.roles.includes("Scheduler")) {
+              this.locationElement.click();
+            } else {
+              this.durationElement.click();
+            }
           }
         } else if (event.code === "Escape") {
           event.target.blur();
@@ -1551,6 +1624,11 @@ class Talk {
     this.durationElement.innerText = this.generateDuration();
   }
 
+  updateLocation(location) {
+    this.location = location;
+    this.locationElement.innerText = this.generateLocation();
+  }
+
   addNoob(userId) {
     this.noobs.push(userId);
     this.updateParticipation();
@@ -1641,6 +1719,15 @@ class Talk {
     return `for\u00a0\u00a0${durationMinutes} minute${
       durationMinutes === 1 ? "" : "s"
     }${relativeSuffix}`;
+  }
+
+  generateLocation() {
+    let location = "unknown location";
+    if (this.location !== null) {
+      location = this.location;
+    }
+
+    return `at\u00a0\u00a0${location}`;
   }
 
   updateDurationElement() {

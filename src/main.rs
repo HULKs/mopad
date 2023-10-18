@@ -1,7 +1,6 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::{Debug, Write},
-    io,
     net::SocketAddr,
     path::Path,
     str::FromStr,
@@ -80,7 +79,7 @@ async fn main() -> eyre::Result<()> {
                 move |parameters| handle_icalendar(parameters, users, talks)
             }),
         )
-        .fallback(get_service(ServeDir::new("./frontend")).handle_error(handle_error));
+        .fallback(get_service(ServeDir::new("./frontend")));
 
     spawn({
         let teams = teams.clone();
@@ -350,11 +349,6 @@ async fn handle_icalendar(
         [(CONTENT_TYPE, "text/calendar; charset=utf-8")],
         response,
     )
-}
-
-async fn handle_error(error: io::Error) -> impl IntoResponse {
-    eprintln!("Error in ServeDir: {error:?}");
-    (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
 }
 
 async fn handle_websocket(

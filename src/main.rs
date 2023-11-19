@@ -286,7 +286,7 @@ async fn handle_icalendar(
     users: Arc<Mutex<BTreeMap<usize, User>>>,
     talks: Arc<Mutex<BTreeMap<usize, Talk>>>,
 ) -> impl IntoResponse {
-    let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:Mopad\r\nX-WR-CALNAME:Mopad\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
+    let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:MOPAD\r\nX-WR-CALNAME:MOPAD\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
     let format = parse("[year][month][day]T[hour][minute][second]Z").unwrap();
     let now = OffsetDateTime::now_utc();
     let users = users.lock().await;

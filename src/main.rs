@@ -312,6 +312,14 @@ async fn handle_icalendar(
                 talk.description.replace('\r', "").replace('\n', ""),
             )
             .unwrap();
+            if let Some(location) = &talk.location {
+                write!(
+                    response,
+                    "LOCATION:{}\r\n",
+                    location.replace('\r', "").replace(';', "")
+                )
+                .unwrap();
+            }
             for nerd in talk.nerds.iter() {
                 let user = &users[nerd];
                 write!(

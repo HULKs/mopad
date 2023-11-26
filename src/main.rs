@@ -16,4 +16,6 @@ async fn main() {
     );
     let teams = SqliteTeamRepository::new(pool);
     dbg!(teams.get_all().await.unwrap());
+    dbg!(teams.get_by_id(1).await.unwrap());
+    dbg!(teams.get_by_id(42).await.unwrap());
 }

@@ -22,4 +22,11 @@ impl TeamRepository for SqliteTeamRepository {
             .fetch_all(self.pool.as_ref())
             .await
     }
+
+    async fn get_by_id(&self, id: i64) -> Result<Option<Team>, Error> {
+        query_as("SELECT * FROM teams WHERE id = ?")
+            .bind(id)
+            .fetch_optional(self.pool.as_ref())
+            .await
+    }
 }

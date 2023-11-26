@@ -4,6 +4,7 @@ use sqlx::Error;
 #[async_trait]
 pub trait UserRepository {
     async fn exists(&self, id: i64) -> Result<bool, Error>;
+    async fn get_name_and_team_id_by_id(&self, id: i64) -> Result<Option<(String, i64)>, Error>;
     async fn get_id_and_hash_by_name_and_team(
         &self,
         name: &str,

@@ -102,6 +102,7 @@ You can also restart the server but this will disconnect all connected clients (
 - Resources
     - Users
         - Roles
+        - Token
     - Teams
     - Talks
         - Noobs
@@ -120,6 +121,11 @@ classDiagram
     class Role {
         user: INTEGER REFERENCES User.id
         role: INTEGER NOT NULL
+    }
+    class Token {
+        token: TEXT PRIMARY KEY,
+        user: INTEGER REFERENCES User.id
+        expires_at: INTEGER NOT NULL
     }
     class Team {
         id: INTEGER PRIMARY KEY

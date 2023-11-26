@@ -9,13 +9,21 @@ CREATE TABLE users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   team INTEGER REFERENCES teams(id) NOT NULL,
-  hash TEXT NOT NULL
+  hash TEXT NOT NULL,
+  CONSTRAINT name_and_pair UNIQUE (name, team)
 );
 
 DROP TABLE IF EXISTS roles;
 CREATE TABLE roles (
   user INTEGER REFERENCES users(id) NOT NULL,
   role INTEGER NOT NULL
+);
+
+DROP TABLE IF EXISTS tokens;
+CREATE TABLE tokens (
+  token TEXT PRIMARY KEY,
+  user INTEGER REFERENCES users(id) NOT NULL,
+  expires_at INTEGER NOT NULL
 );
 
 DROP TABLE IF EXISTS talks;

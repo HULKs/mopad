@@ -1,5 +1,7 @@
+pub mod member;
 pub mod role;
 pub mod sqlite;
+pub mod talk;
 pub mod team;
 pub mod token;
 pub mod user;

@@ -5,6 +5,7 @@ use sqlx::{query_as, Error, Pool, Sqlite};
 
 use super::{Team, TeamRepository};
 
+#[deprecated]
 pub struct SqliteTeamRepository {
     pool: Arc<Pool<Sqlite>>,
 }

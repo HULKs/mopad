@@ -7,6 +7,7 @@ pub mod user;
 use async_trait::async_trait;
 use sqlx::{Error, FromRow};
 
+#[deprecated]
 #[async_trait]
 pub trait TeamRepository {
     async fn get_all(&self) -> Result<Vec<Team>, Error>;

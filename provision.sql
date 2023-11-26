@@ -32,9 +32,9 @@ CREATE TABLE talks (
   creator INTEGER REFERENCES users(id) NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  scheduled_at INTEGER NOT NULL,
+  scheduled_at INTEGER,
   duration INTEGER NOT NULL,
-  location TEXT NOT NULL
+  location TEXT
 );
 
 DROP TABLE IF EXISTS members;

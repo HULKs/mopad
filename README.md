@@ -137,7 +137,7 @@ classDiagram
         title: TEXT NOT NULL
         description: TEXT NOT NULL
         scheduled_at: INTEGER
-        duration: INTEGER
+        duration: INTEGER NOT NULL
         location: INTEGER
     }
     class Member {

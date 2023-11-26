@@ -1,10 +1,14 @@
+mod application;
 mod persistence;
 
 use std::sync::Arc;
 
 use sqlx::SqlitePool;
 
-use crate::persistence::{sqlite::SqliteTeamRepository, TeamRepository};
+use crate::{
+    application::{concrete::ConcreteTeamsService, TeamsService},
+    persistence::sqlite::SqliteTeamRepository,
+};
 
 #[tokio::main]
 async fn main() {
@@ -14,8 +18,6 @@ async fn main() {
             .await
             .unwrap(),
     );
-    let teams = SqliteTeamRepository::new(pool);
-    dbg!(teams.get_all().await.unwrap());
-    dbg!(teams.get_by_id(1).await.unwrap());
-    dbg!(teams.get_by_id(42).await.unwrap());
+    let teams = ConcreteTeamsService::new(SqliteTeamRepository::new(pool));
+    dbg!(teams.get_teams().await.unwrap());
 }

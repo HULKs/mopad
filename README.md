@@ -140,7 +140,7 @@ classDiagram
         duration: INTEGER
         location: INTEGER
     }
-    class Members {
+    class Member {
         user: INTEGER REFERENCES User.id
         talk: INTEGER REFERENCES Talk.id
         is_nerd: INTEGER NOT NULL
@@ -148,6 +148,6 @@ classDiagram
     User *-- Role
     Team *-- User
     User *-- Talk: creator
-    Talk *-- Members
-    User *-- Members
+    Talk *-- Member
+    User *-- Member
 ```

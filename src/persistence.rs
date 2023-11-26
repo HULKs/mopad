@@ -1,4 +1,8 @@
+pub mod role;
 pub mod sqlite;
+pub mod team;
+pub mod token;
+pub mod user;
 
 use async_trait::async_trait;
 use sqlx::{Error, FromRow};

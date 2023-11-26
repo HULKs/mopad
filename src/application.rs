@@ -1,5 +1,5 @@
 pub mod authentication;
-pub mod concrete;
+pub mod teams;
 
 use std::time::{Duration, SystemTime};
 
@@ -18,11 +18,6 @@ pub trait CalendarService {
 
 #[async_trait]
 pub trait TalkService {}
-
-#[async_trait]
-pub trait TeamsService {
-    async fn get_teams(&self) -> Result<Vec<String>, Error>;
-}
 
 #[derive(Debug, Serialize)]
 pub struct Talk {

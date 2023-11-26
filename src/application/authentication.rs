@@ -8,6 +8,13 @@ use async_trait::async_trait;
 use rand_core::OsRng;
 use sqlx::Error;
 
+use crate::persistence::{
+    role::{Role, RoleRepository},
+    team::TeamRepository,
+    token::TokenRepository,
+    user::UserRepository,
+};
+
 #[async_trait]
 pub trait AuthenticationService {
     async fn register(&self, name: &str, team: &str, password: &str) -> Result<Response, Error>;
@@ -124,7 +131,7 @@ impl<
         let capabilities = match self.role_repository.get_roles_by_id(user_id).await? {
             Some(roles) => roles
                 .into_iter()
-                .flat_map(|role| role.into_capabilities())
+                .flat_map(|role| into_capabilities(role))
                 .collect(),
             None => Default::default(),
         };
@@ -154,7 +161,7 @@ impl<
         let capabilities = match self.role_repository.get_roles_by_id(user_id).await? {
             Some(roles) => roles
                 .into_iter()
-                .flat_map(|role| role.into_capabilities())
+                .flat_map(|role| into_capabilities(role))
                 .collect(),
             None => Default::default(),
         };
@@ -174,71 +181,26 @@ fn verify(stored_hash: &str, password_to_verify: &str) -> bool {
         .is_ok()
 }
 
-#[async_trait]
-pub trait TeamRepository {
-    async fn get_id_by_name(&self, name: &str) -> Result<Option<i64>, Error>;
-}
-
-#[async_trait]
-pub trait UserRepository {
-    async fn exists(&self, id: i64) -> Result<bool, Error>;
-    async fn get_id_and_hash_by_name_and_team(
-        &self,
-        name: &str,
-        team_id: i64,
-    ) -> Result<Option<(i64, String)>, Error>;
-    async fn insert_name_and_team_and_hash(
-        &self,
-        name: &str,
-        team_id: i64,
-        hash: &str,
-    ) -> Result<i64, Error>;
-}
-
-#[async_trait]
-pub trait RoleRepository {
-    async fn get_roles_by_id(&self, user_id: i64) -> Result<Option<Vec<Role>>, Error>;
-}
-
-pub enum Role {
-    Editor,
-    Scheduler,
-}
-
-impl Role {
-    fn into_capabilities(self) -> impl Iterator<Item = Capability> {
-        match self {
-            Role::Editor => [
-                Capability::DeleteOtherTalks,
-                Capability::ChangeOtherTitles,
-                Capability::ChangeOtherDescriptions,
-                Capability::ChangeOtherDurations,
-            ]
-            .as_slice()
-            .into_iter()
-            .copied(),
-            Role::Scheduler => [
-                Capability::ChangeOtherScheduledAts,
-                Capability::ChangeOtherDurations,
-                Capability::ChangeOtherLocations,
-            ]
-            .as_slice()
-            .into_iter()
-            .copied(),
-        }
+fn into_capabilities(role: Role) -> impl Iterator<Item = Capability> {
+    match role {
+        Role::Editor => [
+            Capability::DeleteOtherTalks,
+            Capability::ChangeOtherTitles,
+            Capability::ChangeOtherDescriptions,
+            Capability::ChangeOtherDurations,
+        ]
+        .as_slice()
+        .into_iter()
+        .copied(),
+        Role::Scheduler => [
+            Capability::ChangeOtherScheduledAts,
+            Capability::ChangeOtherDurations,
+            Capability::ChangeOtherLocations,
+        ]
+        .as_slice()
+        .into_iter()
+        .copied(),
     }
-}
-
-#[async_trait]
-pub trait TokenRepository {
-    async fn insert_token_for_user(
-        &self,
-        user_id: i64,
-        token: &str,
-        expires_at: SystemTime,
-    ) -> Result<(), Error>;
-    // TODO: remove expired tokens
-    async fn get_user_id(&self, token: &str) -> Result<Option<i64>, Error>;
 }
 
 #[cfg(test)]

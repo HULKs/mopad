@@ -3,7 +3,10 @@ use sqlx::Error;
 
 use crate::persistence::TeamRepository;
 
-use super::TeamsService;
+#[async_trait]
+pub trait TeamsService {
+    async fn get_teams(&self) -> Result<Vec<String>, Error>;
+}
 
 pub struct ConcreteTeamsService<Repository> {
     repository: Repository,

@@ -6,7 +6,7 @@ use std::sync::Arc;
 use sqlx::SqlitePool;
 
 use crate::{
-    application::{concrete::ConcreteTeamsService, TeamsService},
+    application::teams::{ConcreteTeamsService, TeamsService},
     persistence::sqlite::SqliteTeamRepository,
 };
 

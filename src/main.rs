@@ -860,8 +860,7 @@ async fn handle_message(
                     let mut talks = talks.lock().await;
 
                     if !talks.contains_key(&talk_id)
-                        || (!current_user.roles.contains(&Role::Scheduler)
-                            && talks[&talk_id].creator != current_user.id)
+                        || !current_user.roles.contains(&Role::Scheduler)
                     {
                         return Ok(());
                     }

@@ -1344,10 +1344,7 @@ class Talk {
     );
     this.locationElement.classList.add("location");
     this.locationElement.innerText = this.generateLocation();
-    if (
-      this.roles.includes("Scheduler") ||
-      this.creator === this.currentUserId
-    ) {
+    if (this.roles.includes("Scheduler")) {
       this.locationElement.classList.add("editable");
       this.locationElement.addEventListener("click", () => {
         this.locationEditElement.value = this.location;

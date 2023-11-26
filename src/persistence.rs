@@ -4,6 +4,7 @@ pub mod sqlite;
 pub mod talk;
 pub mod team;
 pub mod token;
+pub mod transaction;
 pub mod user;
 
 use async_trait::async_trait;

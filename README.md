@@ -150,4 +150,5 @@ classDiagram
     User *-- Talk: creator
     Talk *-- Member
     User *-- Member
+    User *-- Token
 ```

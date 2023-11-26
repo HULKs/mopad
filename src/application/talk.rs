@@ -4,7 +4,6 @@ use std::{
 };
 
 use async_trait::async_trait;
-use futures::{stream::FuturesUnordered, StreamExt};
 use sqlx::Error;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 

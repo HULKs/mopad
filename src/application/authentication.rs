@@ -104,7 +104,11 @@ impl<
         let token = SaltString::generate(&mut OsRng).to_string();
         let now = SystemTime::now();
         self.token_repository
-            .insert_token_for_user(user_id, &token, now + Duration::from_secs(60 * 60 * 24 * 7))
+            .insert_or_update_token_for_user(
+                &token,
+                user_id,
+                now + Duration::from_secs(60 * 60 * 24 * 7),
+            )
             .await?;
 
         Ok(Response::Success {
@@ -128,18 +132,22 @@ impl<
             return Ok(Response::WrongPassword);
         }
 
-        let capabilities = match self.role_repository.get_roles_by_id(user_id).await? {
-            Some(roles) => roles
-                .into_iter()
-                .flat_map(|role| into_capabilities(role))
-                .collect(),
-            None => Default::default(),
-        };
+        let capabilities = self
+            .role_repository
+            .get_roles_by_id(user_id)
+            .await?
+            .into_iter()
+            .flat_map(|role| into_capabilities(role))
+            .collect();
 
         let token = SaltString::generate(&mut OsRng).to_string();
         let now = SystemTime::now();
         self.token_repository
-            .insert_token_for_user(user_id, &token, now + Duration::from_secs(60 * 60 * 24 * 7))
+            .insert_or_update_token_for_user(
+                &token,
+                user_id,
+                now + Duration::from_secs(60 * 60 * 24 * 7),
+            )
             .await?;
 
         Ok(Response::Success {
@@ -158,13 +166,13 @@ impl<
             return Ok(Response::UnknownUserFromToken);
         }
 
-        let capabilities = match self.role_repository.get_roles_by_id(user_id).await? {
-            Some(roles) => roles
-                .into_iter()
-                .flat_map(|role| into_capabilities(role))
-                .collect(),
-            None => Default::default(),
-        };
+        let capabilities = self
+            .role_repository
+            .get_roles_by_id(user_id)
+            .await?
+            .into_iter()
+            .flat_map(|role| into_capabilities(role))
+            .collect();
 
         Ok(Response::Success {
             user_id,

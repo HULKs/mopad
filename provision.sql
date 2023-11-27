@@ -10,7 +10,7 @@ CREATE TABLE users (
   name TEXT NOT NULL,
   team INTEGER REFERENCES teams(id) NOT NULL,
   hash TEXT NOT NULL,
-  CONSTRAINT name_and_pair UNIQUE (name, team)
+  CONSTRAINT name_and_team UNIQUE (name, team)
 );
 
 DROP TABLE IF EXISTS roles;
@@ -41,5 +41,6 @@ DROP TABLE IF EXISTS members;
 CREATE TABLE members (
   user INTEGER REFERENCES users(id) NOT NULL,
   talk INTEGER REFERENCES talks(id) NOT NULL,
-  is_nerd INTEGER NOT NULL
+  is_nerd INTEGER NOT NULL,
+  CONSTRAINT user_and_talk UNIQUE (user, talk)
 );

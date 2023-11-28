@@ -17,7 +17,7 @@ use crate::persistence::{
 use super::authentication::Capability;
 
 #[async_trait]
-pub trait TalkService {
+pub trait TalksService {
     async fn trigger(
         &self,
         user_id: i64,
@@ -112,7 +112,7 @@ pub struct User {
     team: String,
 }
 
-pub struct ProductionTalkService<TeamRepo, UserRepo, TalkRepo, MemberRepo> {
+pub struct ProductionTalksService<TeamRepo, UserRepo, TalkRepo, MemberRepo> {
     team_repository: TeamRepo,
     user_repository: UserRepo,
     talk_repository: TalkRepo,
@@ -125,7 +125,7 @@ impl<
         UserRepo: UserRepository,
         TalkRepo: TalkRepository,
         MemberRepo: MemberRepository,
-    > ProductionTalkService<TeamRepo, UserRepo, TalkRepo, MemberRepo>
+    > ProductionTalksService<TeamRepo, UserRepo, TalkRepo, MemberRepo>
 {
     pub fn new(
         team_repository: TeamRepo,
@@ -149,7 +149,7 @@ impl<
         UserRepo: UserRepository + Send + Sync,
         TalkRepo: TalkRepository + Send + Sync,
         MemberRepo: MemberRepository + Send + Sync,
-    > TalkService for ProductionTalkService<TeamRepo, UserRepo, TalkRepo, MemberRepo>
+    > TalksService for ProductionTalksService<TeamRepo, UserRepo, TalkRepo, MemberRepo>
 {
     async fn trigger(
         &self,

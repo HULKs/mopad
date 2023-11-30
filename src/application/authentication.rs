@@ -6,6 +6,7 @@ use std::{
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use async_trait::async_trait;
 use rand_core::OsRng;
+use serde::Serialize;
 use sqlx::Error;
 
 use crate::persistence::{
@@ -36,7 +37,7 @@ pub enum Response {
     UnknownToken,
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 pub enum Capability {
     DeleteOtherTalks,
     ChangeOtherTitles,

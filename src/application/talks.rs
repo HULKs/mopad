@@ -4,6 +4,7 @@ use std::{
 };
 
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use sqlx::Error;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 
@@ -25,8 +26,10 @@ pub trait TalksService {
         command: Command,
     ) -> Result<(), Error>;
     fn register_for_updates(&self) -> Receiver<Update>;
+    async fn get_all_talks(&self) -> Result<Vec<Talk>, Error>;
 }
 
+#[derive(Deserialize)]
 pub enum Command {
     AddTalk,
     RemoveTalk {
@@ -60,19 +63,9 @@ pub enum Command {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub enum Update {
-    AddTalk {
-        id: i64,
-        creator: User,
-        title: String,
-        description: String,
-        scheduled_at: Option<SystemTime>,
-        duration: Duration,
-        location: Option<String>,
-        nerds: Vec<User>,
-        noobs: Vec<User>,
-    },
+    AddTalk(Talk),
     RemoveTalk {
         id: i64,
     },
@@ -106,7 +99,20 @@ pub enum Update {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
+pub struct Talk {
+    id: i64,
+    creator: User,
+    title: String,
+    description: String,
+    scheduled_at: Option<SystemTime>,
+    duration: Duration,
+    location: Option<String>,
+    nerds: Vec<User>,
+    noobs: Vec<User>,
+}
+
+#[derive(Clone, Serialize)]
 pub struct User {
     name: String,
     team: String,
@@ -193,7 +199,7 @@ impl<
                     )
                     .await?;
 
-                let _ = self.sender.send(Update::AddTalk {
+                let _ = self.sender.send(Update::AddTalk(Talk {
                     id,
                     creator: User { name: user, team },
                     title,
@@ -203,7 +209,7 @@ impl<
                     location,
                     nerds: Default::default(),
                     noobs: Default::default(),
-                });
+                }));
             }
             Command::RemoveTalk { id } => {
                 self.member_repository.delete_by_talk(id).await?;
@@ -328,6 +334,36 @@ impl<
     fn register_for_updates(&self) -> Receiver<Update> {
         self.sender.subscribe()
     }
+
+    async fn get_all_talks(&self) -> Result<Vec<Talk>, Error> {
+        let mut talks = Vec::new();
+        for talk in self.talk_repository.get_all().await? {
+            let creator =
+                user_id_to_user(talk.creator, &self.user_repository, &self.team_repository).await?;
+
+            let (nerd_ids, noob_ids) = self
+                .member_repository
+                .get_nerds_and_noobs_by_talk(talk.id)
+                .await?;
+            let nerds =
+                user_ids_to_users(nerd_ids, &self.user_repository, &self.team_repository).await?;
+            let noobs =
+                user_ids_to_users(noob_ids, &self.user_repository, &self.team_repository).await?;
+
+            talks.push(Talk {
+                id: talk.id,
+                creator,
+                title: talk.title,
+                description: talk.description,
+                scheduled_at: talk.scheduled_at,
+                duration: talk.duration,
+                location: talk.location,
+                nerds,
+                noobs,
+            });
+        }
+        Ok(talks)
+    }
 }
 
 async fn is_authorized(
@@ -341,7 +377,9 @@ async fn is_authorized(
     }
 
     let talk_id = get_talk_id_by_command(command);
-    let creator_id = talk_repository.get_creator_id_by_id(talk_id).await?;
+    let Some(creator_id) = talk_repository.get_creator_id_by_id(talk_id).await? else {
+        return Ok(false);
+    };
     Ok(user_id == creator_id)
 }
 
@@ -384,15 +422,21 @@ async fn user_ids_to_users(
 ) -> Result<Vec<User>, Error> {
     let mut users = Vec::new();
     for user_id in user_ids {
-        let Some((name, team_id)) = user_repository.get_name_and_team_id_by_id(user_id).await? else {
-            // TODO: log
-            continue;
-        };
-        let Some(team) = team_repository.get_name_by_id(team_id).await? else {
-            // TODO: log
-            continue;
-        };
-        users.push(User { name, team });
+        users.push(user_id_to_user(user_id, user_repository, team_repository).await?);
     }
     Ok(users)
+}
+
+async fn user_id_to_user(
+    user_id: i64,
+    user_repository: &impl UserRepository,
+    team_repository: &impl TeamRepository,
+) -> Result<User, Error> {
+    let Some((name, team_id)) = user_repository.get_name_and_team_id_by_id(user_id).await? else {
+        return Err(Error::RowNotFound);
+    };
+    let Some(team) = team_repository.get_name_by_id(team_id).await? else {
+        return Err(Error::RowNotFound);
+    };
+    Ok(User { name, team })
 }

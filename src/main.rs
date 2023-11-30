@@ -35,7 +35,12 @@ async fn main() {
                 SqliteRoleRepository::new(pool.clone()),
                 SqliteTokenRepository::new(pool.clone()),
             ),
-            ProductionCalendarService::new(),
+            ProductionCalendarService::new(
+                SqliteTeamRepository::new(pool.clone()),
+                SqliteUserRepository::new(pool.clone()),
+                SqliteTalkRepository::new(pool.clone()),
+                SqliteMemberRepository::new(pool.clone()),
+            ),
             ProductionTalksService::new(
                 SqliteTeamRepository::new(pool.clone()),
                 SqliteUserRepository::new(pool.clone()),

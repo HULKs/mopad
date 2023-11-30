@@ -1,3 +1,4 @@
+mod talks_ics;
 mod talks_ws;
 mod teams_json;
 
@@ -15,6 +16,7 @@ use crate::application::{
     authentication::AuthenticationService, calendar::CalendarService, talks::TalksService,
     teams::TeamsService,
 };
+use talks_ics::talks_ics;
 use talks_ws::talks_ws;
 use teams_json::teams_json;
 
@@ -33,7 +35,7 @@ impl ProductionController {
         Self {
             router: Router::new()
                 .route("/talks.ws", get(talks_ws))
-                // .route("/talks.ics", get(Self::talks_ics))
+                .route("/talks.ics", get(talks_ics))
                 .route("/teams.json", get(teams_json))
                 .with_state(Arc::new(Services {
                     authentication: authentication_service,

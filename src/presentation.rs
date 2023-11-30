@@ -60,7 +60,7 @@ impl<'stream> Service<IncomingStream<'stream>> for ProductionController {
     }
 }
 
-struct Services<Authentication, Calendar, Talks, Teams> {
+pub struct Services<Authentication, Calendar, Talks, Teams> {
     authentication: Authentication,
     calendar: Calendar,
     talks: Talks,

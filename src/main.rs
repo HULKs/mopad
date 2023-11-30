@@ -5,13 +5,13 @@ mod presentation;
 use std::sync::Arc;
 
 use application::{
-    authentication::ProductionAuthenticationService, talks::ProductionTalksService,
-    teams::ProductionTeamsService,
+    authentication::ProductionAuthenticationService, calendar::ProductionCalendarService,
+    talks::ProductionTalksService, teams::ProductionTeamsService,
 };
 use axum::serve;
 use persistence::{
-    member::SqliteMemberRepository, role::SqliteRoleRepository, team::SqliteTeamRepository,
-    token::SqliteTokenRepository, user::SqliteUserRepository,
+    member::SqliteMemberRepository, role::SqliteRoleRepository, talk::SqliteTalkRepository,
+    team::SqliteTeamRepository, token::SqliteTokenRepository, user::SqliteUserRepository,
 };
 use presentation::ProductionController;
 use sqlx::SqlitePool;
@@ -30,17 +30,17 @@ async fn main() {
         ProductionController::new(
             "./frontend",
             ProductionAuthenticationService::new(
-                SqliteTeamRepository::new(pool),
-                SqliteUserRepository::new(pool),
-                SqliteRoleRepository::new(pool),
-                SqliteTokenRepository::new(pool),
+                SqliteTeamRepository::new(pool.clone()),
+                SqliteUserRepository::new(pool.clone()),
+                SqliteRoleRepository::new(pool.clone()),
+                SqliteTokenRepository::new(pool.clone()),
             ),
             ProductionCalendarService::new(),
             ProductionTalksService::new(
-                SqliteTeamRepository::new(pool),
-                SqliteUserRepository::new(pool),
-                SqliteTalkRepository::new(pool),
-                SqliteMemberRepository::new(pool),
+                SqliteTeamRepository::new(pool.clone()),
+                SqliteUserRepository::new(pool.clone()),
+                SqliteTalkRepository::new(pool.clone()),
+                SqliteMemberRepository::new(pool.clone()),
             ),
             ProductionTeamsService::new(SqliteTeamRepository::new(pool)),
         ),

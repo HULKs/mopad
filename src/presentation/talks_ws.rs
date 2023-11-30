@@ -65,56 +65,7 @@ async fn talks_ws_connection(
 ) -> Result<(), String> {
     let mut updates = services.talks.register_for_updates();
 
-    let response = match receive(&mut socket).await? {
-        AuthenticationCommand::Register {
-            name,
-            team,
-            password,
-        } => services
-            .authentication
-            .register(&name, &team, &password)
-            .await
-            .map_err(|error| error.to_string())?,
-        AuthenticationCommand::Login {
-            name,
-            team,
-            password,
-        } => services
-            .authentication
-            .login(&name, &team, &password)
-            .await
-            .map_err(|error| error.to_string())?,
-        AuthenticationCommand::Relogin { token } => services
-            .authentication
-            .relogin(&token)
-            .await
-            .map_err(|error| error.to_string())?,
-    };
-
-    let Response::Success { user_id, capabilities, token } = response else {
-        let reason = match response {
-            Response::UnknownTeam => "unknown team",
-            Response::AlreadyRegistered => "already registered",
-            Response::WrongPassword => "wrong password",
-            Response::UnknownUser => "unknown user",
-            Response::UnknownUserFromToken => "unknown user from token",
-            Response::UnknownToken => "unknown token",
-            Response::Success { .. } => panic!("should not be reached"),
-        };
-        return send(&mut socket, &AuthenticationResponse::AuthenticationError {
-            reason: reason.to_string(),
-        }).await;
-    };
-
-    send(
-        &mut socket,
-        &AuthenticationResponse::AuthenticationSuccess {
-            user_id: user_id as usize,
-            capabilities: capabilities.clone(),
-            token,
-        },
-    )
-    .await?;
+    let (user_id, capabilities) = authenticate(&mut socket, &services).await?;
 
     for talk in services
         .talks
@@ -160,6 +111,72 @@ async fn receive<T: DeserializeOwned>(socket: &mut WebSocket) -> Result<T, Strin
         return Err("expected text message".to_string());
     };
     from_str(&message).map_err(|error| error.to_string())
+}
+
+async fn authenticate(
+    socket: &mut WebSocket,
+    services: &Arc<
+        Services<
+            impl AuthenticationService + Send + Sync,
+            impl CalendarService + Send + Sync,
+            impl TalksService + Send + Sync,
+            impl TeamsService + Send + Sync,
+        >,
+    >,
+) -> Result<(i64, HashSet<Capability>), String> {
+    let response = match receive(socket).await? {
+        AuthenticationCommand::Register {
+            name,
+            team,
+            password,
+        } => services
+            .authentication
+            .register(&name, &team, &password)
+            .await
+            .map_err(|error| error.to_string())?,
+        AuthenticationCommand::Login {
+            name,
+            team,
+            password,
+        } => services
+            .authentication
+            .login(&name, &team, &password)
+            .await
+            .map_err(|error| error.to_string())?,
+        AuthenticationCommand::Relogin { token } => services
+            .authentication
+            .relogin(&token)
+            .await
+            .map_err(|error| error.to_string())?,
+    };
+
+    let Response::Success { user_id, capabilities, token } = response else {
+        let reason = match response {
+            Response::UnknownTeam => "unknown team",
+            Response::AlreadyRegistered => "already registered",
+            Response::WrongPassword => "wrong password",
+            Response::UnknownUser => "unknown user",
+            Response::UnknownUserFromToken => "unknown user from token",
+            Response::UnknownToken => "unknown token",
+            Response::Success { .. } => panic!("should not be reached"),
+        };
+        send(socket, &AuthenticationResponse::AuthenticationError {
+            reason: reason.to_string(),
+        }).await?;
+        return Err(format!("authentication error: {reason}"));
+    };
+
+    send(
+        socket,
+        &AuthenticationResponse::AuthenticationSuccess {
+            user_id: user_id as usize,
+            capabilities: capabilities.clone(),
+            token,
+        },
+    )
+    .await?;
+
+    Ok((user_id, capabilities))
 }
 
 #[derive(Clone, Debug, Deserialize)]

@@ -52,7 +52,7 @@ impl UserRepository for SqliteUserRepository {
         name: &str,
         team_id: i64,
     ) -> Result<Option<(i64, String)>, Error> {
-        query_as("SELECT id, hash FROM users WHERE name = ? AND team_id = ?")
+        query_as("SELECT id, hash FROM users WHERE name = ? AND id = ?")
             .bind(name)
             .bind(team_id)
             .fetch_optional(self.pool.as_ref())

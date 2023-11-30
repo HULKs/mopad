@@ -4,8 +4,6 @@ class Mopad {
     this.webSocket = null;
     this.connectMessage = null;
 
-    this.users = {};
-
     this.loading = new Loading();
     this.login = new Login(
       (name, team, password) => {
@@ -93,7 +91,7 @@ class Mopad {
     this.webSocket = new WebSocket(
       `ws${window.location.protocol === "https:" ? "s" : ""}://${
         window.location.host
-      }/api`
+      }/talks.ws`
     );
     this.webSocket.addEventListener("open", () => {
       this.webSocket.send(JSON.stringify(connectMessage));
@@ -117,9 +115,9 @@ class Mopad {
           "reloginToken",
           message["AuthenticationSuccess"]["token"]
         );
-        this.talks.setCurrentUserIdAndRoles(
+        this.talks.setCurrentUserIdAndCapabilities(
           message["AuthenticationSuccess"]["user_id"],
-          message["AuthenticationSuccess"]["roles"]
+          message["AuthenticationSuccess"]["capabilities"]
         );
         this.login.enable();
         this.register.enable();
@@ -143,14 +141,11 @@ class Mopad {
         }
         this.login.enable();
         this.register.enable();
-      } else if (message["Users"] !== undefined) {
-        this.users = message["Users"]["users"];
-        this.talks.updateUsers(message["Users"]["users"]);
       } else if (message["AddTalk"] !== undefined) {
-        this.talks.addTalk(message["AddTalk"]["talk"]);
+        this.talks.addTalk(message["AddTalk"]);
         if (
-          message["AddTalk"]["talk"]["title"] ===
-          `The talk from ${this.users[this.currentUserId].name}`
+          message["AddTalk"]["title"].startsWith("New talk from") &&
+          message["AddTalk"]["creator"]["id"] == this.currentUserId
         ) {
           window.scrollTo({
             top: document.body.scrollHeight,
@@ -158,51 +153,41 @@ class Mopad {
           });
         }
       } else if (message["RemoveTalk"] !== undefined) {
-        this.talks.removeTalk(message["RemoveTalk"]["talk_id"]);
+        this.talks.removeTalk(message["RemoveTalk"]["id"]);
       } else if (message["UpdateTitle"] !== undefined) {
         this.talks.updateTitle(
-          message["UpdateTitle"]["talk_id"],
+          message["UpdateTitle"]["id"],
           message["UpdateTitle"]["title"]
         );
       } else if (message["UpdateDescription"] !== undefined) {
         this.talks.updateDescription(
-          message["UpdateDescription"]["talk_id"],
+          message["UpdateDescription"]["id"],
           message["UpdateDescription"]["description"]
         );
       } else if (message["UpdateScheduledAt"] !== undefined) {
         this.talks.updateScheduledAt(
-          message["UpdateScheduledAt"]["talk_id"],
+          message["UpdateScheduledAt"]["id"],
           message["UpdateScheduledAt"]["scheduled_at"]
         );
       } else if (message["UpdateDuration"] !== undefined) {
         this.talks.updateDuration(
-          message["UpdateDuration"]["talk_id"],
+          message["UpdateDuration"]["id"],
           message["UpdateDuration"]["duration"]
         );
       } else if (message["UpdateLocation"] !== undefined) {
         this.talks.updateLocation(
-          message["UpdateLocation"]["talk_id"],
+          message["UpdateLocation"]["id"],
           message["UpdateLocation"]["location"]
         );
-      } else if (message["AddNoob"] !== undefined) {
-        this.talks.addNoob(
-          message["AddNoob"]["talk_id"],
-          message["AddNoob"]["user_id"]
+      } else if (message["UpdateNerds"] !== undefined) {
+        this.talks.updateNerds(
+          message["UpdateNerds"]["id"],
+          message["UpdateNerds"]["nerds"]
         );
-      } else if (message["RemoveNoob"] !== undefined) {
-        this.talks.removeNoob(
-          message["RemoveNoob"]["talk_id"],
-          message["RemoveNoob"]["user_id"]
-        );
-      } else if (message["AddNerd"] !== undefined) {
-        this.talks.addNerd(
-          message["AddNerd"]["talk_id"],
-          message["AddNerd"]["user_id"]
-        );
-      } else if (message["RemoveNerd"] !== undefined) {
-        this.talks.removeNerd(
-          message["RemoveNerd"]["talk_id"],
-          message["RemoveNerd"]["user_id"]
+      } else if (message["UpdateNoobs"] !== undefined) {
+        this.talks.updateNoobs(
+          message["UpdateNoobs"]["id"],
+          message["UpdateNoobs"]["noobs"]
         );
       }
     });
@@ -532,7 +517,7 @@ class Register {
     const imprintElement = footerElement.appendChild(
       document.createElement("a")
     );
-    imprintElement.href = "https://rohow.de/2020/de/imprint.html";
+    imprintElement.href = "https://rohow.de/2023/de/imprint.html";
     imprintElement.target = "_blank";
     imprintElement.rel = "noreferrer";
     imprintElement.innerText = "Imprint/Impressum";
@@ -542,7 +527,7 @@ class Register {
     const privacyPolicyElement = footerElement.appendChild(
       document.createElement("a")
     );
-    privacyPolicyElement.href = "https://rohow.de/2020/de/privacy_policy.html";
+    privacyPolicyElement.href = "https://rohow.de/2023/de/privacy_policy.html";
     privacyPolicyElement.target = "_blank";
     privacyPolicyElement.rel = "noreferrer";
     privacyPolicyElement.innerText = "Privacy Policy/Datenschutzerklärung";
@@ -598,7 +583,6 @@ class Talks {
 
     this.talks = {};
     this.sectionElementsOfTalks = {};
-    this.users = {};
 
     this.pastExpanded = false;
     this.currentExpanded = true;
@@ -611,14 +595,7 @@ class Talks {
     addButtonElement.classList.add("add");
     addButtonElement.innerText = "+";
     addButtonElement.addEventListener("click", () => {
-      sendMessage({
-        AddTalk: {
-          title: `The talk from ${this.users[this.currentUserId].name}`,
-          description:
-            "You can change the title, duration, and description by clicking on them",
-          duration: { secs: 30 * 60, nanos: 0 },
-        },
-      });
+      sendMessage("AddTalk");
     });
 
     this.calendarDialogElement = this.element.appendChild(
@@ -812,7 +789,7 @@ class Talks {
     const imprintElement = this.footerElement.appendChild(
       document.createElement("a")
     );
-    imprintElement.href = "https://rohow.de/2020/de/imprint.html";
+    imprintElement.href = "https://rohow.de/2023/de/imprint.html";
     imprintElement.target = "_blank";
     imprintElement.rel = "noreferrer";
     imprintElement.innerText = "Imprint/Impressum";
@@ -822,7 +799,7 @@ class Talks {
     const privacyPolicyElement = this.footerElement.appendChild(
       document.createElement("a")
     );
-    privacyPolicyElement.href = "https://rohow.de/2020/de/privacy_policy.html";
+    privacyPolicyElement.href = "https://rohow.de/2023/de/privacy_policy.html";
     privacyPolicyElement.target = "_blank";
     privacyPolicyElement.rel = "noreferrer";
     privacyPolicyElement.innerText = "Privacy Policy/Datenschutzerklärung";
@@ -843,9 +820,9 @@ class Talks {
     this.updateVisibleSections();
   }
 
-  setCurrentUserIdAndRoles(currentUserId, roles) {
+  setCurrentUserIdAndCapabilities(currentUserId, capabilities) {
     this.currentUserId = currentUserId;
-    this.roles = roles;
+    this.capabilities = capabilities;
     this.updateCalendarElements();
   }
 
@@ -1079,22 +1056,14 @@ class Talks {
     }
   }
 
-  updateUsers(users) {
-    this.users = users;
-    for (const talk of Object.values(this.talks)) {
-      talk.updateUsers(users);
-    }
-  }
-
   addTalk(talk) {
     if (this.talks[talk.id] !== undefined) {
       return;
     }
     this.talks[talk.id] = new Talk(
       talk,
-      this.users,
       this.currentUserId,
-      this.roles,
+      this.capabilities,
       this.sendMessage
     );
     const sectionElement = this.sectionNameToSectionElement(
@@ -1104,61 +1073,53 @@ class Talks {
     this.updateVisibleSections();
   }
 
-  removeTalk(talkId) {
-    this.sectionElementsOfTalks[talkId].removeChild(this.talks[talkId].element);
-    delete this.sectionElementsOfTalks[talkId];
+  removeTalk(id) {
+    this.sectionElementsOfTalks[id].removeChild(this.talks[id].element);
+    delete this.sectionElementsOfTalks[id];
     this.updateVisibleSections();
-    delete this.talks[talkId];
+    delete this.talks[id];
   }
 
-  updateTitle(talkId, title) {
-    this.talks[talkId].updateTitle(title);
+  updateTitle(id, title) {
+    this.talks[id].updateTitle(title);
   }
 
-  updateDescription(talkId, description) {
-    this.talks[talkId].updateDescription(description);
+  updateDescription(id, description) {
+    this.talks[id].updateDescription(description);
   }
 
-  updateScheduledAt(talkId, scheduledAt) {
-    this.talks[talkId].updateScheduledAt(scheduledAt);
-    const currentSectionElement = this.sectionElementsOfTalks[talkId];
+  updateScheduledAt(id, scheduledAt) {
+    this.talks[id].updateScheduledAt(scheduledAt);
+    const currentSectionElement = this.sectionElementsOfTalks[id];
     const targetSectionElement = this.sectionNameToSectionElement(
-      this.talks[talkId].getTargetSectionName()
+      this.talks[id].getTargetSectionName()
     );
     if (currentSectionElement !== targetSectionElement) {
-      currentSectionElement.removeChild(this.talks[talkId].element);
-      this.insertTalkIntoSectionElement(talkId, targetSectionElement);
+      currentSectionElement.removeChild(this.talks[id].element);
+      this.insertTalkIntoSectionElement(id, targetSectionElement);
       this.updateVisibleSections();
     }
   }
 
-  updateDuration(talkId, duration) {
-    this.talks[talkId].updateDuration(duration);
+  updateDuration(id, duration) {
+    this.talks[id].updateDuration(duration);
   }
 
-  updateLocation(talkId, location) {
-    this.talks[talkId].updateLocation(location);
+  updateLocation(id, location) {
+    this.talks[id].updateLocation(location);
   }
 
-  addNoob(talkId, userId) {
-    this.talks[talkId].addNoob(userId);
+  updateNerds(id, nerds) {
+    this.talks[id].updateNerds(nerds);
   }
 
-  removeNoob(talkId, userId) {
-    this.talks[talkId].removeNoob(userId);
-  }
-
-  addNerd(talkId, userId) {
-    this.talks[talkId].addNerd(userId);
-  }
-
-  removeNerd(talkId, userId) {
-    this.talks[talkId].removeNerd(userId);
+  updateNoobs(id, noobs) {
+    this.talks[id].updateNoobs(noobs);
   }
 }
 
 class Talk {
-  constructor(talk, users, currentUserId, roles, sendMessage) {
+  constructor(talk, currentUserId, capabilities, sendMessage) {
     this.element = document.createElement("div");
     this.element.classList.add("talk");
 
@@ -1172,11 +1133,13 @@ class Talk {
     this.noobs = talk.noobs;
     this.nerds = talk.nerds;
 
-    this.users = users;
     this.currentUserId = currentUserId;
-    this.roles = roles;
+    this.capabilities = capabilities;
 
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+    if (
+      this.capabilities.includes("DeleteOtherTalks") ||
+      this.creator.id === this.currentUserId
+    ) {
       const deleteButtonElement = this.element.appendChild(
         document.createElement("div")
       );
@@ -1186,7 +1149,7 @@ class Talk {
         if (confirm("Do you really want to delete this talk?")) {
           sendMessage({
             RemoveTalk: {
-              talk_id: this.id,
+              id: this.id,
             },
           });
         }
@@ -1202,7 +1165,10 @@ class Talk {
       this.titleElement.classList.remove("empty");
       this.titleElement.innerText = this.title;
     }
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+    if (
+      this.capabilities.includes("ChangeOtherTitles") ||
+      this.creator.id === this.currentUserId
+    ) {
       this.titleElement.classList.add("editable");
       this.titleElement.addEventListener("click", () => {
         this.titleEditElement.value = this.title;
@@ -1216,7 +1182,7 @@ class Talk {
       this.titleEditElement.addEventListener("input", () => {
         sendMessage({
           UpdateTitle: {
-            talk_id: this.id,
+            id: this.id,
             title: this.titleEditElement.value,
           },
         });
@@ -1231,7 +1197,7 @@ class Talk {
     );
     this.scheduledAtElement.classList.add("scheduled-at");
     this.scheduledAtElement.innerText = this.generateScheduledAt();
-    if (this.roles.includes("Scheduler")) {
+    if (this.capabilities.includes("ChangeOtherScheduledAts")) {
       this.scheduledAtElement.classList.add("editable");
       this.scheduledAtElement.addEventListener("click", () => {
         if (this.scheduledAt) {
@@ -1275,7 +1241,7 @@ class Talk {
         }
         sendMessage({
           UpdateScheduledAt: {
-            talk_id: this.id,
+            id: this.id,
             scheduled_at: scheduledAt,
           },
         });
@@ -1291,7 +1257,10 @@ class Talk {
     );
     this.durationElement.classList.add("duration");
     this.durationElement.innerText = this.generateDuration();
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+    if (
+      this.capabilities.includes("ChangeOtherDurations") ||
+      this.creator.id === this.currentUserId
+    ) {
       this.durationElement.classList.add("editable");
       this.durationElement.addEventListener("click", () => {
         this.durationEditElement.value = Math.floor(this.duration.secs / 60);
@@ -1324,7 +1293,7 @@ class Talk {
         } else {
           sendMessage({
             UpdateDuration: {
-              talk_id: this.id,
+              id: this.id,
               duration: {
                 secs: minutes * 60,
                 nanos: 0,
@@ -1344,7 +1313,7 @@ class Talk {
     );
     this.locationElement.classList.add("location");
     this.locationElement.innerText = this.generateLocation();
-    if (this.roles.includes("Scheduler")) {
+    if (this.capabilities.includes("ChangeOtherLocations")) {
       this.locationElement.classList.add("editable");
       this.locationElement.addEventListener("click", () => {
         this.locationEditElement.value = this.location;
@@ -1365,7 +1334,7 @@ class Talk {
             : this.locationEditElement.value;
         sendMessage({
           UpdateLocation: {
-            talk_id: this.id,
+            id: this.id,
             location,
           },
         });
@@ -1389,7 +1358,10 @@ class Talk {
       this.descriptionElement.classList.remove("empty");
       this.descriptionElement.innerText = this.description;
     }
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+    if (
+      this.capabilities.includes("ChangeOtherDescriptions") ||
+      this.creator.id === this.currentUserId
+    ) {
       this.descriptionElement.classList.add("editable");
       this.descriptionElement.addEventListener("click", () => {
         this.descriptionEditElement.value = this.description;
@@ -1406,7 +1378,7 @@ class Talk {
       this.descriptionEditElement.addEventListener("input", () => {
         sendMessage({
           UpdateDescription: {
-            talk_id: this.id,
+            id: this.id,
             description: this.descriptionEditElement.value,
           },
         });
@@ -1419,13 +1391,16 @@ class Talk {
       });
     }
 
-    if (this.roles.includes("Editor") || this.creator === this.currentUserId) {
+    if (
+      this.capabilities.includes("ChangeOtherTitles") ||
+      this.creator.id === this.currentUserId
+    ) {
       this.titleEditElement.addEventListener("keydown", (event) => {
         if (event.code === "Tab") {
           event.preventDefault();
           event.target.blur();
           if (!event.shiftKey) {
-            if (this.roles.includes("Scheduler")) {
+            if (this.capabilities.includes("ChangeOtherScheduledAts")) {
               this.scheduledAtElement.click();
             } else {
               this.durationElement.click();
@@ -1435,18 +1410,23 @@ class Talk {
           event.target.blur();
         }
       });
+    }
+    if (
+      this.capabilities.includes("ChangeOtherDurations") ||
+      this.creator.id === this.currentUserId
+    ) {
       this.durationEditElement.addEventListener("keydown", (event) => {
         if (event.code === "Tab") {
           event.preventDefault();
           event.target.blur();
           if (event.shiftKey) {
-            if (this.roles.includes("Scheduler")) {
+            if (this.capabilities.includes("ChangeOtherScheduledAts")) {
               this.scheduledAtElement.click();
             } else {
               this.titleElement.click();
             }
           } else {
-            if (this.roles.includes("Scheduler")) {
+            if (this.capabilities.includes("ChangeOtherLocations")) {
               this.locationElement.click();
             } else {
               this.descriptionElement.click();
@@ -1456,6 +1436,8 @@ class Talk {
           event.target.blur();
         }
       });
+    }
+    if (this.capabilities.includes("ChangeOtherLocations")) {
       this.locationEditElement.addEventListener("keydown", (event) => {
         if (event.code === "Tab") {
           event.preventDefault();
@@ -1469,12 +1451,17 @@ class Talk {
           event.target.blur();
         }
       });
+    }
+    if (
+      this.capabilities.includes("ChangeOtherDescription") ||
+      this.creator.id === this.currentUserId
+    ) {
       this.descriptionEditElement.addEventListener("keydown", (event) => {
         if (event.code === "Tab") {
           event.preventDefault();
           event.target.blur();
           if (event.shiftKey) {
-            if (this.roles.includes("Scheduler")) {
+            if (this.capabilities.includes("ChangeOtherLocations")) {
               this.locationElement.click();
             } else {
               this.durationElement.click();
@@ -1485,7 +1472,7 @@ class Talk {
         }
       });
     }
-    if (this.roles.includes("Scheduler")) {
+    if (this.capabilities.includes("ChangeOtherScheduledAts")) {
       this.scheduledAtEditElement.addEventListener("keydown", (event) => {
         if (event.code === "Tab") {
           event.preventDefault();
@@ -1494,8 +1481,8 @@ class Talk {
             this.titleElement.click();
           } else {
             if (
-              this.roles.includes("Editor") ||
-              this.creator === this.currentUserId
+              this.capabilities.includes("Editor") ||
+              this.creator.id === this.currentUserId
             ) {
               this.durationElement.click();
             }
@@ -1517,18 +1504,9 @@ class Talk {
     this.noobsButtonElement.classList.add("noob");
     this.noobsButtonElement.innerText = "Noob";
     this.noobsButtonElement.addEventListener("click", () => {
-      if (this.nerds.includes(this.currentUserId)) {
-        sendMessage({
-          RemoveNerd: {
-            talk_id: this.id,
-            user_id: currentUserId,
-          },
-        });
-      }
       sendMessage({
-        [this.noobs.includes(this.currentUserId) ? "RemoveNoob" : "AddNoob"]: {
-          talk_id: this.id,
-          user_id: currentUserId,
+        ToggleNoob: {
+          id: this.id,
         },
       });
     });
@@ -1539,22 +1517,14 @@ class Talk {
     this.nerdsButtonElement.classList.add("nerd");
     this.nerdsButtonElement.innerText = "Nerd";
     this.nerdsButtonElement.addEventListener("click", () => {
-      if (this.noobs.includes(this.currentUserId)) {
-        sendMessage({
-          RemoveNoob: {
-            talk_id: this.id,
-            user_id: currentUserId,
-          },
-        });
-      }
       sendMessage({
-        [this.nerds.includes(this.currentUserId) ? "RemoveNerd" : "AddNerd"]: {
-          talk_id: this.id,
-          user_id: currentUserId,
+        ToggleNerd: {
+          id: this.id,
         },
       });
     });
-    this.updateParticipation();
+    this.updateNerdsElements();
+    this.updateNoobsElements();
   }
 
   minuteTick() {
@@ -1580,11 +1550,6 @@ class Talk {
     }
 
     return "unscheduled";
-  }
-
-  updateUsers(users) {
-    this.users = users;
-    this.updateParticipation();
   }
 
   updateTitle(title) {
@@ -1626,24 +1591,14 @@ class Talk {
     this.locationElement.innerText = this.generateLocation();
   }
 
-  addNoob(userId) {
-    this.noobs.push(userId);
-    this.updateParticipation();
+  updateNerds(nerds) {
+    this.nerds = nerds;
+    this.updateNerdsElements();
   }
 
-  removeNoob(userId) {
-    this.noobs = this.noobs.filter((noob) => noob !== userId);
-    this.updateParticipation();
-  }
-
-  addNerd(userId) {
-    this.nerds.push(userId);
-    this.updateParticipation();
-  }
-
-  removeNerd(userId) {
-    this.nerds = this.nerds.filter((nerd) => nerd !== userId);
-    this.updateParticipation();
+  updateNoobs(noobs) {
+    this.noobs = noobs;
+    this.updateNoobsElements();
   }
 
   generateScheduledAt() {
@@ -1734,32 +1689,46 @@ class Talk {
     }
   }
 
-  updateParticipation() {
-    const participatingAsNoob = this.noobs.includes(this.currentUserId);
-    const participatingAsNerd = this.nerds.includes(this.currentUserId);
-    if (participatingAsNoob) {
-      this.noobsButtonElement.classList.add("participating");
-    } else {
-      this.noobsButtonElement.classList.remove("participating");
-    }
-    this.noobsButtonElement.innerText = `Noob (${this.noobs.length})`;
-    this.noobsButtonElement.title = `${this.noobs
-      .map(
-        (userId) => `${this.users[userId].name} (${this.users[userId].team})`
-      )
-      .join(", ")}`;
-    if (participatingAsNerd) {
+  updateNerdsElements() {
+    const participating = this.nerds.some(
+      (nerd) => nerd.id === this.currentUserId
+    );
+    if (participating) {
       this.nerdsButtonElement.classList.add("participating");
     } else {
       this.nerdsButtonElement.classList.remove("participating");
     }
     this.nerdsButtonElement.innerText = `Nerd (${this.nerds.length})`;
     this.nerdsButtonElement.title = `${this.nerds
-      .map(
-        (userId) => `${this.users[userId].name} (${this.users[userId].team})`
-      )
+      .map((nerd) => `${nerd.name} (${nerd.team})`)
       .join(", ")}`;
-    if (participatingAsNoob || participatingAsNerd) {
+    if (
+      participating ||
+      this.noobsButtonElement.classList.contains("participating")
+    ) {
+      this.element.classList.add("participating");
+    } else {
+      this.element.classList.remove("participating");
+    }
+  }
+
+  updateNoobsElements() {
+    const participating = this.noobs.some(
+      (noob) => noob.id === this.currentUserId
+    );
+    if (participating) {
+      this.noobsButtonElement.classList.add("participating");
+    } else {
+      this.noobsButtonElement.classList.remove("participating");
+    }
+    this.noobsButtonElement.innerText = `Noob (${this.noobs.length})`;
+    this.noobsButtonElement.title = `${this.noobs
+      .map((noob) => `${noob.name} (${noob.team})`)
+      .join(", ")}`;
+    if (
+      participating ||
+      this.nerdsButtonElement.classList.contains("participating")
+    ) {
       this.element.classList.add("participating");
     } else {
       this.element.classList.remove("participating");

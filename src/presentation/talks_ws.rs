@@ -80,11 +80,14 @@ async fn talks_ws_connection(
         select! {
             command = receive(&mut socket) => {
                 let command = command?;
-                services
-                    .talks
-                    .trigger(user_id, &capabilities, command)
-                    .await
-                    .map_err(|error| error.to_string())?;
+                match command {
+                    Some(command) => services
+                        .talks
+                        .trigger(user_id, &capabilities, command)
+                        .await
+                        .map_err(|error| error.to_string())?,
+                    None => return Ok(()),
+                }
             },
             update = updates.recv() => {
                 let update = update.map_err(|error| error.to_string())?;
@@ -101,16 +104,19 @@ async fn send(socket: &mut WebSocket, message: &impl Serialize) -> Result<(), St
         .map_err(|error| error.to_string())
 }
 
-async fn receive<T: DeserializeOwned>(socket: &mut WebSocket) -> Result<T, String> {
-    let Message::Text(message) = socket
-        .recv()
-        .await
-        .ok_or_else(|| "closed".to_string())?
-        .map_err(|error| error.to_string())?
-    else {
-        return Err("expected text message".to_string());
+async fn receive<T: DeserializeOwned>(socket: &mut WebSocket) -> Result<Option<T>, String> {
+    let message = match socket.recv().await {
+        Some(message) => message,
+        None => return Ok(None),
     };
-    from_str(&message).map_err(|error| error.to_string())
+    let message = match message.map_err(|error| error.to_string())? {
+        Message::Text(message) => message,
+        Message::Close(_) => return Ok(None),
+        message => return Err(format!("expected text message but got {message:?}")),
+    };
+    from_str(&message)
+        .map(|message| Some(message))
+        .map_err(|error| error.to_string())
 }
 
 async fn authenticate(
@@ -124,7 +130,11 @@ async fn authenticate(
         >,
     >,
 ) -> Result<(i64, HashSet<Capability>), String> {
-    let response = match receive(socket).await? {
+    let command = match receive(socket).await? {
+        Some(command) => command,
+        None => return Err("closed before authentication".to_string()),
+    };
+    let response = match command {
         AuthenticationCommand::Register {
             name,
             team,

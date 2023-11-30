@@ -114,6 +114,7 @@ pub struct Talk {
 
 #[derive(Clone, Serialize)]
 pub struct User {
+    id: i64,
     name: String,
     team: String,
 }
@@ -201,7 +202,11 @@ impl<
 
                 let _ = self.sender.send(Update::AddTalk(Talk {
                     id,
-                    creator: User { name: user, team },
+                    creator: User {
+                        id: user_id,
+                        name: user,
+                        team,
+                    },
                     title,
                     description,
                     scheduled_at,
@@ -438,5 +443,9 @@ async fn user_id_to_user(
     let Some(team) = team_repository.get_name_by_id(team_id).await? else {
         return Err(Error::RowNotFound);
     };
-    Ok(User { name, team })
+    Ok(User {
+        id: user_id,
+        name,
+        team,
+    })
 }

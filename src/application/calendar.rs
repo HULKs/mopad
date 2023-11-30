@@ -28,3 +28,22 @@ pub struct Member {
     pub name: String,
     pub team: String,
 }
+
+pub struct ProductionCalendarService {}
+
+impl ProductionCalendarService {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[async_trait]
+impl CalendarService for ProductionCalendarService {
+    async fn get_all_talks(&self) -> Result<Vec<Talk>, Error> {
+        todo!()
+    }
+
+    async fn get_own_talks(&self, user_id: i64) -> Result<Vec<Talk>, Error> {
+        todo!()
+    }
+}

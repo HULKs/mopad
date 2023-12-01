@@ -1,19 +1,17 @@
-mod application;
-mod persistence;
-mod presentation;
-
 use std::sync::Arc;
 
-use application::{
-    authentication::ProductionAuthenticationService, calendar::ProductionCalendarService,
-    talks::ProductionTalksService, teams::ProductionTeamsService,
-};
 use axum::serve;
-use persistence::{
-    member::SqliteMemberRepository, role::SqliteRoleRepository, talk::SqliteTalkRepository,
-    team::SqliteTeamRepository, token::SqliteTokenRepository, user::SqliteUserRepository,
+use mopad::{
+    application::{
+        authentication::ProductionAuthenticationService, calendar::ProductionCalendarService,
+        talks::ProductionTalksService, teams::ProductionTeamsService,
+    },
+    persistence::{
+        member::SqliteMemberRepository, role::SqliteRoleRepository, talk::SqliteTalkRepository,
+        team::SqliteTeamRepository, token::SqliteTokenRepository, user::SqliteUserRepository,
+    },
+    presentation::ProductionController,
 };
-use presentation::ProductionController;
 use sqlx::SqlitePool;
 use tokio::net::TcpListener;
 

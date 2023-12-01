@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sqlx::{query, query_as, Error, Pool, Sqlite};
+use sqlx::{error::ErrorKind, query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait UserRepository {
@@ -17,7 +17,7 @@ pub trait UserRepository {
         name: &str,
         team_id: i64,
         hash: &str,
-    ) -> Result<i64, Error>;
+    ) -> Result<Option<i64>, Error>;
 }
 
 pub struct SqliteUserRepository {
@@ -64,13 +64,17 @@ impl UserRepository for SqliteUserRepository {
         name: &str,
         team_id: i64,
         hash: &str,
-    ) -> Result<i64, Error> {
-        query("INSERT INTO users (name, team, hash) VALUES (?, ?, ?)")
+    ) -> Result<Option<i64>, Error> {
+        match query("INSERT INTO users (name, team, hash) VALUES (?, ?, ?)")
             .bind(name)
             .bind(team_id)
             .bind(hash)
             .execute(self.pool.as_ref())
             .await
-            .map(|result| result.last_insert_rowid())
+        {
+            Ok(result) => Ok(Some(result.last_insert_rowid())),
+            Err(Error::Database(error)) if error.kind() == ErrorKind::UniqueViolation => Ok(None),
+            Err(error) => Err(error),
+        }
     }
 }

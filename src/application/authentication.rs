@@ -96,11 +96,9 @@ impl<
             .unwrap()
             .to_string();
 
-        let user_id = self
-            .user_repository
-            .insert_name_and_team_and_hash(name, team_id, &hash)
-            .await?;
-        // TODO: already registered error
+        let Some(user_id) = self.user_repository.insert_name_and_team_and_hash(name, team_id, &hash).await? else {
+            return Ok(Response::AlreadyRegistered);
+        };
 
         let token = SaltString::generate(&mut OsRng).to_string();
         let now = SystemTime::now();

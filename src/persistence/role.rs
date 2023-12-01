@@ -6,6 +6,7 @@ use sqlx::{query, query_as, Error, Pool, Sqlite};
 #[async_trait]
 pub trait RoleRepository {
     async fn get_roles_by_id(&self, user_id: i64) -> Result<Vec<Role>, Error>;
+    async fn get_all(&self) -> Result<Vec<UserRole>, Error>;
     async fn clear(&self) -> Result<(), Error>;
     async fn import(&self, roles: Vec<UserRole>) -> Result<(), Error>;
 }
@@ -45,6 +46,31 @@ impl RoleRepository for SqliteRoleRepository {
                 _ => Err(Error::Decode(format!("unknown role {role}").into())),
             })
             .collect()
+    }
+
+    async fn get_all(&self) -> Result<Vec<UserRole>, Error> {
+        query_as("SELECT user, role FROM roles")
+            .fetch_all(self.pool.as_ref())
+            .await
+            .and_then(|roles| {
+                roles
+                    .into_iter()
+                    .map(|(user, role)| {
+                        Ok(UserRole {
+                            user,
+                            role: match role {
+                                0 => Role::Editor,
+                                1 => Role::Scheduler,
+                                _ => {
+                                    return Err(Error::Decode(
+                                        format!("unknown role {role}").into(),
+                                    ))
+                                }
+                            },
+                        })
+                    })
+                    .collect()
+            })
     }
 
     async fn clear(&self) -> Result<(), Error> {

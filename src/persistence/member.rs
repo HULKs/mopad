@@ -15,6 +15,7 @@ pub trait MemberRepository {
     ) -> Result<(), Error>;
     async fn get_nerds_and_noobs_by_id(&self, id: i64) -> Result<(Vec<i64>, Vec<i64>), Error>;
     async fn delete_by_id(&self, id: i64) -> Result<(), Error>;
+    async fn get_all(&self) -> Result<Vec<Member>, Error>;
     async fn clear(&self) -> Result<(), Error>;
     async fn import(&self, members: Vec<Member>) -> Result<(), Error>;
 }
@@ -101,6 +102,22 @@ impl MemberRepository for SqliteMemberRepository {
             .execute(self.pool.as_ref())
             .await
             .map(|_| ())
+    }
+
+    async fn get_all(&self) -> Result<Vec<Member>, Error> {
+        query_as("SELECT user, talk, is_nerd FROM members")
+            .fetch_all(self.pool.as_ref())
+            .await
+            .map(|members| {
+                members
+                    .into_iter()
+                    .map(|(user, talk, is_nerd)| Member {
+                        user_id: user,
+                        talk_id: talk,
+                        is_nerd,
+                    })
+                    .collect()
+            })
     }
 
     async fn clear(&self) -> Result<(), Error> {

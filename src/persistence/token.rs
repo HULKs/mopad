@@ -1,6 +1,6 @@
 use std::{
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use async_trait::async_trait;
@@ -16,6 +16,7 @@ pub trait TokenRepository {
     ) -> Result<(), Error>;
     async fn delete_later_than(&self, deadline: SystemTime) -> Result<(), Error>;
     async fn get_user_id(&self, token: &str) -> Result<Option<i64>, Error>;
+    async fn get_all(&self) -> Result<Vec<Token>, Error>;
     async fn clear(&self) -> Result<(), Error>;
     async fn import(&self, tokens: Vec<Token>) -> Result<(), Error>;
 }
@@ -67,6 +68,22 @@ impl TokenRepository for SqliteTokenRepository {
             .fetch_optional(self.pool.as_ref())
             .await
             .map(|user| user.map(|(user,)| user))
+    }
+
+    async fn get_all(&self) -> Result<Vec<Token>, Error> {
+        query_as("SELECT token, user, expires_at FROM tokens")
+            .fetch_all(self.pool.as_ref())
+            .await
+            .map(|tokens| {
+                tokens
+                    .into_iter()
+                    .map(|(token, user, expires_at): (_, _, i64)| Token {
+                        token,
+                        user_id: user,
+                        expires_at: UNIX_EPOCH + Duration::from_secs(expires_at as u64),
+                    })
+                    .collect()
+            })
     }
 
     async fn clear(&self) -> Result<(), Error> {

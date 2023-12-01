@@ -21,6 +21,9 @@ impl<TeamRepo: TeamRepository> ProductionTeamsService<TeamRepo> {
 #[async_trait]
 impl<TeamRepo: TeamRepository + Send + Sync> TeamsService for ProductionTeamsService<TeamRepo> {
     async fn get_teams(&self) -> Result<Vec<String>, Error> {
-        self.team_repository.get_all().await
+        self.team_repository
+            .get_all()
+            .await
+            .map(|team| team.into_iter().map(|team| team.name).collect())
     }
 }

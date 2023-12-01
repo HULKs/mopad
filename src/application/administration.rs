@@ -28,6 +28,17 @@ pub trait AdministrationService {
         tokens: BTreeMap<String, Token>,
         talks: BTreeMap<usize, Talk>,
     ) -> Result<(), Error>;
+    async fn export(
+        &self,
+    ) -> Result<
+        (
+            BTreeSet<String>,
+            BTreeMap<usize, User>,
+            BTreeMap<String, Token>,
+            BTreeMap<usize, Talk>,
+        ),
+        Error,
+    >;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -237,5 +248,100 @@ impl<
         self.member_repository.import(persistence_members).await?;
 
         Ok(())
+    }
+
+    async fn export(
+        &self,
+    ) -> Result<
+        (
+            BTreeSet<String>,
+            BTreeMap<usize, User>,
+            BTreeMap<String, Token>,
+            BTreeMap<usize, Talk>,
+        ),
+        Error,
+    > {
+        let persistence_teams = self.team_repository.get_all().await?;
+        let persistence_users = self.user_repository.get_all().await?;
+        let persistence_roles = self.role_repository.get_all().await?;
+        let persistence_tokens = self.token_repository.get_all().await?;
+        let persistence_talks = self.talk_repository.get_all().await?;
+        let persistence_members = self.member_repository.get_all().await?;
+
+        let export_users = persistence_users
+            .into_iter()
+            .map(|user| {
+                (
+                    user.id as usize,
+                    User {
+                        id: user.id as usize,
+                        name: user.name,
+                        team: persistence_teams
+                            .iter()
+                            .find_map(|team| (team.id == user.team_id).then_some(team.name.clone()))
+                            .unwrap(),
+                        hash: user.hash,
+                        roles: persistence_roles
+                            .iter()
+                            .filter_map(|role| {
+                                (role.user == user.id).then_some(match role.role {
+                                    PersistenceRole::Editor => Role::Editor,
+                                    PersistenceRole::Scheduler => Role::Scheduler,
+                                })
+                            })
+                            .collect(),
+                    },
+                )
+            })
+            .collect();
+        let export_teams = persistence_teams
+            .into_iter()
+            .map(|team| team.name)
+            .collect();
+        let export_tokens = persistence_tokens
+            .into_iter()
+            .map(|token| {
+                (
+                    token.token,
+                    Token {
+                        user_id: token.user_id as usize,
+                        expires_at: token.expires_at,
+                    },
+                )
+            })
+            .collect();
+        let export_talks = persistence_talks
+            .into_iter()
+            .map(|talk| {
+                (
+                    talk.id as usize,
+                    Talk {
+                        id: talk.id as usize,
+                        creator: talk.creator as usize,
+                        title: talk.title,
+                        description: talk.description,
+                        scheduled_at: talk.scheduled_at,
+                        duration: talk.duration,
+                        location: talk.location,
+                        nerds: persistence_members
+                            .iter()
+                            .filter_map(|member| {
+                                (member.is_nerd && member.talk_id == talk.id)
+                                    .then_some(member.user_id as usize)
+                            })
+                            .collect(),
+                        noobs: persistence_members
+                            .iter()
+                            .filter_map(|member| {
+                                (!member.is_nerd && member.talk_id == talk.id)
+                                    .then_some(member.user_id as usize)
+                            })
+                            .collect(),
+                    },
+                )
+            })
+            .collect();
+
+        Ok((export_teams, export_users, export_tokens, export_talks))
     }
 }

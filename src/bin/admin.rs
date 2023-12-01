@@ -10,7 +10,7 @@ use mopad::{
         team::SqliteTeamRepository, token::SqliteTokenRepository, user::SqliteUserRepository,
     },
 };
-use serde_json::from_reader;
+use serde_json::{from_reader, to_writer_pretty};
 use sqlx::SqlitePool;
 
 #[derive(Parser)]
@@ -28,6 +28,12 @@ enum Command {
         new_password: String,
     },
     Import {
+        teams_path: PathBuf,
+        users_path: PathBuf,
+        tokens_path: PathBuf,
+        talks_path: PathBuf,
+    },
+    Export {
         teams_path: PathBuf,
         users_path: PathBuf,
         tokens_path: PathBuf,
@@ -82,6 +88,26 @@ async fn main() {
                 .map(|talk| (talk.id, talk))
                 .collect();
             service.import(teams, users, tokens, talks).await.unwrap();
+        }
+        Command::Export {
+            teams_path,
+            users_path,
+            tokens_path,
+            talks_path,
+        } => {
+            let (teams, users, tokens, talks) = service.export().await.unwrap();
+            to_writer_pretty(File::create(teams_path).unwrap(), &teams).unwrap();
+            to_writer_pretty(
+                File::create(users_path).unwrap(),
+                &users.values().collect::<Vec<_>>(),
+            )
+            .unwrap();
+            to_writer_pretty(File::create(tokens_path).unwrap(), &tokens).unwrap();
+            to_writer_pretty(
+                File::create(talks_path).unwrap(),
+                &talks.values().collect::<Vec<_>>(),
+            )
+            .unwrap();
         }
     }
 }

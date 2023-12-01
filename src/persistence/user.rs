@@ -21,6 +21,7 @@ pub trait UserRepository {
         hash: &str,
     ) -> Result<Option<i64>, Error>;
     async fn update_hash(&self, id: i64, hash: &str) -> Result<(), Error>;
+    async fn get_all(&self) -> Result<Vec<User>, Error>;
     async fn clear(&self) -> Result<(), Error>;
     async fn import(&self, users: Vec<User>) -> Result<(), Error>;
 }
@@ -110,6 +111,23 @@ impl UserRepository for SqliteUserRepository {
             .execute(self.pool.as_ref())
             .await
             .map(|_| ())
+    }
+
+    async fn get_all(&self) -> Result<Vec<User>, Error> {
+        query_as("SELECT id, name, team, hash FROM users")
+            .fetch_all(self.pool.as_ref())
+            .await
+            .map(|users| {
+                users
+                    .into_iter()
+                    .map(|(id, name, team, hash)| User {
+                        id,
+                        name,
+                        team_id: team,
+                        hash,
+                    })
+                    .collect()
+            })
     }
 
     async fn clear(&self) -> Result<(), Error> {

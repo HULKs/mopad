@@ -334,7 +334,7 @@ class Login {
     const imprintElement = footerElement.appendChild(
       document.createElement("a")
     );
-    imprintElement.href = "https://rohow.de/2020/de/imprint.html";
+    imprintElement.href = "https://rohow.de/2023/de/imprint.html";
     imprintElement.target = "_blank";
     imprintElement.rel = "noreferrer";
     imprintElement.innerText = "Imprint/Impressum";
@@ -344,7 +344,7 @@ class Login {
     const privacyPolicyElement = footerElement.appendChild(
       document.createElement("a")
     );
-    privacyPolicyElement.href = "https://rohow.de/2020/de/privacy_policy.html";
+    privacyPolicyElement.href = "https://rohow.de/2023/de/privacy_policy.html";
     privacyPolicyElement.target = "_blank";
     privacyPolicyElement.rel = "noreferrer";
     privacyPolicyElement.innerText = "Privacy Policy/Datenschutzerklärung";

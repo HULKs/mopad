@@ -1,13 +1,20 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sqlx::{query_as, Error, Pool, Sqlite};
+use sqlx::{query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait TeamRepository {
     async fn get_all(&self) -> Result<Vec<String>, Error>;
     async fn get_name_by_id(&self, id: i64) -> Result<Option<String>, Error>;
     async fn get_id_by_name(&self, name: &str) -> Result<Option<i64>, Error>;
+    async fn clear(&self) -> Result<(), Error>;
+    async fn import(&self, teams: Vec<Team>) -> Result<(), Error>;
+}
+
+pub struct Team {
+    pub id: i64,
+    pub name: String,
 }
 
 pub struct SqliteTeamRepository {
@@ -43,5 +50,25 @@ impl TeamRepository for SqliteTeamRepository {
             .fetch_optional(self.pool.as_ref())
             .await
             .map(|id| id.map(|(id,)| id))
+    }
+
+    async fn clear(&self) -> Result<(), Error> {
+        query("DELETE FROM teams")
+            .execute(self.pool.as_ref())
+            .await
+            .map(|_| ())
+    }
+
+    async fn import(&self, teams: Vec<Team>) -> Result<(), Error> {
+        for team in teams {
+            query("INSERT INTO teams (id, name) VALUES (?, ?)")
+                .bind(team.id)
+                .bind(team.name)
+                .execute(self.pool.as_ref())
+                .await
+                .map(|_| ())?;
+        }
+
+        Ok(())
     }
 }

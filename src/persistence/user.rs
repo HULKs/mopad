@@ -21,6 +21,15 @@ pub trait UserRepository {
         hash: &str,
     ) -> Result<Option<i64>, Error>;
     async fn update_hash(&self, id: i64, hash: &str) -> Result<(), Error>;
+    async fn clear(&self) -> Result<(), Error>;
+    async fn import(&self, users: Vec<User>) -> Result<(), Error>;
+}
+
+pub struct User {
+    pub id: i64,
+    pub name: String,
+    pub team_id: i64,
+    pub hash: String,
 }
 
 pub struct SqliteUserRepository {
@@ -101,5 +110,27 @@ impl UserRepository for SqliteUserRepository {
             .execute(self.pool.as_ref())
             .await
             .map(|_| ())
+    }
+
+    async fn clear(&self) -> Result<(), Error> {
+        query("DELETE FROM users")
+            .execute(self.pool.as_ref())
+            .await
+            .map(|_| ())
+    }
+
+    async fn import(&self, users: Vec<User>) -> Result<(), Error> {
+        for user in users {
+            query("INSERT INTO users (id, name, team, hash) VALUES (?, ?, ?, ?)")
+                .bind(user.id)
+                .bind(user.name)
+                .bind(user.team_id)
+                .bind(user.hash)
+                .execute(self.pool.as_ref())
+                .await
+                .map(|_| ())?;
+        }
+
+        Ok(())
     }
 }

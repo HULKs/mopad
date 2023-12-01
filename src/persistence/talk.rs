@@ -29,6 +29,8 @@ pub trait TalkRepository {
     async fn update_duration(&self, id: i64, duration: Duration) -> Result<(), Error>;
     async fn update_location(&self, id: i64, location: Option<&str>) -> Result<(), Error>;
     async fn get_all(&self) -> Result<Vec<Talk>, Error>;
+    async fn clear(&self) -> Result<(), Error>;
+    async fn import(&self, talks: Vec<Talk>) -> Result<(), Error>;
 }
 
 pub struct Talk {
@@ -173,5 +175,30 @@ impl TalkRepository for SqliteTalkRepository {
                 )
                 .collect()
         })
+    }
+
+    async fn clear(&self) -> Result<(), Error> {
+        query("DELETE FROM talks")
+            .execute(self.pool.as_ref())
+            .await
+            .map(|_| ())
+    }
+
+    async fn import(&self, talks: Vec<Talk>) -> Result<(), Error> {
+        for talk in talks {
+            query("INSERT INTO talks (id, creator, title, description, scheduled_at, duration, location) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            .bind(talk.id)
+            .bind(talk.creator)
+            .bind(talk.title)
+            .bind(talk.description)
+            .bind(talk.scheduled_at.map(|scheduled_at| scheduled_at.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64 ))
+            .bind(talk.duration.as_secs() as i64)
+            .bind(talk.location)
+                .execute(self.pool.as_ref())
+                .await
+                .map(|_| ())?;
+        }
+
+        Ok(())
     }
 }

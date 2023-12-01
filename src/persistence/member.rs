@@ -15,6 +15,14 @@ pub trait MemberRepository {
     ) -> Result<(), Error>;
     async fn get_nerds_and_noobs_by_id(&self, id: i64) -> Result<(Vec<i64>, Vec<i64>), Error>;
     async fn delete_by_id(&self, id: i64) -> Result<(), Error>;
+    async fn clear(&self) -> Result<(), Error>;
+    async fn import(&self, members: Vec<Member>) -> Result<(), Error>;
+}
+
+pub struct Member {
+    pub user_id: i64,
+    pub talk_id: i64,
+    pub is_nerd: bool,
 }
 
 pub enum State {
@@ -93,5 +101,26 @@ impl MemberRepository for SqliteMemberRepository {
             .execute(self.pool.as_ref())
             .await
             .map(|_| ())
+    }
+
+    async fn clear(&self) -> Result<(), Error> {
+        query("DELETE FROM members")
+            .execute(self.pool.as_ref())
+            .await
+            .map(|_| ())
+    }
+
+    async fn import(&self, members: Vec<Member>) -> Result<(), Error> {
+        for member in members {
+            query("INSERT INTO members (user, talk, is_nerd) VALUES (?, ?, ?)")
+                .bind(member.user_id)
+                .bind(member.talk_id)
+                .bind(member.is_nerd)
+                .execute(self.pool.as_ref())
+                .await
+                .map(|_| ())?;
+        }
+
+        Ok(())
     }
 }

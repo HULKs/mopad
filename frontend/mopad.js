@@ -1411,6 +1411,26 @@ class Talk {
         }
       });
     }
+    if (this.capabilities.includes("ChangeOtherScheduledAts")) {
+      this.scheduledAtEditElement.addEventListener("keydown", (event) => {
+        if (event.code === "Tab") {
+          event.preventDefault();
+          event.target.blur();
+          if (event.shiftKey) {
+            this.titleElement.click();
+          } else {
+            if (
+              this.capabilities.includes("Editor") ||
+              this.creator.id === this.currentUserId
+            ) {
+              this.durationElement.click();
+            }
+          }
+        } else if (event.code === "Enter" || event.code === "Escape") {
+          event.target.blur();
+        }
+      });
+    }
     if (
       this.capabilities.includes("ChangeOtherDurations") ||
       this.creator.id === this.currentUserId
@@ -1468,26 +1488,6 @@ class Talk {
             }
           }
         } else if (event.code === "Escape") {
-          event.target.blur();
-        }
-      });
-    }
-    if (this.capabilities.includes("ChangeOtherScheduledAts")) {
-      this.scheduledAtEditElement.addEventListener("keydown", (event) => {
-        if (event.code === "Tab") {
-          event.preventDefault();
-          event.target.blur();
-          if (event.shiftKey) {
-            this.titleElement.click();
-          } else {
-            if (
-              this.capabilities.includes("Editor") ||
-              this.creator.id === this.currentUserId
-            ) {
-              this.durationElement.click();
-            }
-          }
-        } else if (event.code === "Enter" || event.code === "Escape") {
           event.target.blur();
         }
       });

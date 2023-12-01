@@ -5,6 +5,7 @@ use sqlx::{error::ErrorKind, query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait UserRepository {
+    async fn provision(&self) -> Result<(), Error>;
     async fn exists(&self, id: i64) -> Result<bool, Error>;
     async fn get_name_and_team_id_by_id(&self, id: i64) -> Result<Option<(String, i64)>, Error>;
     async fn get_id_by_name_and_team(&self, name: &str, team_id: i64)
@@ -45,6 +46,24 @@ impl SqliteUserRepository {
 
 #[async_trait]
 impl UserRepository for SqliteUserRepository {
+    async fn provision(&self) -> Result<(), Error> {
+        query("DROP TABLE IF EXISTS users")
+            .execute(self.pool.as_ref())
+            .await?;
+        query(
+            "CREATE TABLE users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                team INTEGER REFERENCES teams(id) NOT NULL,
+                hash TEXT NOT NULL,
+                CONSTRAINT name_and_team UNIQUE (name, team)
+            )",
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
     async fn exists(&self, id: i64) -> Result<bool, Error> {
         query_as("SELECT id FROM users WHERE id = ?")
             .bind(id)

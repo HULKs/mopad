@@ -22,6 +22,7 @@ struct Arguments {
 
 #[derive(Subcommand)]
 enum Command {
+    Provision,
     ResetPassword {
         user: String,
         team: String,
@@ -61,6 +62,7 @@ async fn main() {
     );
 
     match arguments.command {
+        Command::Provision => service.provision().await.unwrap(),
         Command::ResetPassword {
             user,
             team,

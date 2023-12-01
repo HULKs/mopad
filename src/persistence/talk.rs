@@ -8,6 +8,7 @@ use sqlx::{query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait TalkRepository {
+    async fn provision(&self) -> Result<(), Error>;
     async fn insert(
         &self,
         creator_id: i64,
@@ -55,6 +56,26 @@ impl SqliteTalkRepository {
 
 #[async_trait]
 impl TalkRepository for SqliteTalkRepository {
+    async fn provision(&self) -> Result<(), Error> {
+        query("DROP TABLE IF EXISTS talks")
+            .execute(self.pool.as_ref())
+            .await?;
+        query(
+            "CREATE TABLE talks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                creator INTEGER REFERENCES users(id) NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                scheduled_at INTEGER,
+                duration INTEGER NOT NULL,
+                location TEXT
+            )",
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
     async fn insert(
         &self,
         creator_id: i64,

@@ -6,6 +6,7 @@ use sqlx::{query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait MemberRepository {
+    async fn provision(&self) -> Result<(), Error>;
     async fn get_state_by_user_and_talk(&self, user_id: i64, talk_id: i64) -> Result<State, Error>;
     async fn set_state_by_user_and_talk(
         &self,
@@ -44,6 +45,23 @@ impl SqliteMemberRepository {
 
 #[async_trait]
 impl MemberRepository for SqliteMemberRepository {
+    async fn provision(&self) -> Result<(), Error> {
+        query("DROP TABLE IF EXISTS members")
+            .execute(self.pool.as_ref())
+            .await?;
+        query(
+            "CREATE TABLE members (
+                user INTEGER REFERENCES users(id) NOT NULL,
+                talk INTEGER REFERENCES talks(id) NOT NULL,
+                is_nerd INTEGER NOT NULL,
+                CONSTRAINT user_and_talk UNIQUE (user, talk)
+            )",
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
     async fn get_state_by_user_and_talk(&self, user_id: i64, talk_id: i64) -> Result<State, Error> {
         match query_as("SELECT is_nerd FROM members WHERE user = ? AND talk = ?")
             .bind(user_id)

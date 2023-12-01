@@ -5,6 +5,7 @@ use sqlx::{query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait TeamRepository {
+    async fn provision(&self) -> Result<(), Error>;
     async fn get_name_by_id(&self, id: i64) -> Result<Option<String>, Error>;
     async fn get_id_by_name(&self, name: &str) -> Result<Option<i64>, Error>;
     async fn get_all(&self) -> Result<Vec<Team>, Error>;
@@ -29,6 +30,21 @@ impl SqliteTeamRepository {
 
 #[async_trait]
 impl TeamRepository for SqliteTeamRepository {
+    async fn provision(&self) -> Result<(), Error> {
+        query("DROP TABLE IF EXISTS teams")
+            .execute(self.pool.as_ref())
+            .await?;
+        query(
+            "CREATE TABLE teams (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL
+            )",
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
     async fn get_name_by_id(&self, id: i64) -> Result<Option<String>, Error> {
         query_as("SELECT name FROM teams WHERE id = ?")
             .bind(id)

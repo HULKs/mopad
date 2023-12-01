@@ -5,6 +5,7 @@ use sqlx::{query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait RoleRepository {
+    async fn provision(&self) -> Result<(), Error>;
     async fn get_roles_by_id(&self, user_id: i64) -> Result<Vec<Role>, Error>;
     async fn get_all(&self) -> Result<Vec<UserRole>, Error>;
     async fn clear(&self) -> Result<(), Error>;
@@ -33,6 +34,21 @@ impl SqliteRoleRepository {
 
 #[async_trait]
 impl RoleRepository for SqliteRoleRepository {
+    async fn provision(&self) -> Result<(), Error> {
+        query("DROP TABLE IF EXISTS roles")
+            .execute(self.pool.as_ref())
+            .await?;
+        query(
+            "CREATE TABLE roles (
+                user INTEGER REFERENCES users(id) NOT NULL,
+                role INTEGER NOT NULL
+            )",
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
     async fn get_roles_by_id(&self, user_id: i64) -> Result<Vec<Role>, Error> {
         let roles = query_as("SELECT role FROM roles WHERE user = ?")
             .bind(user_id)

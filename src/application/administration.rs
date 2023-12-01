@@ -20,6 +20,7 @@ use super::authentication::hash;
 
 #[async_trait]
 pub trait AdministrationService {
+    async fn provision(&self) -> Result<(), Error>;
     async fn reset_password(&self, user: &str, team: &str, password: &str) -> Result<(), Error>;
     async fn import(
         &self,
@@ -138,6 +139,16 @@ impl<
         MemberRepo,
     >
 {
+    async fn provision(&self) -> Result<(), Error> {
+        self.team_repository.provision().await?;
+        self.user_repository.provision().await?;
+        self.role_repository.provision().await?;
+        self.token_repository.provision().await?;
+        self.talk_repository.provision().await?;
+        self.member_repository.provision().await?;
+        Ok(())
+    }
+
     async fn reset_password(&self, user: &str, team: &str, password: &str) -> Result<(), Error> {
         let Some(team_id) = self.team_repository.get_id_by_name(team).await? else {
             eprintln!("unknown team");

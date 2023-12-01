@@ -8,6 +8,7 @@ use sqlx::{query, query_as, Error, Pool, Sqlite};
 
 #[async_trait]
 pub trait TokenRepository {
+    async fn provision(&self) -> Result<(), Error>;
     async fn insert_or_update_token_for_user(
         &self,
         token: &str,
@@ -39,6 +40,22 @@ impl SqliteTokenRepository {
 
 #[async_trait]
 impl TokenRepository for SqliteTokenRepository {
+    async fn provision(&self) -> Result<(), Error> {
+        query("DROP TABLE IF EXISTS tokens")
+            .execute(self.pool.as_ref())
+            .await?;
+        query(
+            "CREATE TABLE tokens (
+                token TEXT PRIMARY KEY,
+                user INTEGER REFERENCES users(id) NOT NULL,
+                expires_at INTEGER NOT NULL
+            )",
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
     async fn insert_or_update_token_for_user(
         &self,
         token: &str,

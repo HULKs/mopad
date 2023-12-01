@@ -86,7 +86,7 @@ async fn talks_ws_connection(
                         .trigger(user_id, &capabilities, command)
                         .await
                         .map_err(|error| error.to_string())?,
-                    None => return Ok(()),
+                    None => {},
                 }
             },
             update = updates.recv() => {
@@ -112,6 +112,8 @@ async fn receive<T: DeserializeOwned>(socket: &mut WebSocket) -> Result<Option<T
     let message = match message.map_err(|error| error.to_string())? {
         Message::Text(message) => message,
         Message::Close(_) => return Ok(None),
+        Message::Ping(_) => return Ok(None),
+        Message::Pong(_) => return Ok(None),
         message => return Err(format!("expected text message but got {message:?}")),
     };
     from_str(&message)

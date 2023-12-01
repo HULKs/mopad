@@ -14,7 +14,7 @@ pub trait TokenRepository {
         user_id: i64,
         expires_at: SystemTime,
     ) -> Result<(), Error>;
-    // TODO: remove expired tokens
+    async fn delete_later_than(&self, deadline: SystemTime) -> Result<(), Error>;
     async fn get_user_id(&self, token: &str) -> Result<Option<i64>, Error>;
 }
 
@@ -45,7 +45,13 @@ impl TokenRepository for SqliteTokenRepository {
             .map(|_| ())
     }
 
-    // TODO: remove expired tokens
+    async fn delete_later_than(&self, deadline: SystemTime) -> Result<(), Error> {
+        query("DELETE FROM tokens WHERE expires_at > ?")
+            .bind(deadline.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64)
+            .execute(self.pool.as_ref())
+            .await
+            .map(|_| ())
+    }
 
     async fn get_user_id(&self, token: &str) -> Result<Option<i64>, Error> {
         query_as("SELECT user FROM tokens WHERE token = ?")

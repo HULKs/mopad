@@ -109,6 +109,7 @@ impl<
                 now + Duration::from_secs(60 * 60 * 24 * 7),
             )
             .await?;
+        self.token_repository.delete_later_than(now).await?;
 
         Ok(Response::Success {
             user_id,
@@ -148,6 +149,7 @@ impl<
                 now + Duration::from_secs(60 * 60 * 24 * 7),
             )
             .await?;
+        self.token_repository.delete_later_than(now).await?;
 
         Ok(Response::Success {
             user_id,
@@ -157,6 +159,10 @@ impl<
     }
 
     async fn relogin(&self, token: &str) -> Result<Response, Error> {
+        self.token_repository
+            .delete_later_than(SystemTime::now())
+            .await?;
+
         let Some(user_id) = self.token_repository.get_user_id(token).await? else {
             return Ok(Response::UnknownToken);
         };

@@ -29,7 +29,7 @@ pub trait TalksService {
     async fn get_all_talks(&self) -> Result<Vec<Talk>, Error>;
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub enum Command {
     AddTalk,
     RemoveTalk {
@@ -158,18 +158,18 @@ impl<
         command: Command,
     ) -> Result<(), Error> {
         if !is_authorized(user_id, capabilities, &self.talk_repository, &command).await? {
-            // TODO: log authorization violation
+            eprintln!("{user_id} with {capabilities:?} not authorized for {command:?}");
             return Ok(());
         }
 
         match command {
             Command::AddTalk => {
                 let Some((user, team_id)) = self.user_repository.get_name_and_team_id_by_id(user_id).await? else {
-                    // TODO: log inconsistency
+                    eprintln!("inconsistent data: user {user_id} not existing");
                     return Ok(());
                 };
                 let Some(team) = self.team_repository.get_name_by_id(team_id).await? else {
-                    // TODO: log inconsistency
+                    eprintln!("inconsistent data: team {team_id} not existing");
                     return Ok(());
                 };
 

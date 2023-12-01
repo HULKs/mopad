@@ -13,8 +13,8 @@ pub trait MemberRepository {
         talk_id: i64,
         state: State,
     ) -> Result<(), Error>;
-    async fn get_nerds_and_noobs_by_talk(&self, id: i64) -> Result<(Vec<i64>, Vec<i64>), Error>;
-    async fn delete_by_talk(&self, id: i64) -> Result<(), Error>;
+    async fn get_nerds_and_noobs_by_id(&self, id: i64) -> Result<(Vec<i64>, Vec<i64>), Error>;
+    async fn delete_by_id(&self, id: i64) -> Result<(), Error>;
 }
 
 pub enum State {
@@ -67,7 +67,7 @@ impl MemberRepository for SqliteMemberRepository {
             .map(|_| ())
     }
 
-    async fn get_nerds_and_noobs_by_talk(&self, id: i64) -> Result<(Vec<i64>, Vec<i64>), Error> {
+    async fn get_nerds_and_noobs_by_id(&self, id: i64) -> Result<(Vec<i64>, Vec<i64>), Error> {
         let mut nerds = Vec::new();
         let mut nerds_fetcher = query_as("SELECT user FROM members WHERE talk = ? AND is_nerd = 1")
             .bind(id)
@@ -87,7 +87,7 @@ impl MemberRepository for SqliteMemberRepository {
         Ok((nerds, noobs))
     }
 
-    async fn delete_by_talk(&self, id: i64) -> Result<(), Error> {
+    async fn delete_by_id(&self, id: i64) -> Result<(), Error> {
         query("DELETE FROM members WHERE talk = ?")
             .bind(id)
             .execute(self.pool.as_ref())

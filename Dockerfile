@@ -8,8 +8,8 @@ RUN cargo install --path .
 
 FROM debian:bookworm-slim
 
-COPY --from=builder /usr/local/cargo/bin/mopad /usr/local/bin/mopad
+COPY --from=builder /usr/local/cargo/bin/server /usr/local/bin/server
 WORKDIR /mopad
 COPY ./frontend/ ./frontend/
 
-CMD ["mopad"]
+CMD ["server"]

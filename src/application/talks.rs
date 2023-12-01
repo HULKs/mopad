@@ -210,7 +210,7 @@ impl<
                 }));
             }
             Command::RemoveTalk { id } => {
-                self.member_repository.delete_by_talk(id).await?;
+                self.member_repository.delete_by_id(id).await?;
                 self.talk_repository.delete(id).await?;
                 let _ = self.sender.send(Update::RemoveTalk { id });
             }
@@ -259,7 +259,7 @@ impl<
                     .await?;
                 let (nerd_ids, noob_ids) = self
                     .member_repository
-                    .get_nerds_and_noobs_by_talk(id)
+                    .get_nerds_and_noobs_by_id(id)
                     .await?;
                 if nerds_changed {
                     let _ = self.sender.send(Update::UpdateNerds {
@@ -299,7 +299,7 @@ impl<
                     .await?;
                 let (nerd_ids, noob_ids) = self
                     .member_repository
-                    .get_nerds_and_noobs_by_talk(id)
+                    .get_nerds_and_noobs_by_id(id)
                     .await?;
                 if nerds_changed {
                     let _ = self.sender.send(Update::UpdateNerds {
@@ -341,7 +341,7 @@ impl<
 
             let (nerd_ids, noob_ids) = self
                 .member_repository
-                .get_nerds_and_noobs_by_talk(talk.id)
+                .get_nerds_and_noobs_by_id(talk.id)
                 .await?;
             let nerds =
                 user_ids_to_users(nerd_ids, &self.user_repository, &self.team_repository).await?;

@@ -69,7 +69,7 @@ impl<
         for talk in self.talk_repository.get_all().await? {
             let (nerd_ids, noob_ids) = self
                 .member_repository
-                .get_nerds_and_noobs_by_talk(talk.id)
+                .get_nerds_and_noobs_by_id(talk.id)
                 .await?;
 
             if let Some(user_id) = user_id {

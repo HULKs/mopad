@@ -7,6 +7,8 @@ use sqlx::{error::ErrorKind, query, query_as, Error, Pool, Sqlite};
 pub trait UserRepository {
     async fn exists(&self, id: i64) -> Result<bool, Error>;
     async fn get_name_and_team_id_by_id(&self, id: i64) -> Result<Option<(String, i64)>, Error>;
+    async fn get_id_by_name_and_team(&self, name: &str, team_id: i64)
+        -> Result<Option<i64>, Error>;
     async fn get_id_and_hash_by_name_and_team(
         &self,
         name: &str,
@@ -18,6 +20,7 @@ pub trait UserRepository {
         team_id: i64,
         hash: &str,
     ) -> Result<Option<i64>, Error>;
+    async fn update_hash(&self, id: i64, hash: &str) -> Result<(), Error>;
 }
 
 pub struct SqliteUserRepository {
@@ -47,12 +50,25 @@ impl UserRepository for SqliteUserRepository {
             .await
     }
 
+    async fn get_id_by_name_and_team(
+        &self,
+        name: &str,
+        team_id: i64,
+    ) -> Result<Option<i64>, Error> {
+        query_as("SELECT id FROM users WHERE name = ? AND team = ?")
+            .bind(name)
+            .bind(team_id)
+            .fetch_optional(self.pool.as_ref())
+            .await
+            .map(|id| id.map(|(id,)| id))
+    }
+
     async fn get_id_and_hash_by_name_and_team(
         &self,
         name: &str,
         team_id: i64,
     ) -> Result<Option<(i64, String)>, Error> {
-        query_as("SELECT id, hash FROM users WHERE name = ? AND id = ?")
+        query_as("SELECT id, hash FROM users WHERE name = ? AND team = ?")
             .bind(name)
             .bind(team_id)
             .fetch_optional(self.pool.as_ref())
@@ -76,5 +92,14 @@ impl UserRepository for SqliteUserRepository {
             Err(Error::Database(error)) if error.kind() == ErrorKind::UniqueViolation => Ok(None),
             Err(error) => Err(error),
         }
+    }
+
+    async fn update_hash(&self, id: i64, hash: &str) -> Result<(), Error> {
+        query("UPDATE users SET hash = ? WHERE id = ?")
+            .bind(hash)
+            .bind(id)
+            .execute(self.pool.as_ref())
+            .await
+            .map(|_| ())
     }
 }

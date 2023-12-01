@@ -9,6 +9,7 @@ RUN cargo install --path .
 FROM debian:bookworm-slim
 
 COPY --from=builder /usr/local/cargo/bin/server /usr/local/bin/server
+COPY --from=builder /usr/local/cargo/bin/admin /usr/local/bin/admin
 WORKDIR /mopad
 COPY ./frontend/ ./frontend/
 

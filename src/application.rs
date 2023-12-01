@@ -3,6 +3,7 @@ use sqlx::Error;
 
 use crate::persistence::{team::TeamRepository, user::UserRepository};
 
+pub mod administration;
 pub mod authentication;
 pub mod calendar;
 pub mod talks;

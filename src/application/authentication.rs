@@ -90,11 +90,7 @@ impl<
             return Ok(Response::UnknownTeam);
         };
 
-        let salt = SaltString::generate(&mut OsRng);
-        let hash = Argon2::default()
-            .hash_password(password.as_bytes(), &salt)
-            .unwrap()
-            .to_string();
+        let hash = hash(password);
 
         let Some(user_id) = self.user_repository.insert_name_and_team_and_hash(name, team_id, &hash).await? else {
             return Ok(Response::AlreadyRegistered);
@@ -185,6 +181,14 @@ impl<
             token: token.to_string(),
         })
     }
+}
+
+pub fn hash(password: &str) -> String {
+    let salt = SaltString::generate(&mut OsRng);
+    Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .unwrap()
+        .to_string()
 }
 
 fn verify(stored_hash: &str, password_to_verify: &str) -> bool {

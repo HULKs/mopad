@@ -22,6 +22,7 @@ pub trait TokenRepository {
     async fn import(&self, tokens: Vec<Token>) -> Result<(), Error>;
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub token: String,
     pub user_id: i64,
@@ -112,6 +113,7 @@ impl TokenRepository for SqliteTokenRepository {
 
     async fn import(&self, tokens: Vec<Token>) -> Result<(), Error> {
         for token in tokens {
+            println!("Importing {token:?}...");
             query("INSERT INTO tokens (token, user, expires_at) VALUES (?, ?, ?)")
                 .bind(token.token)
                 .bind(token.user_id)

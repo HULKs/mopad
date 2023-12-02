@@ -34,6 +34,7 @@ pub trait TalkRepository {
     async fn import(&self, talks: Vec<Talk>) -> Result<(), Error>;
 }
 
+#[derive(Debug)]
 pub struct Talk {
     pub id: i64,
     pub creator: i64,
@@ -207,6 +208,7 @@ impl TalkRepository for SqliteTalkRepository {
 
     async fn import(&self, talks: Vec<Talk>) -> Result<(), Error> {
         for talk in talks {
+            println!("Importing {talk:?}...");
             query("INSERT INTO talks (id, creator, title, description, scheduled_at, duration, location) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .bind(talk.id)
             .bind(talk.creator)

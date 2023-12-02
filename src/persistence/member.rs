@@ -21,6 +21,7 @@ pub trait MemberRepository {
     async fn import(&self, members: Vec<Member>) -> Result<(), Error>;
 }
 
+#[derive(Debug)]
 pub struct Member {
     pub user_id: i64,
     pub talk_id: i64,
@@ -147,6 +148,7 @@ impl MemberRepository for SqliteMemberRepository {
 
     async fn import(&self, members: Vec<Member>) -> Result<(), Error> {
         for member in members {
+            println!("Importing {member:?}...");
             query("INSERT INTO members (user, talk, is_nerd) VALUES (?, ?, ?)")
                 .bind(member.user_id)
                 .bind(member.talk_id)

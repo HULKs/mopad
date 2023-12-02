@@ -12,11 +12,13 @@ pub trait RoleRepository {
     async fn import(&self, roles: Vec<UserRole>) -> Result<(), Error>;
 }
 
+#[derive(Debug)]
 pub struct UserRole {
     pub user: i64,
     pub role: Role,
 }
 
+#[derive(Debug)]
 pub enum Role {
     Editor,
     Scheduler,
@@ -98,6 +100,7 @@ impl RoleRepository for SqliteRoleRepository {
 
     async fn import(&self, roles: Vec<UserRole>) -> Result<(), Error> {
         for role in roles {
+            println!("Importing {role:?}...");
             query("INSERT INTO roles (user, role) VALUES (?, ?)")
                 .bind(role.user)
                 .bind(match role.role {

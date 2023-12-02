@@ -13,6 +13,7 @@ pub trait TeamRepository {
     async fn import(&self, teams: Vec<Team>) -> Result<(), Error>;
 }
 
+#[derive(Debug)]
 pub struct Team {
     pub id: i64,
     pub name: String,
@@ -82,6 +83,7 @@ impl TeamRepository for SqliteTeamRepository {
 
     async fn import(&self, teams: Vec<Team>) -> Result<(), Error> {
         for team in teams {
+            println!("Importing {team:?}...");
             query("INSERT INTO teams (id, name) VALUES (?, ?)")
                 .bind(team.id)
                 .bind(team.name)

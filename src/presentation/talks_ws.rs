@@ -10,6 +10,7 @@ use axum::{
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{from_str, to_string};
 use tokio::select;
+use tungstenite::error::{Error as TungsteniteError, ProtocolError};
 
 use crate::application::{
     authentication::{AuthenticationService, Capability, Response},
@@ -109,12 +110,22 @@ async fn send(socket: &mut WebSocket, message: &impl Serialize) -> Result<(), St
 async fn receive<T: DeserializeOwned>(socket: &mut WebSocket) -> Result<Option<T>, String> {
     let message = loop {
         match socket.recv().await {
-            Some(message) => match message.map_err(|error| error.to_string())? {
-                Message::Text(message) => break message,
-                Message::Close(_) => {}
-                Message::Ping(_) => {}
-                Message::Pong(_) => {}
-                message => return Err(format!("expected text message but got {message:?}")),
+            Some(message) => match message {
+                Ok(Message::Text(message)) => break message,
+                Ok(Message::Close(_)) => {}
+                Ok(Message::Ping(_)) => {}
+                Ok(Message::Pong(_)) => {}
+                Ok(message) => return Err(format!("expected text message but got {message:?}")),
+                Err(error) => {
+                    let error = error.into_inner();
+                    if let Some(TungsteniteError::Protocol(
+                        ProtocolError::ResetWithoutClosingHandshake,
+                    )) = error.downcast_ref::<TungsteniteError>()
+                    {
+                        return Ok(None);
+                    }
+                    return Err(error.to_string());
+                }
             },
             None => return Ok(None),
         }

@@ -24,7 +24,7 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
-            ./Dockerfile
+            ./Containerfile
 
       - name: Push to ghcr.io
         id: push-to-registry

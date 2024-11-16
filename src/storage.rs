@@ -11,9 +11,10 @@ use eyre::Context;
 use rand_core::OsRng;
 use serde::{Deserialize, Serialize};
 use tokio::{
-    fs::{read, File},
+    fs::{create_dir_all, read, try_exists, File},
     io::AsyncWriteExt,
 };
+use tracing::warn;
 
 pub type Token = String;
 
@@ -23,7 +24,7 @@ pub struct TokenData {
     pub expires_at: SystemTime,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct TokenStore {
     #[serde(flatten)]
     store: BTreeMap<Token, TokenData>,
@@ -79,6 +80,27 @@ where
         Ok(Self { path, value })
     }
 
+    pub async fn read_from_or_create_default(path: impl Into<PathBuf>) -> eyre::Result<Self>
+    where
+        T: Default,
+    {
+        let path = path.into();
+        if try_exists(&path)
+            .await
+            .wrap_err("failed to check if file exists")?
+        {
+            Self::read_from(path).await
+        } else {
+            warn!(
+                "Cannot find file {path}, creating default",
+                path = path.display()
+            );
+            let value = T::default();
+            value.write_to_file(&path).await?;
+            Ok(Self { path, value })
+        }
+    }
+
     pub async fn commit(&self) -> eyre::Result<()>
     where
         T: Serialize,
@@ -99,16 +121,24 @@ pub struct Storage {
 impl Storage {
     pub async fn load(path: impl Into<PathBuf> + Debug) -> eyre::Result<Self> {
         let path = path.into();
-        let teams = MirroredToDisk::read_from(path.join("teams.json"))
+        let exists = try_exists(&path)
+            .await
+            .wrap_err("failed to check if storage directory exists")?;
+        if !exists {
+            create_dir_all(&path)
+                .await
+                .wrap_err("failed to create storage directory")?;
+        }
+        let teams = MirroredToDisk::read_from_or_create_default(path.join("teams.json"))
             .await
             .wrap_err("failed to read teams.json")?;
-        let users = MirroredToDisk::read_from(path.join("users.json"))
+        let users = MirroredToDisk::read_from_or_create_default(path.join("users.json"))
             .await
             .wrap_err("failed to read users")?;
-        let talks = MirroredToDisk::read_from(path.join("talks.json"))
+        let talks = MirroredToDisk::read_from_or_create_default(path.join("talks.json"))
             .await
             .wrap_err("failed to read talks")?;
-        let tokens = MirroredToDisk::read_from(path.join("tokens.json"))
+        let tokens = MirroredToDisk::read_from_or_create_default(path.join("tokens.json"))
             .await
             .wrap_err("failed to read talks")?;
         Ok(Self {

@@ -1,7 +1,8 @@
 use core::fmt::Debug;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    path::Path,
+    ops::{Deref, DerefMut},
+    path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
 
@@ -14,35 +15,108 @@ use tokio::{
     io::AsyncWriteExt,
 };
 
+pub type Token = String;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct TokenData {
+    pub user_id: usize,
+    pub expires_at: SystemTime,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct TokenStore {
+    #[serde(flatten)]
+    store: BTreeMap<Token, TokenData>,
+}
+
+impl TokenStore {
+    pub fn insert(&mut self, token: Token, user_id: usize, expires_at: SystemTime) {
+        self.store.insert(
+            token,
+            TokenData {
+                user_id,
+                expires_at,
+            },
+        );
+    }
+
+    pub fn remove_expired(&mut self, now: SystemTime) {
+        self.store.retain(|_token, data| data.expires_at >= now);
+    }
+
+    pub fn get(&self, token: &Token) -> Option<&TokenData> {
+        self.store.get(token)
+    }
+}
+
+#[derive(Debug)]
+pub struct MirroredToDisk<T> {
+    pub path: PathBuf,
+    pub value: T,
+}
+
+impl<T> Deref for MirroredToDisk<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl<T> DerefMut for MirroredToDisk<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.value
+    }
+}
+
+impl<T> MirroredToDisk<T>
+where
+    T: ReadFromFileExt + WriteToFileExt,
+{
+    pub async fn read_from(path: impl Into<PathBuf>) -> eyre::Result<Self> {
+        let path = path.into();
+        let value = T::read_from_file(&path).await?;
+        Ok(Self { path, value })
+    }
+
+    pub async fn commit(&self) -> eyre::Result<()>
+    where
+        T: Serialize,
+    {
+        self.value.write_to_file(&self.path).await
+    }
+}
+
 #[derive(Debug)]
 pub struct Storage {
-    pub teams: BTreeSet<String>,
-    pub users: BTreeMap<usize, User>,
-    pub talks: BTreeMap<usize, Talk>,
+    pub path: PathBuf,
+    pub teams: MirroredToDisk<BTreeSet<String>>,
+    pub users: MirroredToDisk<BTreeMap<usize, User>>,
+    pub talks: MirroredToDisk<BTreeMap<usize, Talk>>,
+    pub tokens: MirroredToDisk<TokenStore>,
 }
 
 impl Storage {
-    pub async fn load(path: impl AsRef<Path> + Debug) -> eyre::Result<Self> {
-        let path = path.as_ref();
-        let teams = BTreeSet::<String>::read_from_file(path.join("teams.json"))
+    pub async fn load(path: impl Into<PathBuf> + Debug) -> eyre::Result<Self> {
+        let path = path.into();
+        let teams = MirroredToDisk::read_from(path.join("teams.json"))
             .await
             .wrap_err("failed to read teams.json")?;
-        let users = Vec::<User>::read_from_file(path.join("users.json"))
+        let users = MirroredToDisk::read_from(path.join("users.json"))
             .await
-            .wrap_err("failed to read users")?
-            .into_iter()
-            .map(|user| (user.id, user))
-            .collect();
-        let talks = Vec::<Talk>::read_from_file(path.join("talks.json"))
+            .wrap_err("failed to read users")?;
+        let talks = MirroredToDisk::read_from(path.join("talks.json"))
             .await
-            .wrap_err("failed to read talks")?
-            .into_iter()
-            .map(|talk| (talk.id, talk))
-            .collect();
+            .wrap_err("failed to read talks")?;
+        let tokens = MirroredToDisk::read_from(path.join("tokens.json"))
+            .await
+            .wrap_err("failed to read talks")?;
         Ok(Self {
+            path: path.to_path_buf(),
             teams,
             users,
             talks,
+            tokens,
         })
     }
 }
@@ -57,13 +131,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(
-        id: usize,
-        name: String,
-        team: String,
-        password: String,
-        roles: BTreeSet<Role>,
-    ) -> Self {
+    pub fn new(id: usize, name: String, team: String, password: String) -> Self {
         let salt = SaltString::generate(&mut OsRng);
         let hash = Argon2::default()
             .hash_password(password.as_bytes(), &salt)
@@ -74,7 +142,7 @@ impl User {
             name,
             team,
             hash: hash.to_string(),
-            roles,
+            roles: BTreeSet::new(),
         }
     }
 
@@ -83,6 +151,18 @@ impl User {
         Argon2::default()
             .verify_password(password.as_bytes(), &stored_hash)
             .is_ok()
+    }
+
+    pub fn is_editor(&self) -> bool {
+        self.roles.contains(&Role::Editor)
+    }
+
+    pub fn is_scheduler(&self) -> bool {
+        self.roles.contains(&Role::Scheduler)
+    }
+
+    pub fn is_creator(&self, talk: &Talk) -> bool {
+        self.id == talk.creator
     }
 }
 
@@ -101,12 +181,12 @@ pub struct Talk {
     pub scheduled_at: Option<SystemTime>,
     pub duration: Duration,
     pub location: Option<String>,
-    pub nerds: Vec<usize>,
-    pub noobs: Vec<usize>,
+    pub nerds: BTreeSet<usize>,
+    pub noobs: BTreeSet<usize>,
 }
 
 pub trait ReadFromFileExt {
-    async fn read_from_file(file_path: impl AsRef<Path> + Debug) -> eyre::Result<Self>
+    async fn read_from_file(path: impl AsRef<Path> + Debug) -> eyre::Result<Self>
     where
         Self: Sized;
 }
@@ -122,7 +202,7 @@ where
 }
 
 pub trait WriteToFileExt {
-    async fn write_to_file(&self, file_path: impl AsRef<Path> + Debug) -> eyre::Result<()>;
+    async fn write_to_file(&self, path: impl AsRef<Path> + Debug) -> eyre::Result<()>;
 }
 
 impl<T> WriteToFileExt for T

@@ -1,11 +1,42 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     time::{Duration, SystemTime},
 };
 
 use serde::{Deserialize, Serialize};
 
-use crate::storage::{Talk, User};
+use crate::storage::{Role, Talk, User};
+
+/// Authentication command sent by the client.
+#[derive(Clone, Debug, Deserialize)]
+pub enum AuthenticationCommand {
+    Register {
+        name: String,
+        team: String,
+        password: String,
+    },
+    Login {
+        name: String,
+        team: String,
+        password: String,
+    },
+    Relogin {
+        token: String,
+    },
+}
+
+/// Server response to an authentication command.
+#[derive(Clone, Debug, Serialize)]
+pub enum AuthenticationResponse {
+    AuthenticationSuccess {
+        user_id: usize,
+        roles: BTreeSet<Role>,
+        token: String,
+    },
+    AuthenticationError {
+        reason: String,
+    },
+}
 
 /// Commands are sent from the client to the server to request changes.
 #[derive(Clone, Debug, Deserialize)]

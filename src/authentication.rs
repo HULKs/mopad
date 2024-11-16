@@ -1,308 +1,159 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    time::{Duration, SystemTime},
-};
+use std::time::{Duration, SystemTime};
 
 use argon2::password_hash::SaltString;
 use axum::extract::ws::{Message, WebSocket};
+use eyre::{bail, Context, ContextCompat};
 use rand_core::OsRng;
-use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
 
-use crate::storage::{ReadFromFileExt, Role, Storage, User, WriteToFileExt};
-
-type Tokens = BTreeMap<String, StoredToken>;
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-struct StoredToken {
-    user_id: usize,
-    expires_at: SystemTime,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-enum AuthenticationCommand {
-    Register {
-        name: String,
-        team: String,
-        password: String,
-    },
-    Login {
-        name: String,
-        team: String,
-        password: String,
-    },
-    Relogin {
-        token: String,
-    },
-}
-
-#[derive(Clone, Debug, Serialize)]
-enum AuthenticationResponse {
-    AuthenticationSuccess {
-        user_id: usize,
-        roles: BTreeSet<Role>,
-        token: String,
-    },
-    AuthenticationError {
-        reason: String,
-    },
-}
+use crate::{
+    messages::{AuthenticationCommand, Update},
+    storage::User,
+    AppState,
+};
 
 pub async fn authenticate(
     socket: &mut WebSocket,
-    storage: &Mutex<Storage>,
-) -> Option<(User, bool)> {
-    let authentication_command: AuthenticationCommand = match socket.recv().await {
-        Some(Ok(authentication_command)) => match authentication_command {
-            Message::Text(authentication_command) => {
-                match serde_json::from_str(&authentication_command) {
-                    Ok(authentication_command) => authentication_command,
-                    Err(_) => {
-                        let _ = socket
-                            .send(Message::Text(
-                                serde_json::to_string(
-                                    &AuthenticationResponse::AuthenticationError {
-                                        reason: "failed to deserialize from WebSocket".to_string(),
-                                    },
-                                )
-                                .unwrap(),
-                            ))
-                            .await;
-                        return None;
-                    }
-                }
-            }
-            _ => {
-                let _ = socket
-                    .send(Message::Text(
-                        serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                            reason: "expected text message from WebSocket".to_string(),
-                        })
-                        .unwrap(),
-                    ))
-                    .await;
-                return None;
-            }
-        },
-        Some(Err(_)) => {
-            let _ = socket
-                .send(Message::Text(
-                    serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                        reason: "failed to read from WebSocket".to_string(),
-                    })
-                    .unwrap(),
-                ))
-                .await;
-            return None;
-        }
-        None => return None,
-    };
+    state: &AppState,
+) -> eyre::Result<(User, String)> {
+    let authentication_command = receive_command(socket).await?;
 
     match authentication_command {
         AuthenticationCommand::Register {
             name,
             team,
             password,
-        } => {
-            if !storage.lock().await.teams.contains(&team) {
-                let _ = socket
-                    .send(Message::Text(
-                        serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                            reason: "unknown team".to_string(),
-                        })
-                        .unwrap(),
-                    ))
-                    .await;
-                return None;
-            }
-
-            let users = &mut storage.lock().await.users;
-
-            if users
-                .values()
-                .any(|user| user.name == name && user.team == team)
-            {
-                let _ = socket
-                    .send(Message::Text(
-                        serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                            reason: "already registered".to_string(),
-                        })
-                        .unwrap(),
-                    ))
-                    .await;
-                return None;
-            }
-
-            let next_user_id = users.keys().copied().max().unwrap_or_default() + 1;
-
-            users.insert(
-                next_user_id,
-                User::new(next_user_id, name, team, password, BTreeSet::new()),
-            );
-
-            users
-                .values()
-                .collect::<Vec<_>>()
-                .write_to_file("users.json")
-                .await
-                .expect("failed to write users.json");
-
-            let mut tokens = Tokens::read_from_file("tokens.json")
-                .await
-                .expect("failed to read tokens.json");
-            let token = SaltString::generate(&mut OsRng).to_string();
-            let now = SystemTime::now();
-            tokens.insert(
-                token.clone(),
-                StoredToken {
-                    user_id: next_user_id,
-                    expires_at: now + Duration::from_secs(60 * 60 * 24 * 7),
-                },
-            );
-            tokens.retain(|_token, stored_token| stored_token.expires_at >= now);
-            tokens
-                .write_to_file("tokens.json")
-                .await
-                .expect("failed to write tokens.json");
-
-            let _ = socket
-                .send(Message::Text(
-                    serde_json::to_string(&AuthenticationResponse::AuthenticationSuccess {
-                        user_id: next_user_id,
-                        roles: users[&next_user_id].roles.clone(),
-                        token,
-                    })
-                    .unwrap(),
-                ))
-                .await;
-
-            Some((users[&next_user_id].clone(), true))
-        }
+        } => register(state, name, team, password)
+            .await
+            .wrap_err("failed to register"),
         AuthenticationCommand::Login {
             name,
             team,
             password,
-        } => {
-            let users = &mut storage.lock().await.users;
-
-            if let Some(user) = users
-                .values()
-                .find(|user| user.name == name && user.team == team)
-            {
-                if user.verify(password) {
-                    let mut tokens = Tokens::read_from_file("tokens.json")
-                        .await
-                        .expect("failed to read tokens.json");
-                    let token = SaltString::generate(&mut OsRng).to_string();
-                    let now = SystemTime::now();
-                    tokens.insert(
-                        token.clone(),
-                        StoredToken {
-                            user_id: user.id,
-                            expires_at: now + Duration::from_secs(60 * 60 * 24 * 7),
-                        },
-                    );
-                    tokens.retain(|_token, stored_token| stored_token.expires_at >= now);
-                    tokens
-                        .write_to_file("tokens.json")
-                        .await
-                        .expect("failed to write tokens.json");
-
-                    let _ = socket
-                        .send(Message::Text(
-                            serde_json::to_string(&AuthenticationResponse::AuthenticationSuccess {
-                                user_id: user.id,
-                                roles: user.roles.clone(),
-                                token,
-                            })
-                            .unwrap(),
-                        ))
-                        .await;
-
-                    Some((user.clone(), false))
-                } else {
-                    let _ = socket
-                        .send(Message::Text(
-                            serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                                reason: "wrong password".to_string(),
-                            })
-                            .unwrap(),
-                        ))
-                        .await;
-                    None
-                }
-            } else {
-                let _ = socket
-                    .send(Message::Text(
-                        serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                            reason: "unknown user".to_string(),
-                        })
-                        .unwrap(),
-                    ))
-                    .await;
-                None
-            }
-        }
-        AuthenticationCommand::Relogin { token } => {
-            let users = &mut storage.lock().await.users;
-
-            let mut tokens = Tokens::read_from_file("tokens.json")
-                .await
-                .expect("failed to read tokens.json");
-            let now = SystemTime::now();
-            let number_of_tokens = tokens.len();
-            tokens.retain(|_token, stored_token| stored_token.expires_at >= now);
-            let number_of_tokens_changed = number_of_tokens != tokens.len();
-            let result = match tokens.get(&token) {
-                Some(stored_token) => match users.get(&stored_token.user_id) {
-                    Some(user) => {
-                        let _ = socket
-                            .send(Message::Text(
-                                serde_json::to_string(
-                                    &AuthenticationResponse::AuthenticationSuccess {
-                                        user_id: user.id,
-                                        roles: user.roles.clone(),
-                                        token,
-                                    },
-                                )
-                                .unwrap(),
-                            ))
-                            .await;
-                        Some((user.clone(), false))
-                    }
-                    None => {
-                        let _ = socket
-                            .send(Message::Text(
-                                serde_json::to_string(
-                                    &AuthenticationResponse::AuthenticationError {
-                                        reason: "unknown user from token".to_string(),
-                                    },
-                                )
-                                .unwrap(),
-                            ))
-                            .await;
-                        None
-                    }
-                },
-                None => {
-                    let _ = socket
-                        .send(Message::Text(
-                            serde_json::to_string(&AuthenticationResponse::AuthenticationError {
-                                reason: "unknown token".to_string(),
-                            })
-                            .unwrap(),
-                        ))
-                        .await;
-                    None
-                }
-            };
-            if number_of_tokens_changed {
-                tokens
-                    .write_to_file("tokens.json")
-                    .await
-                    .expect("failed to write tokens.json");
-            }
-            result
-        }
+        } => login(state, name, team, password)
+            .await
+            .wrap_err("failed to login"),
+        AuthenticationCommand::Relogin { token } => relogin(state, token).await,
     }
+}
+
+async fn receive_command(socket: &mut WebSocket) -> eyre::Result<AuthenticationCommand> {
+    let maybe_message = socket.recv().await.wrap_err("WebSocket closed")?;
+    let message = maybe_message.wrap_err("failed to receive message from WebSocket")?;
+    let text = match message {
+        Message::Text(text) => text,
+        other => bail!("expected text message from WebSocket, got: {other:#?}"),
+    };
+    serde_json::from_str(&text).wrap_err("failed to parse JSON")
+}
+
+async fn register(
+    state: &AppState,
+    name: String,
+    team: String,
+    password: String,
+) -> eyre::Result<(User, String)> {
+    let storage = &mut state.storage.lock().await;
+
+    if !storage.teams.contains(&team) {
+        bail!("unknown team {team}");
+    }
+
+    if storage
+        .users
+        .values()
+        .any(|user| user.name == name && user.team == team)
+    {
+        bail!("user {name} from team {team} already exists");
+    }
+
+    let max_user_id = storage.users.keys().copied().max().unwrap_or_default();
+    let next_user_id = max_user_id + 1;
+
+    let new_user = User::new(next_user_id, name, team, password);
+    storage.users.insert(next_user_id, new_user.clone());
+    storage
+        .users
+        .commit()
+        .await
+        .expect("failed to commit users");
+
+    // Inform all connected clients about the new user.
+    let users_update = Update::Users {
+        users: storage
+            .users
+            .values()
+            .map(|user| (user.id, user.into()))
+            .collect(),
+    };
+    let _ = state.updates_sender.send(users_update);
+
+    let token = SaltString::generate(&mut OsRng).to_string();
+    let now = SystemTime::now();
+    let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
+    storage.tokens.remove_expired(now);
+    storage
+        .tokens
+        .insert(token.clone(), new_user.id, now + seven_days);
+    storage
+        .tokens
+        .commit()
+        .await
+        .wrap_err("failed to commit tokens")?;
+    Ok((new_user, token))
+}
+
+async fn login(
+    state: &AppState,
+    name: String,
+    team: String,
+    password: String,
+) -> eyre::Result<(User, String)> {
+    let storage = &mut state.storage.lock().await;
+    let Some(user) = storage
+        .users
+        .values()
+        .find(|user| user.name == name && user.team == team)
+        .cloned()
+    else {
+        bail!("unknown user {name} from team {team}");
+    };
+
+    if !user.verify(password) {
+        bail!("wrong password");
+    }
+
+    let token = SaltString::generate(&mut OsRng).to_string();
+    let now = SystemTime::now();
+    let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
+    storage.tokens.remove_expired(now);
+    storage
+        .tokens
+        .insert(token.clone(), user.id, now + seven_days);
+    storage
+        .tokens
+        .commit()
+        .await
+        .wrap_err("failed to commit tokens")?;
+
+    Ok((user, token))
+}
+
+async fn relogin(state: &AppState, token: String) -> eyre::Result<(User, String)> {
+    let storage = &mut state.storage.lock().await;
+
+    let now = SystemTime::now();
+    storage.tokens.remove_expired(now);
+    storage
+        .tokens
+        .commit()
+        .await
+        .wrap_err("failed to commit tokens")?;
+
+    let data = storage.tokens.get(&token).wrap_err("unknown token")?;
+    let user = storage
+        .users
+        .get(&data.user_id)
+        .wrap_err("unknown user id from token")?;
+
+    Ok((user.clone(), token))
 }

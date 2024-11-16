@@ -1,15 +1,14 @@
-use std::{fmt::Write, sync::Arc};
+use std::fmt::Write;
 
 use axum::{
-    extract::Query,
+    extract::{Query, State},
     http::{header::CONTENT_TYPE, StatusCode},
     response::IntoResponse,
 };
 use serde::Deserialize;
 use time::{format_description::parse, OffsetDateTime};
-use tokio::sync::Mutex;
 
-use crate::storage::Storage;
+use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct ICalendarParameters {
@@ -17,13 +16,13 @@ pub struct ICalendarParameters {
 }
 
 pub async fn handle_icalendar(
+    State(state): State<AppState>,
     parameters: Query<ICalendarParameters>,
-    storage: Arc<Mutex<Storage>>,
 ) -> impl IntoResponse {
     let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:MOPAD\r\nX-WR-CALNAME:MOPAD\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
     let format = parse("[year][month][day]T[hour][minute][second]Z").unwrap();
     let now = OffsetDateTime::now_utc();
-    let storage = storage.lock().await;
+    let storage = state.storage.lock().await;
     for talk in storage.talks.values() {
         match parameters.user_id {
             Some(user_id) if !talk.noobs.contains(&user_id) && !talk.nerds.contains(&user_id) => {

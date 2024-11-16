@@ -1,78 +1,89 @@
-use std::sync::Arc;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    time::{Duration, SystemTime},
+};
 
 use axum::{
     extract::{
         ws::{Message, WebSocket},
-        WebSocketUpgrade,
+        State, WebSocketUpgrade,
     },
     response::IntoResponse,
 };
-use eyre::Context;
-use tokio::{
-    select,
-    sync::{broadcast, Mutex},
-};
+use eyre::{bail, Context, ContextCompat, Result};
+use tokio::select;
+use tracing::error;
 
 use crate::{
     authentication::authenticate,
-    messages::{Command, Update},
-    storage::{Role, Storage, Talk, User, WriteToFileExt},
+    messages::{AuthenticationResponse, Command, Update},
+    storage::{Talk, User},
+    AppState,
 };
 
 pub async fn handle_websocket(
+    State(state): State<AppState>,
     upgrade: WebSocketUpgrade,
-    storage: Arc<Mutex<Storage>>,
-    updates_sender: broadcast::Sender<Update>,
 ) -> impl IntoResponse {
-    upgrade.on_upgrade(move |socket| handle_upgraded_websocket(socket, storage, updates_sender))
+    upgrade.on_upgrade(move |socket| handle_upgraded_websocket(socket, state))
 }
 
-async fn handle_upgraded_websocket(
-    socket: WebSocket,
-    storage: Arc<Mutex<Storage>>,
-    updates_sender: broadcast::Sender<Update>,
-) {
-    match connection(socket, storage, updates_sender).await {
+async fn handle_upgraded_websocket(socket: WebSocket, state: AppState) {
+    match connection(socket, state).await {
         Ok(_) => {}
-        Err(error) => eprintln!("Error in handle_upgraded_websocket():\n{error:?}"),
+        Err(error) => error!("Error in handle_upgraded_websocket(): {error:#?}"),
     }
 }
 
-async fn connection(
-    mut socket: WebSocket,
-    storage: Arc<Mutex<Storage>>,
-    updates_sender: broadcast::Sender<Update>,
-) -> eyre::Result<()> {
-    let mut updates_receiver = updates_sender.subscribe();
+async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
+    let mut updates_receiver = state.updates_sender.subscribe();
 
-    let (current_user, users_changed) = match authenticate(&mut socket, &storage).await {
-        Some((current_user, users_changed)) => (current_user, users_changed),
-        None => return Ok(()),
+    let user = match authenticate(&mut socket, &state).await {
+        Ok((user, token)) => {
+            let response = AuthenticationResponse::AuthenticationSuccess {
+                user_id: user.id,
+                roles: user.roles.clone(),
+                token,
+            };
+            let _ = socket
+                .send(Message::Text(serde_json::to_string(&response).unwrap()))
+                .await;
+            user
+        }
+        Err(error) => {
+            let response = AuthenticationResponse::AuthenticationError {
+                reason: format!("{error:#}"),
+            };
+            let _ = socket
+                .send(Message::Text(serde_json::to_string(&response).unwrap()))
+                .await;
+            return Ok(());
+        }
     };
 
     let update_users = Update::Users {
-        users: storage
+        users: state
+            .storage
             .lock()
             .await
             .users
-            .iter()
-            .map(|(user_id, user)| (*user_id, user.into()))
+            .values()
+            .map(|user| (user.id, user.into()))
             .collect(),
     };
-    if users_changed {
-        let _ = updates_sender.send(update_users);
-    } else {
-        let _ = socket
-            .send(Message::Text(serde_json::to_string(&update_users).unwrap()))
-            .await;
-    }
+    let _ = socket
+        .send(Message::Text(serde_json::to_string(&update_users).unwrap()))
+        .await;
 
     {
-        let talks = &storage.lock().await.talks;
+        let talks = &state.storage.lock().await.talks;
         for talk in talks.values() {
+            let update = Update::AddTalk { talk: talk.clone() };
             let _ = socket
                 .send(Message::Text(
-                    serde_json::to_string(&Update::AddTalk { talk: talk.clone() }).unwrap(),
+                    serde_json::to_string(&update).wrap_err_with(|| {
+                        format!("failed to serialize talk update: {update:#?}")
+                    })?,
                 ))
                 .await;
         }
@@ -84,7 +95,7 @@ async fn connection(
                 if command_message.is_none() {
                     break;
                 }
-                handle_message(command_message.unwrap(), &storage, &current_user, &updates_sender)
+                handle_message(command_message.unwrap(), &user, &state)
                     .await
                     .wrap_err("failed to handle command message")?;
             }
@@ -100,7 +111,7 @@ async fn connection(
     Ok(())
 }
 
-async fn handle_update(update: Update, stream: &mut WebSocket) -> eyre::Result<()> {
+async fn handle_update(update: Update, stream: &mut WebSocket) -> Result<()> {
     stream
         .send(Message::Text(
             serde_json::to_string(&update).wrap_err("failed to serialize update")?,
@@ -111,10 +122,9 @@ async fn handle_update(update: Update, stream: &mut WebSocket) -> eyre::Result<(
 
 async fn handle_message(
     command_message: Result<Message, axum::Error>,
-    storage: &Mutex<Storage>,
-    current_user: &User,
-    updates_sender: &broadcast::Sender<Update>,
-) -> eyre::Result<()> {
+    user: &User,
+    state: &AppState,
+) -> Result<()> {
     let command_message = command_message.wrap_err("failed to receive command")?;
 
     if let Message::Text(message) = command_message {
@@ -127,279 +137,228 @@ async fn handle_message(
                 description,
                 duration,
             } => {
-                let talks = &mut storage.lock().await.talks;
-
-                let next_talk_id = talks.keys().copied().max().unwrap_or_default() + 1;
-
-                let talk = Talk {
-                    id: next_talk_id,
-                    creator: current_user.id,
-                    title,
-                    description,
-                    scheduled_at: None,
-                    duration,
-                    location: None,
-                    nerds: vec![current_user.id],
-                    noobs: vec![],
-                };
-                talks.insert(next_talk_id, talk.clone());
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::AddTalk { talk });
+                add_talk(state, user, title, description, duration).await?;
             }
             Command::RemoveTalk { talk_id } => {
-                let talks = &mut storage.lock().await.talks;
-
-                let no_such_talk = !talks.contains_key(&talk_id);
-                let is_editor = current_user.roles.contains(&Role::Editor);
-                let is_creator = talks[&talk_id].creator == current_user.id;
-                let can_edit = is_editor || is_creator;
-                if no_such_talk || !can_edit {
-                    return Ok(());
-                }
-
-                talks.remove(&talk_id);
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::RemoveTalk { talk_id });
+                remove_talk(state, talk_id, user).await?;
             }
             Command::UpdateTitle { talk_id, title } => {
-                let talks = &mut storage.lock().await.talks;
-
-                if !talks.contains_key(&talk_id)
-                    || (!current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id)
-                {
-                    return Ok(());
-                }
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                talk.title = title.clone();
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::UpdateTitle { talk_id, title });
+                update_title(state, talk_id, user, title).await?;
             }
             Command::UpdateDescription {
                 talk_id,
                 description,
             } => {
-                let talks = &mut storage.lock().await.talks;
-
-                if !talks.contains_key(&talk_id)
-                    || (!current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id)
-                {
-                    return Ok(());
-                }
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                talk.description = description.clone();
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::UpdateDescription {
-                    talk_id,
-                    description,
-                });
+                update_description(state, talk_id, user, description).await?;
             }
             Command::UpdateScheduledAt {
                 talk_id,
                 scheduled_at,
             } => {
-                let talks = &mut storage.lock().await.talks;
-
-                if !talks.contains_key(&talk_id) || !current_user.roles.contains(&Role::Scheduler) {
-                    return Ok(());
-                }
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                talk.scheduled_at = scheduled_at;
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::UpdateScheduledAt {
-                    talk_id,
-                    scheduled_at,
-                });
+                update_scheduled_at(state, talk_id, user, scheduled_at).await?;
             }
             Command::UpdateDuration { talk_id, duration } => {
-                let talks = &mut storage.lock().await.talks;
-
-                if !talks.contains_key(&talk_id)
-                    || (!current_user.roles.contains(&Role::Editor)
-                        && talks[&talk_id].creator != current_user.id)
-                {
-                    return Ok(());
-                }
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                talk.duration = duration;
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::UpdateDuration { talk_id, duration });
+                update_duration(state, talk_id, user, duration).await?;
             }
             Command::UpdateLocation { talk_id, location } => {
-                let talks = &mut storage.lock().await.talks;
-
-                if !talks.contains_key(&talk_id)
-                    || (!current_user.roles.contains(&Role::Scheduler)
-                        && talks[&talk_id].creator != current_user.id)
-                {
-                    return Ok(());
-                }
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                talk.location = location.clone();
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::UpdateLocation { talk_id, location });
+                update_location(state, talk_id, user, location).await?;
             }
             Command::AddNoob { talk_id, user_id } => {
-                let talks = &mut storage.lock().await.talks;
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                if !talk.noobs.contains(&user_id) {
-                    talk.noobs.push(user_id);
-                }
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::AddNoob { talk_id, user_id });
+                add_noob(state, talk_id, user_id).await?;
             }
             Command::RemoveNoob { talk_id, user_id } => {
-                let talks = &mut storage.lock().await.talks;
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                if let Some(index) = talk.noobs.iter().position(|&noob_id| noob_id == user_id) {
-                    talk.noobs.remove(index);
-                }
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::RemoveNoob { talk_id, user_id });
+                remove_noob(state, talk_id, user_id).await?;
             }
             Command::AddNerd { talk_id, user_id } => {
-                let talks = &mut storage.lock().await.talks;
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                if !talk.nerds.contains(&user_id) {
-                    talk.nerds.push(user_id);
-                }
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::AddNerd { talk_id, user_id });
+                add_nerd(state, talk_id, user_id).await?;
             }
             Command::RemoveNerd { talk_id, user_id } => {
-                let talks = &mut storage.lock().await.talks;
-
-                let talk = match talks.get_mut(&talk_id) {
-                    Some(talk) => talk,
-                    None => return Ok(()),
-                };
-
-                if let Some(index) = talk.nerds.iter().position(|&nerd_id| nerd_id == user_id) {
-                    talk.nerds.remove(index);
-                }
-
-                talks
-                    .values()
-                    .collect::<Vec<_>>()
-                    .write_to_file("talks.json")
-                    .await
-                    .wrap_err("failed to write talks.json")?;
-
-                let _ = updates_sender.send(Update::RemoveNerd { talk_id, user_id });
+                remove_nerd(state, talk_id, user_id).await?;
             }
         }
     }
 
+    Ok(())
+}
+
+async fn add_talk(
+    state: &AppState,
+    user: &User,
+    title: String,
+    description: String,
+    duration: Duration,
+) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let max_talk_id = talks.keys().copied().max().unwrap_or_default();
+    let next_talk_id = max_talk_id + 1;
+    let talk = Talk {
+        id: next_talk_id,
+        creator: user.id,
+        title,
+        description,
+        scheduled_at: None,
+        duration,
+        location: None,
+        nerds: BTreeSet::from([user.id]),
+        noobs: Default::default(),
+    };
+    talks.insert(next_talk_id, talk.clone());
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state.updates_sender.send(Update::AddTalk { talk });
+    Ok(())
+}
+
+fn get_talk(talks: &mut BTreeMap<usize, Talk>, talk_id: usize) -> Result<&mut Talk> {
+    talks
+        .get_mut(&talk_id)
+        .wrap_err_with(|| format!("talk {talk_id} does not exist"))
+}
+
+async fn remove_talk(state: &AppState, talk_id: usize, user: &User) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    if !(user.is_editor() || user.is_scheduler()) {
+        bail!("user cannot edit talk with id {talk_id}");
+    }
+    let id = talk.id;
+    talks.remove(&id);
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state.updates_sender.send(Update::RemoveTalk { talk_id });
+    Ok(())
+}
+
+async fn update_title(state: &AppState, talk_id: usize, user: &User, title: String) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    if !(user.is_editor() || user.is_creator(talk)) {
+        bail!("user cannot edit talk with id {talk_id}");
+    }
+    talk.title = title.clone();
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::UpdateTitle { talk_id, title });
+    Ok(())
+}
+
+async fn update_description(
+    state: &AppState,
+    talk_id: usize,
+    user: &User,
+    description: String,
+) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    if !(user.is_editor() || user.is_creator(talk)) {
+        bail!("user cannot edit talk with id {talk_id}");
+    }
+    talk.description = description.clone();
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state.updates_sender.send(Update::UpdateDescription {
+        talk_id,
+        description,
+    });
+    Ok(())
+}
+
+async fn update_scheduled_at(
+    state: &AppState,
+    talk_id: usize,
+    user: &User,
+    scheduled_at: Option<SystemTime>,
+) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    if !user.is_scheduler() {
+        bail!("user cannot schedule talks");
+    }
+    talk.scheduled_at = scheduled_at;
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state.updates_sender.send(Update::UpdateScheduledAt {
+        talk_id,
+        scheduled_at,
+    });
+    Ok(())
+}
+
+async fn update_duration(
+    state: &AppState,
+    talk_id: usize,
+    user: &User,
+    duration: Duration,
+) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    if !(user.is_scheduler() || user.is_creator(talk)) {
+        bail!("user cannot change duration of talk with id {talk_id}");
+    }
+    talk.duration = duration;
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::UpdateDuration { talk_id, duration });
+    Ok(())
+}
+
+async fn update_location(
+    state: &AppState,
+    talk_id: usize,
+    user: &User,
+    location: Option<String>,
+) -> Result<()> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    if !(user.is_scheduler() || user.is_creator(talk)) {
+        bail!("user cannot schedule talks");
+    }
+    talk.location = location.clone();
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::UpdateLocation { talk_id, location });
+    Ok(())
+}
+
+async fn add_noob(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    talk.noobs.insert(user_id);
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::AddNoob { talk_id, user_id });
+    Ok(())
+}
+
+async fn remove_noob(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    talk.noobs.remove(&user_id);
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::RemoveNoob { talk_id, user_id });
+    Ok(())
+}
+
+async fn add_nerd(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    talk.nerds.insert(user_id);
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::AddNerd { talk_id, user_id });
+    Ok(())
+}
+
+async fn remove_nerd(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
+    let talks = &mut state.storage.lock().await.talks;
+    let talk = get_talk(talks, talk_id)?;
+    talk.nerds.remove(&user_id);
+    talks.commit().await.wrap_err("failed to commit talks")?;
+    let _ = state
+        .updates_sender
+        .send(Update::RemoveNerd { talk_id, user_id });
     Ok(())
 }

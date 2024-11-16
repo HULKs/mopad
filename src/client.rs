@@ -64,7 +64,7 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
     let update_users = Update::Users {
         users: state
             .storage
-            .lock()
+            .read()
             .await
             .users
             .values()
@@ -76,7 +76,7 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
         .await;
 
     {
-        let talks = &state.storage.lock().await.talks;
+        let talks = &state.storage.read().await.talks;
         for talk in talks.values() {
             let update = Update::AddTalk { talk: talk.clone() };
             let _ = socket
@@ -188,7 +188,7 @@ async fn add_talk(
     description: String,
     duration: Duration,
 ) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let max_talk_id = talks.keys().copied().max().unwrap_or_default();
     let next_talk_id = max_talk_id + 1;
     let talk = Talk {
@@ -215,7 +215,7 @@ fn get_talk(talks: &mut BTreeMap<usize, Talk>, talk_id: usize) -> Result<&mut Ta
 }
 
 async fn remove_talk(state: &AppState, talk_id: usize, user: &User) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_editor() || user.is_scheduler()) {
         bail!("user cannot edit talk with id {talk_id}");
@@ -228,7 +228,7 @@ async fn remove_talk(state: &AppState, talk_id: usize, user: &User) -> Result<()
 }
 
 async fn update_title(state: &AppState, talk_id: usize, user: &User, title: String) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_editor() || user.is_creator(talk)) {
         bail!("user cannot edit talk with id {talk_id}");
@@ -247,7 +247,7 @@ async fn update_description(
     user: &User,
     description: String,
 ) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_editor() || user.is_creator(talk)) {
         bail!("user cannot edit talk with id {talk_id}");
@@ -267,7 +267,7 @@ async fn update_scheduled_at(
     user: &User,
     scheduled_at: Option<SystemTime>,
 ) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     if !user.is_scheduler() {
         bail!("user cannot schedule talks");
@@ -287,7 +287,7 @@ async fn update_duration(
     user: &User,
     duration: Duration,
 ) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_scheduler() || user.is_creator(talk)) {
         bail!("user cannot change duration of talk with id {talk_id}");
@@ -306,7 +306,7 @@ async fn update_location(
     user: &User,
     location: Option<String>,
 ) -> Result<()> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_scheduler() || user.is_creator(talk)) {
         bail!("user cannot schedule talks");
@@ -320,7 +320,7 @@ async fn update_location(
 }
 
 async fn add_noob(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     talk.noobs.insert(user_id);
     talks.commit().await.wrap_err("failed to commit talks")?;
@@ -331,7 +331,7 @@ async fn add_noob(state: &AppState, talk_id: usize, user_id: usize) -> Result<()
 }
 
 async fn remove_noob(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     talk.noobs.remove(&user_id);
     talks.commit().await.wrap_err("failed to commit talks")?;
@@ -342,7 +342,7 @@ async fn remove_noob(state: &AppState, talk_id: usize, user_id: usize) -> Result
 }
 
 async fn add_nerd(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     talk.nerds.insert(user_id);
     talks.commit().await.wrap_err("failed to commit talks")?;
@@ -353,7 +353,7 @@ async fn add_nerd(state: &AppState, talk_id: usize, user_id: usize) -> Result<()
 }
 
 async fn remove_nerd(state: &AppState, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-    let talks = &mut state.storage.lock().await.talks;
+    let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
     talk.nerds.remove(&user_id);
     talks.commit().await.wrap_err("failed to commit talks")?;

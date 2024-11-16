@@ -22,7 +22,7 @@ pub async fn handle_icalendar(
     let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:MOPAD\r\nX-WR-CALNAME:MOPAD\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
     let format = parse("[year][month][day]T[hour][minute][second]Z").unwrap();
     let now = OffsetDateTime::now_utc();
-    let storage = state.storage.lock().await;
+    let storage = state.storage.read().await;
     for talk in storage.talks.values() {
         match parameters.user_id {
             Some(user_id) if !talk.noobs.contains(&user_id) && !talk.nerds.contains(&user_id) => {

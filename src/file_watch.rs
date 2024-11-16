@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::{
     signal::unix::{signal, SignalKind},
-    sync::{broadcast, Mutex},
+    sync::{broadcast, RwLock},
 };
 use tracing::{error, info};
 
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub async fn refresh_files_from_disk_on_signal(
-    storage: Arc<Mutex<Storage>>,
+    storage: Arc<RwLock<Storage>>,
     updates_sender: broadcast::Sender<Update>,
 ) {
     let mut received_signals =
@@ -22,7 +22,7 @@ pub async fn refresh_files_from_disk_on_signal(
         received_signals.recv().await;
         info!("Received SIGUSR1, refreshing storage...");
 
-        let mut storage = storage.lock().await;
+        let mut storage = storage.write().await;
 
         let refreshed_storage = match Storage::load(storage.path.clone()).await {
             Ok(storage) => storage,

@@ -52,7 +52,7 @@ async fn register(
     team: String,
     password: String,
 ) -> eyre::Result<(User, String)> {
-    let storage = &mut state.storage.lock().await;
+    let storage = &mut state.storage.write().await;
 
     if !storage.teams.contains(&team) {
         bail!("unknown team {team}");
@@ -108,7 +108,7 @@ async fn login(
     team: String,
     password: String,
 ) -> eyre::Result<(User, String)> {
-    let storage = &mut state.storage.lock().await;
+    let storage = &mut state.storage.write().await;
     let Some(user) = storage
         .users
         .values()
@@ -139,7 +139,7 @@ async fn login(
 }
 
 async fn relogin(state: &AppState, token: String) -> eyre::Result<(User, String)> {
-    let storage = &mut state.storage.lock().await;
+    let storage = &mut state.storage.write().await;
 
     let now = SystemTime::now();
     storage.tokens.remove_expired(now);

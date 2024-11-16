@@ -87,6 +87,7 @@ pub enum Command {
     },
 }
 
+#[allow(clippy::enum_variant_names)]
 /// Update messages are sent from the server to the client to inform the client of changes to the
 /// state of the server.
 #[derive(Clone, Debug, Serialize)]

@@ -14,7 +14,7 @@ use messages::Update;
 use storage::Storage;
 use tokio::{
     spawn,
-    sync::{broadcast, Mutex},
+    sync::{broadcast, RwLock},
 };
 use tower_http::services::ServeDir;
 use tracing::info;
@@ -53,7 +53,7 @@ struct Arguments {
 
 #[derive(Debug, Clone)]
 struct AppState {
-    storage: Arc<Mutex<Storage>>,
+    storage: Arc<RwLock<Storage>>,
     updates_sender: broadcast::Sender<Update>,
 }
 
@@ -67,7 +67,7 @@ async fn main() -> eyre::Result<()> {
         .wrap_err("failed to load storage")?;
     let (updates_sender, _updates_receiver) = broadcast::channel(INTERNAL_CHANNEL_CAPACITY);
     let state = AppState {
-        storage: Arc::new(Mutex::new(storage)),
+        storage: Arc::new(RwLock::new(storage)),
         updates_sender,
     };
 
@@ -82,7 +82,7 @@ async fn main() -> eyre::Result<()> {
         .route(
             TEAM_ENDPOINT,
             get(move |State(state): State<AppState>| async move {
-                Json(state.storage.lock().await.teams.clone())
+                Json(state.storage.read().await.teams.clone())
             }),
         )
         .route(ICAL_ENDPOINT, get(handle_icalendar))

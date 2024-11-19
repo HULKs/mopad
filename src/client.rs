@@ -217,7 +217,7 @@ fn get_talk(talks: &mut BTreeMap<usize, Talk>, talk_id: usize) -> Result<&mut Ta
 async fn remove_talk(state: &AppState, talk_id: usize, user: &User) -> Result<()> {
     let talks = &mut state.storage.write().await.talks;
     let talk = get_talk(talks, talk_id)?;
-    if !(user.is_editor() || user.is_scheduler()) {
+    if !(user.is_editor() || user.is_scheduler() || user.is_creator(talk)) {
         bail!("user cannot edit talk with id {talk_id}");
     }
     let id = talk.id;

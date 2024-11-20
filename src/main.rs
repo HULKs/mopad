@@ -13,7 +13,7 @@ use ical::handle_icalendar;
 use messages::Update;
 use storage::Storage;
 use tokio::{
-    spawn,
+    signal, spawn,
     sync::{broadcast, RwLock},
 };
 use tower_http::services::ServeDir;
@@ -96,6 +96,27 @@ async fn main() -> eyre::Result<()> {
     info!("Listening on http://{address}");
     Server::bind(&bind_address)
         .serve(application.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
         .await
         .wrap_err("failed to serve application")
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }

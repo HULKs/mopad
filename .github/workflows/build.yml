@@ -43,7 +43,7 @@ jobs:
   #         echo "${{ toJSON(steps.push-to-registry.outputs) }}"
   #
   deploy:
-    needs: publish
+    # needs: publish
     name: Deploy
     runs-on: self-hosted
     container:

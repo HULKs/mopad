@@ -46,7 +46,8 @@ jobs:
     needs: publish
     name: Deploy
     runs-on: self-hosted
-    image: docker.io/debian:bookworm
+    container:
+      image: docker.io/debian:bookworm
 
     steps:
       - name: setup ssh

@@ -43,24 +43,23 @@ jobs:
           echo "${{ toJSON(steps.push-to-registry.outputs) }}"
 
   deploy:
-    deploy:
-      needs: publish
-      name: Deploy
-      runs-on: self-hosted
-      image: docker.io/debian:bookworm
+    needs: publish
+    name: Deploy
+    runs-on: self-hosted
+    image: docker.io/debian:bookworm
 
-      steps:
-        - name: setup ssh
-          run : |
-            set -e
-            apt update
-            apt install --yes ssh
-        - name: install ssh keys
-          run: |
-            install -m 600 -D /dev/null ~/.ssh/id_ed25519
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-            ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-        - name: connect and pull
-          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
-        - name: cleanup
-          run: rm -rf ~/.ssh
+    steps:
+      - name: setup ssh
+        run : |
+          set -e
+          apt update
+          apt install --yes ssh
+      - name: install ssh keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+      - name: connect and pull
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
+      - name: cleanup
+        run: rm -rf ~/.ssh

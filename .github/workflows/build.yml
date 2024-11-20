@@ -1,23 +1,25 @@
-name: Build and Push Image
-on: push
-
-env:
-  IMAGE_NAME: mopad
-  IMAGE_TAGS: latest ${{ github.sha }} ${{ github.ref_name }}
-  IMAGE_REGISTRY: docker://ghcr.io/hulks/
-  REGISTRY_USER: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ github.token }}
+name: Build, Publish, and Deploy
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  build:
-    name: Build and push image
+  publish:
+    name: Build and Publish
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: mopad
+      IMAGE_TAGS: latest ${{ github.sha }} ${{ github.ref_name }}
+      IMAGE_REGISTRY: docker://ghcr.io/hulks/
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_PASSWORD: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
 
-      - name: Build Image
+      - name: build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
@@ -26,7 +28,7 @@ jobs:
           containerfiles: |
             ./Containerfile
 
-      - name: Push to ghcr.io
+      - name: push to ghcr.io
         id: push-to-registry
         uses: redhat-actions/push-to-registry@v2
         with:
@@ -36,6 +38,29 @@ jobs:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
 
-      - name: Echo outputs
+      - name: echo outputs
         run: |
           echo "${{ toJSON(steps.push-to-registry.outputs) }}"
+
+  deploy:
+    deploy:
+      needs: publish
+      name: Deploy
+      runs-on: self-hosted
+      image: docker.io/debian:bookworm
+
+      steps:
+        - name: setup ssh
+          run : |
+            set -e
+            apt update
+            apt install --yes ssh
+        - name: install ssh keys
+          run: |
+            install -m 600 -D /dev/null ~/.ssh/id_ed25519
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+            ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+        - name: connect and pull
+          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
+        - name: cleanup
+          run: rm -rf ~/.ssh

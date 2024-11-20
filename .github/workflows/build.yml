@@ -56,27 +56,9 @@ jobs:
           apt update
           apt install --yes ssh
       - name: install ssh keys
-        # run: |
-        #   install -m 600 -D /dev/null ~/.ssh/id_ed25519
-        #   echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        #   ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-        #         - name: Configure SSH
         run: |
-          mkdir -p ~/.ssh/
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging.key
-          chmod 600 ~/.ssh/staging.key
-          cat > ~/.ssh/config <<END
-          Host staging
-            HostName $SSH_HOST
-            User $SSH_USER
-            IdentityFile ~/.ssh/staging.key
-            StrictHostKeyChecking no
-          END
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+          install -m 600 -D /dev/null /root/.ssh/id_ed25519
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /root/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > /root/.ssh/known_hosts
       - name: connect and pull
-        run: ssh -v staging "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
-      - name: cleanup
-        run: rm -rf ~/.ssh
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"

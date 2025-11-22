@@ -85,18 +85,72 @@ impl Storage {
                 .await
                 .wrap_err("failed to create storage directory")?;
         }
-        let teams = MirroredToDisk::read_from_or_create_default(path.join("teams.json"))
-            .await
-            .wrap_err("failed to read teams.json")?;
-        let users = MirroredToDisk::read_from_or_create_default(path.join("users.json"))
-            .await
-            .wrap_err("failed to read users")?;
-        let talks = MirroredToDisk::read_from_or_create_default(path.join("talks.json"))
-            .await
-            .wrap_err("failed to read talks")?;
-        let tokens = MirroredToDisk::read_from_or_create_default(path.join("tokens.json"))
-            .await
-            .wrap_err("failed to read talks")?;
+        let mut teams = MirroredToDisk::<BTreeSet<String>>::read_from_or_create_default(
+            path.join("teams.json"),
+        )
+        .await
+        .wrap_err("failed to read teams.json")?;
+
+        let mut users = MirroredToDisk::<BTreeMap<usize, User>>::read_from_or_create_default(
+            path.join("users.json"),
+        )
+        .await
+        .wrap_err("failed to read users")?;
+
+        for (user_id, user) in users.iter_mut() {
+            if *user_id != user.id {
+                tracing::warn!(
+                    "Inconsistent user id for user {}: key is {}, but user.id is {}. Syncing user.id to {}.",
+                    user.name,
+                    user_id,
+                    user.id,
+                    user_id,
+                );
+                user.id = *user_id;
+            }
+            if !teams.value.contains(&user.team) {
+                tracing::warn!(
+                    "User {} has unknown team {}. Assigning to 'Unknown' team.",
+                    user.name,
+                    user.team
+                );
+                user.team = "Unknown".to_string();
+                teams.value.insert("Unknown".to_string());
+            }
+        }
+
+        let mut talks = MirroredToDisk::<BTreeMap<usize, Talk>>::read_from_or_create_default(
+            path.join("talks.json"),
+        )
+        .await?;
+        let tokens = MirroredToDisk::read_from_or_create_default(path.join("tokens.json")).await?;
+
+        let user_ids: BTreeSet<usize> = users.keys().copied().collect();
+
+        talks.value.retain(|talk_id, talk| {
+            if !user_ids.contains(&talk.creator) {
+                tracing::warn!(
+                    "Dropping orphan talk {talk_id} (creator {} missing)",
+                    talk.creator
+                );
+                return false;
+            }
+
+            let original_nerds = talk.nerds.len();
+            talk.nerds.retain(|id| user_ids.contains(id));
+            if talk.nerds.len() != original_nerds {
+                tracing::info!("Cleaned invalid nerds from talk {talk_id}");
+            }
+
+            let original_noobs = talk.noobs.len();
+            talk.noobs.retain(|id| user_ids.contains(id));
+            if talk.noobs.len() != original_noobs {
+                tracing::info!("Cleaned invalid noobs from talk {talk_id}");
+            }
+
+            true
+        });
+
         Ok(Self {
             path: path.to_path_buf(),
             teams,

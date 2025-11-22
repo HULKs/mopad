@@ -1,5 +1,6 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
+    ops::DerefMut,
     time::{Duration, SystemTime},
 };
 
@@ -17,7 +18,7 @@ use tracing::error;
 use crate::{
     authentication::authenticate,
     messages::{AuthenticationResponse, Command, Update},
-    storage::{Talk, User},
+    storage::{Storage, Talk, UserId},
     AppState,
 };
 
@@ -38,19 +39,19 @@ async fn handle_upgraded_websocket(socket: WebSocket, state: AppState) {
 async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
     let mut updates_receiver = state.updates_sender.subscribe();
 
-    let user = match authenticate(&mut socket, &state).await {
-        Ok((user, token)) => {
+    let user_id = match authenticate(&mut socket, &state).await {
+        Ok(authentication) => {
             let response = AuthenticationResponse::AuthenticationSuccess {
-                user_id: user.id,
-                roles: user.roles.clone(),
-                token,
+                user_id: authentication.user_id,
+                roles: authentication.roles.clone(),
+                token: authentication.token,
             };
             let _ = socket
                 .send(Message::Text(
                     serde_json::to_string(&response).unwrap().into(),
                 ))
                 .await;
-            user
+            authentication.user_id
         }
         Err(error) => {
             let response = AuthenticationResponse::AuthenticationError {
@@ -101,7 +102,7 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
                 if command_message.is_none() {
                     break;
                 }
-                handle_message(command_message.unwrap(), &user, &state)
+                handle_message(command_message.unwrap(), user_id, &state)
                     .await
                     .wrap_err("failed to handle command message")?;
             }
@@ -130,7 +131,7 @@ async fn handle_update(update: Update, stream: &mut WebSocket) -> Result<()> {
 
 async fn handle_message(
     command_message: Result<Message, axum::Error>,
-    user: &User,
+    user_id: UserId,
     state: &AppState,
 ) -> Result<()> {
     let command_message = command_message.wrap_err("failed to receive command")?;
@@ -145,31 +146,31 @@ async fn handle_message(
                 description,
                 duration,
             } => {
-                add_talk(state, user, title, description, duration).await?;
+                add_talk(state, user_id, title, description, duration).await?;
             }
             Command::RemoveTalk { talk_id } => {
-                remove_talk(state, talk_id, user).await?;
+                remove_talk(state, talk_id, user_id).await?;
             }
             Command::UpdateTitle { talk_id, title } => {
-                update_title(state, talk_id, user, title).await?;
+                update_title(state, talk_id, user_id, title).await?;
             }
             Command::UpdateDescription {
                 talk_id,
                 description,
             } => {
-                update_description(state, talk_id, user, description).await?;
+                update_description(state, talk_id, user_id, description).await?;
             }
             Command::UpdateScheduledAt {
                 talk_id,
                 scheduled_at,
             } => {
-                update_scheduled_at(state, talk_id, user, scheduled_at).await?;
+                update_scheduled_at(state, talk_id, user_id, scheduled_at).await?;
             }
             Command::UpdateDuration { talk_id, duration } => {
-                update_duration(state, talk_id, user, duration).await?;
+                update_duration(state, talk_id, user_id, duration).await?;
             }
             Command::UpdateLocation { talk_id, location } => {
-                update_location(state, talk_id, user, location).await?;
+                update_location(state, talk_id, user_id, location).await?;
             }
             Command::AddNoob { talk_id, user_id } => {
                 add_noob(state, talk_id, user_id).await?;
@@ -191,7 +192,7 @@ async fn handle_message(
 
 async fn add_talk(
     state: &AppState,
-    user: &User,
+    user_id: UserId,
     title: String,
     description: String,
     duration: Duration,
@@ -201,13 +202,13 @@ async fn add_talk(
     let next_talk_id = max_talk_id + 1;
     let talk = Talk {
         id: next_talk_id,
-        creator: user.id,
+        creator: user_id,
         title,
         description,
         scheduled_at: None,
         duration,
         location: None,
-        nerds: BTreeSet::from([user.id]),
+        nerds: BTreeSet::from([user_id]),
         noobs: Default::default(),
     };
     talks.insert(next_talk_id, talk.clone());
@@ -222,8 +223,12 @@ fn get_talk(talks: &mut BTreeMap<usize, Talk>, talk_id: usize) -> Result<&mut Ta
         .wrap_err_with(|| format!("talk {talk_id} does not exist"))
 }
 
-async fn remove_talk(state: &AppState, talk_id: usize, user: &User) -> Result<()> {
-    let talks = &mut state.storage.write().await.talks;
+async fn remove_talk(state: &AppState, talk_id: usize, user_id: UserId) -> Result<()> {
+    let mut storage = state.storage.write().await;
+    let Storage { users, talks, .. } = storage.deref_mut();
+    let user = users
+        .get(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_editor() || user.is_scheduler() || user.is_creator(talk)) {
         bail!("user cannot edit talk with id {talk_id}");
@@ -235,8 +240,17 @@ async fn remove_talk(state: &AppState, talk_id: usize, user: &User) -> Result<()
     Ok(())
 }
 
-async fn update_title(state: &AppState, talk_id: usize, user: &User, title: String) -> Result<()> {
-    let talks = &mut state.storage.write().await.talks;
+async fn update_title(
+    state: &AppState,
+    talk_id: usize,
+    user_id: UserId,
+    title: String,
+) -> Result<()> {
+    let mut storage = state.storage.write().await;
+    let Storage { users, talks, .. } = storage.deref_mut();
+    let user = users
+        .get(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_editor() || user.is_creator(talk)) {
         bail!("user cannot edit talk with id {talk_id}");
@@ -252,10 +266,14 @@ async fn update_title(state: &AppState, talk_id: usize, user: &User, title: Stri
 async fn update_description(
     state: &AppState,
     talk_id: usize,
-    user: &User,
+    user_id: UserId,
     description: String,
 ) -> Result<()> {
-    let talks = &mut state.storage.write().await.talks;
+    let mut storage = state.storage.write().await;
+    let Storage { users, talks, .. } = storage.deref_mut();
+    let user = users
+        .get(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_editor() || user.is_creator(talk)) {
         bail!("user cannot edit talk with id {talk_id}");
@@ -272,10 +290,14 @@ async fn update_description(
 async fn update_scheduled_at(
     state: &AppState,
     talk_id: usize,
-    user: &User,
+    user_id: UserId,
     scheduled_at: Option<SystemTime>,
 ) -> Result<()> {
-    let talks = &mut state.storage.write().await.talks;
+    let mut storage = state.storage.write().await;
+    let Storage { users, talks, .. } = storage.deref_mut();
+    let user = users
+        .get(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
     let talk = get_talk(talks, talk_id)?;
     if !user.is_scheduler() {
         bail!("user cannot schedule talks");
@@ -292,10 +314,14 @@ async fn update_scheduled_at(
 async fn update_duration(
     state: &AppState,
     talk_id: usize,
-    user: &User,
+    user_id: UserId,
     duration: Duration,
 ) -> Result<()> {
-    let talks = &mut state.storage.write().await.talks;
+    let mut storage = state.storage.write().await;
+    let Storage { users, talks, .. } = storage.deref_mut();
+    let user = users
+        .get(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_scheduler() || user.is_creator(talk)) {
         bail!("user cannot change duration of talk with id {talk_id}");
@@ -311,10 +337,14 @@ async fn update_duration(
 async fn update_location(
     state: &AppState,
     talk_id: usize,
-    user: &User,
+    user_id: UserId,
     location: Option<String>,
 ) -> Result<()> {
-    let talks = &mut state.storage.write().await.talks;
+    let mut storage = state.storage.write().await;
+    let Storage { users, talks, .. } = storage.deref_mut();
+    let user = users
+        .get(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
     let talk = get_talk(talks, talk_id)?;
     if !(user.is_scheduler() || user.is_creator(talk)) {
         bail!("user cannot schedule talks");

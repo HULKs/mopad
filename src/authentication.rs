@@ -1,4 +1,8 @@
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::BTreeSet,
+    ops::DerefMut,
+    time::{Duration, SystemTime},
+};
 
 use argon2::password_hash::SaltString;
 use axum::extract::ws::{Message, WebSocket};
@@ -7,14 +11,20 @@ use rand_core::OsRng;
 
 use crate::{
     messages::{AuthenticationCommand, Update},
-    storage::{AttendanceMode, User},
+    storage::{AttendanceMode, Role, Storage, UserId},
     AppState,
 };
+
+pub struct Authentication {
+    pub user_id: UserId,
+    pub roles: BTreeSet<Role>,
+    pub token: String,
+}
 
 pub async fn authenticate(
     socket: &mut WebSocket,
     state: &AppState,
-) -> eyre::Result<(User, String)> {
+) -> eyre::Result<Authentication> {
     let authentication_command = receive_command(socket).await?;
 
     match authentication_command {
@@ -59,7 +69,7 @@ async fn register(
     team: String,
     attendance_mode: AttendanceMode,
     password: String,
-) -> eyre::Result<(User, String)> {
+) -> eyre::Result<Authentication> {
     let storage = &mut state.storage.write().await;
 
     if !storage.teams.contains(&team) {
@@ -74,11 +84,7 @@ async fn register(
         bail!("user {name} from team {team} already exists");
     }
 
-    let max_user_id = storage.users.keys().copied().max().unwrap_or_default();
-    let next_user_id = max_user_id + 1;
-
-    let new_user = User::new(next_user_id, name, team, attendance_mode, password);
-    storage.users.insert(next_user_id, new_user.clone());
+    let new_user_id = storage.add_user(name, team, attendance_mode, password);
     storage
         .users
         .commit()
@@ -101,13 +107,17 @@ async fn register(
     storage.tokens.remove_expired(now);
     storage
         .tokens
-        .insert(token.clone(), new_user.id, now + seven_days);
+        .insert(token.clone(), new_user_id, now + seven_days);
     storage
         .tokens
         .commit()
         .await
         .wrap_err("failed to commit tokens")?;
-    Ok((new_user, token))
+    Ok(Authentication {
+        user_id: new_user_id,
+        roles: BTreeSet::new(),
+        token,
+    })
 }
 
 async fn login(
@@ -115,13 +125,13 @@ async fn login(
     name: String,
     team: String,
     password: String,
-) -> eyre::Result<(User, String)> {
+) -> eyre::Result<Authentication> {
     let storage = &mut state.storage.write().await;
-    let Some(user) = storage
-        .users
+    let Storage { users, tokens, .. } = storage.deref_mut();
+
+    let Some(user) = users
         .values()
         .find(|user| user.name == name && user.team == team)
-        .cloned()
     else {
         bail!("unknown user {name} from team {team}");
     };
@@ -133,20 +143,18 @@ async fn login(
     let token = SaltString::generate(&mut OsRng).to_string();
     let now = SystemTime::now();
     let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
-    storage.tokens.remove_expired(now);
-    storage
-        .tokens
-        .insert(token.clone(), user.id, now + seven_days);
-    storage
-        .tokens
-        .commit()
-        .await
-        .wrap_err("failed to commit tokens")?;
+    tokens.remove_expired(now);
+    tokens.insert(token.clone(), user.id, now + seven_days);
+    tokens.commit().await.wrap_err("failed to commit tokens")?;
 
-    Ok((user, token))
+    Ok(Authentication {
+        user_id: user.id,
+        roles: user.roles.clone(),
+        token,
+    })
 }
 
-async fn relogin(state: &AppState, token: String) -> eyre::Result<(User, String)> {
+async fn relogin(state: &AppState, token: String) -> eyre::Result<Authentication> {
     let storage = &mut state.storage.write().await;
 
     let now = SystemTime::now();
@@ -163,5 +171,9 @@ async fn relogin(state: &AppState, token: String) -> eyre::Result<(User, String)
         .get(&data.user_id)
         .wrap_err("unknown user id from token")?;
 
-    Ok((user.clone(), token))
+    Ok(Authentication {
+        user_id: user.id,
+        roles: user.roles.clone(),
+        token,
+    })
 }

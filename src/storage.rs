@@ -113,12 +113,30 @@ where
 pub struct Storage {
     pub path: PathBuf,
     pub teams: MirroredToDisk<BTreeSet<String>>,
-    pub users: MirroredToDisk<BTreeMap<usize, User>>,
+    pub users: MirroredToDisk<BTreeMap<UserId, User>>,
     pub talks: MirroredToDisk<BTreeMap<usize, Talk>>,
     pub tokens: MirroredToDisk<TokenStore>,
 }
 
 impl Storage {
+    pub fn add_user(
+        &mut self,
+        name: String,
+        team: String,
+        attendance_mode: AttendanceMode,
+        password: String,
+    ) -> UserId {
+        let new_id = self
+            .users
+            .keys()
+            .max()
+            .map(|id| id + 1)
+            .unwrap_or_else(|| 0);
+        let user = User::new(new_id, name, team, attendance_mode, password);
+        self.users.insert(new_id, user);
+        new_id
+    }
+
     pub async fn load(path: impl Into<PathBuf> + Debug) -> eyre::Result<Self> {
         let path = path.into();
         let exists = try_exists(&path)
@@ -156,6 +174,8 @@ pub enum AttendanceMode {
     OnSite,
     Remote,
 }
+
+pub type UserId = usize;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct User {
@@ -219,7 +239,7 @@ pub enum Role {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Talk {
     pub id: usize,
-    pub creator: usize,
+    pub creator: UserId,
     pub title: String,
     pub description: String,
     pub scheduled_at: Option<SystemTime>,

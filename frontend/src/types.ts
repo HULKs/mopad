@@ -39,18 +39,73 @@ export interface Talk {
 }
 
 // WebSocket Messages
+export interface AddTalkPayload {
+  title: string;
+  description: string;
+  duration: Duration;
+}
+
+export interface RemoveTalkPayload {
+  talk_id: number;
+}
+
+export interface UpdateTitlePayload {
+  talk_id: number;
+  title: string;
+}
+
+export interface UpdateDescriptionPayload {
+  talk_id: number;
+  description: string;
+}
+
+export interface UpdateScheduledAtPayload {
+  talk_id: number;
+  scheduled_at: SystemTime | null;
+}
+
+export interface UpdateDurationPayload {
+  talk_id: number;
+  duration: Duration;
+}
+
+export interface UpdateLocationPayload {
+  talk_id: number;
+  location: string | null;
+}
+
+export interface TalkUserPayload {
+  talk_id: number;
+}
+
+export type AddTalkCommand = { AddTalk: AddTalkPayload };
+export type RemoveTalkCommand = { RemoveTalk: RemoveTalkPayload };
+export type UpdateTitleCommand = { UpdateTitle: UpdateTitlePayload };
+export type UpdateDescriptionCommand = {
+  UpdateDescription: UpdateDescriptionPayload;
+};
+export type UpdateScheduledAtCommand = {
+  UpdateScheduledAt: UpdateScheduledAtPayload;
+};
+export type UpdateDurationCommand = { UpdateDuration: UpdateDurationPayload };
+export type UpdateLocationCommand = { UpdateLocation: UpdateLocationPayload };
+export type AddNoobCommand = { AddNoob: TalkUserPayload };
+export type RemoveNoobCommand = { RemoveNoob: TalkUserPayload };
+export type AddNerdCommand = { AddNerd: TalkUserPayload };
+export type RemoveNerdCommand = { RemoveNerd: TalkUserPayload };
+
 export type Command =
-  | { AddTalk: { title: string; description: string; duration: Duration } }
-  | { RemoveTalk: { talk_id: number } }
-  | { UpdateTitle: { talk_id: number; title: string } }
-  | { UpdateDescription: { talk_id: number; description: string } }
-  | { UpdateScheduledAt: { talk_id: number; scheduled_at: SystemTime | null } }
-  | { UpdateDuration: { talk_id: number; duration: Duration } }
-  | { UpdateLocation: { talk_id: number; location: string | null } }
-  | { AddNoob: { talk_id: number; user_id: number } }
-  | { RemoveNoob: { talk_id: number; user_id: number } }
-  | { AddNerd: { talk_id: number; user_id: number } }
-  | { RemoveNerd: { talk_id: number; user_id: number } };
+  | AddTalkCommand
+  | RemoveTalkCommand
+  | UpdateTitleCommand
+  | UpdateDescriptionCommand
+  | UpdateScheduledAtCommand
+  | UpdateDurationCommand
+  | UpdateLocationCommand
+  | AddNoobCommand
+  | RemoveNoobCommand
+  | AddNerdCommand
+  | RemoveNerdCommand;
 
 export type AuthCommand =
   | {

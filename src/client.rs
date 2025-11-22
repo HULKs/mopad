@@ -172,16 +172,16 @@ async fn handle_message(
             Command::UpdateLocation { talk_id, location } => {
                 update_location(state, talk_id, user_id, location).await?;
             }
-            Command::AddNoob { talk_id, user_id } => {
+            Command::AddNoob { talk_id } => {
                 add_noob(state, talk_id, user_id).await?;
             }
-            Command::RemoveNoob { talk_id, user_id } => {
+            Command::RemoveNoob { talk_id } => {
                 remove_noob(state, talk_id, user_id).await?;
             }
-            Command::AddNerd { talk_id, user_id } => {
+            Command::AddNerd { talk_id } => {
                 add_nerd(state, talk_id, user_id).await?;
             }
-            Command::RemoveNerd { talk_id, user_id } => {
+            Command::RemoveNerd { talk_id } => {
                 remove_nerd(state, talk_id, user_id).await?;
             }
         }

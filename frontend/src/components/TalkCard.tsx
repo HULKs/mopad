@@ -1,4 +1,11 @@
-import { AttendanceMode, Role, type Talk, ParticipationKind } from "../types";
+import {
+  AttendanceMode,
+  Role,
+  type Talk,
+  ParticipationKind,
+  type Command,
+  type TalkUserPayload,
+} from "../types";
 import { currentUser, users, sendCommand, currentTimeSecs } from "../store";
 import { EditableField } from "./ui/EditableField";
 import {
@@ -101,7 +108,10 @@ export function TalkCard({ talk }: { talk: Talk }) {
         canEdit={isCreator || isScheduler}
         onSave={(loc) =>
           sendCommand({
-            UpdateLocation: { talk_id: talk.id, location: loc || null },
+            UpdateLocation: {
+              talk_id: talk.id,
+              location: loc || null,
+            },
           })
         }
       >
@@ -118,7 +128,10 @@ export function TalkCard({ talk }: { talk: Talk }) {
         canEdit={isCreator || isEditor}
         onSave={(desc) =>
           sendCommand({
-            UpdateDescription: { talk_id: talk.id, description: desc },
+            UpdateDescription: {
+              talk_id: talk.id,
+              description: desc,
+            },
           })
         }
       />
@@ -152,26 +165,41 @@ function RoleButton({
     .join(", ");
 
   const toggle = () => {
-    const cmd = isPart
-      ? role === ParticipationKind.Noob
-        ? { RemoveNoob: { talk_id: talk.id, user_id: myId } }
-        : { RemoveNerd: { talk_id: talk.id, user_id: myId } }
-      : role === ParticipationKind.Noob
-        ? { AddNoob: { talk_id: talk.id, user_id: myId } }
-        : { AddNerd: { talk_id: talk.id, user_id: myId } };
+    const payload: TalkUserPayload = {
+      talk_id: talk.id,
+    };
+
+    let cmd: Command;
+
+    if (isPart) {
+      if (role === ParticipationKind.Noob) {
+        cmd = { RemoveNoob: payload };
+      } else {
+        cmd = { RemoveNerd: payload };
+      }
+    } else {
+      if (role === ParticipationKind.Noob) {
+        cmd = { AddNoob: payload };
+      } else {
+        cmd = { AddNerd: payload };
+      }
+    }
 
     if (!isPart) {
       const otherList =
         role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
+
       if (otherList.includes(myId)) {
-        const removeOther =
+        const removeOtherCmd: Command =
           role === ParticipationKind.Noob
-            ? { RemoveNerd: { talk_id: talk.id, user_id: myId } }
-            : { RemoveNoob: { talk_id: talk.id, user_id: myId } };
-        sendCommand(removeOther as any);
+            ? { RemoveNerd: payload }
+            : { RemoveNoob: payload };
+
+        sendCommand(removeOtherCmd);
       }
     }
-    sendCommand(cmd as any);
+
+    sendCommand(cmd);
   };
 
   return (

@@ -2,7 +2,7 @@ import { computed } from "@preact/signals";
 import { useState } from "preact/hooks";
 import { talks, currentTimeSecs, sendCommand, currentUser } from "../store";
 import { TalkCard } from "./TalkCard";
-import type { Talk } from "../types";
+import { type Talk } from "../types";
 
 export function TalkList() {
   const user = currentUser.value!;

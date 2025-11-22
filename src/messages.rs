@@ -72,19 +72,15 @@ pub enum Command {
     },
     AddNoob {
         talk_id: usize,
-        user_id: usize,
     },
     RemoveNoob {
         talk_id: usize,
-        user_id: usize,
     },
     AddNerd {
         talk_id: usize,
-        user_id: usize,
     },
     RemoveNerd {
         talk_id: usize,
-        user_id: usize,
     },
 }
 

@@ -184,6 +184,9 @@ async fn handle_message(
             Command::RemoveNerd { talk_id } => {
                 remove_nerd(state, talk_id, user_id).await?;
             }
+            Command::SetAttendanceMode { attendance_mode } => {
+                set_attendance_mode(state, user_id, attendance_mode).await?;
+            }
         }
     }
 
@@ -398,5 +401,24 @@ async fn remove_nerd(state: &AppState, talk_id: usize, user_id: usize) -> Result
     let _ = state
         .updates_sender
         .send(Update::RemoveNerd { talk_id, user_id });
+    Ok(())
+}
+
+async fn set_attendance_mode(
+    state: &AppState,
+    user_id: UserId,
+    attendance_mode: crate::storage::AttendanceMode,
+) -> Result<()> {
+    let mut storage = state.storage.write().await;
+    let Storage { users, .. } = storage.deref_mut();
+    let user = users
+        .get_mut(&user_id)
+        .wrap_err_with(|| format!("user {user_id} does not exist"))?;
+    user.attendance_mode = attendance_mode;
+    users.commit().await.wrap_err("failed to commit users")?;
+    let _ = state.updates_sender.send(Update::UpdateAttendanceMode {
+        user_id,
+        attendance_mode,
+    });
     Ok(())
 }

@@ -82,6 +82,9 @@ pub enum Command {
     RemoveNerd {
         talk_id: usize,
     },
+    SetAttendanceMode {
+        attendance_mode: AttendanceMode,
+    },
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -133,6 +136,10 @@ pub enum Update {
     RemoveNerd {
         talk_id: usize,
         user_id: usize,
+    },
+    UpdateAttendanceMode {
+        user_id: usize,
+        attendance_mode: AttendanceMode,
     },
 }
 

@@ -46,7 +46,9 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
                 token,
             };
             let _ = socket
-                .send(Message::Text(serde_json::to_string(&response).unwrap()))
+                .send(Message::Text(
+                    serde_json::to_string(&response).unwrap().into(),
+                ))
                 .await;
             user
         }
@@ -55,7 +57,9 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
                 reason: format!("{error:#}"),
             };
             let _ = socket
-                .send(Message::Text(serde_json::to_string(&response).unwrap()))
+                .send(Message::Text(
+                    serde_json::to_string(&response).unwrap().into(),
+                ))
                 .await;
             return Ok(());
         }
@@ -72,7 +76,9 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
             .collect(),
     };
     let _ = socket
-        .send(Message::Text(serde_json::to_string(&update_users).unwrap()))
+        .send(Message::Text(
+            serde_json::to_string(&update_users).unwrap().into(),
+        ))
         .await;
 
     {
@@ -81,9 +87,9 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
             let update = Update::AddTalk { talk: talk.clone() };
             let _ = socket
                 .send(Message::Text(
-                    serde_json::to_string(&update).wrap_err_with(|| {
-                        format!("failed to serialize talk update: {update:#?}")
-                    })?,
+                    serde_json::to_string(&update)
+                        .wrap_err_with(|| format!("failed to serialize talk update: {update:#?}"))?
+                        .into(),
                 ))
                 .await;
         }
@@ -114,7 +120,9 @@ async fn connection(mut socket: WebSocket, state: AppState) -> Result<()> {
 async fn handle_update(update: Update, stream: &mut WebSocket) -> Result<()> {
     stream
         .send(Message::Text(
-            serde_json::to_string(&update).wrap_err("failed to serialize update")?,
+            serde_json::to_string(&update)
+                .wrap_err("failed to serialize update")?
+                .into(),
         ))
         .await
         .wrap_err("failed to send update")

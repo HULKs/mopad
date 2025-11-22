@@ -3,7 +3,7 @@ use std::{net::SocketAddr, path::PathBuf, str::FromStr, sync::Arc};
 use axum::{
     extract::State,
     routing::{get, get_service},
-    Json, Router, Server,
+    Json, Router,
 };
 use clap::Parser;
 use client::handle_websocket;
@@ -94,8 +94,10 @@ async fn main() -> eyre::Result<()> {
         .wrap_err_with(|| format!("failed to parse address: {address}"))?;
 
     info!("Listening on http://{address}");
-    Server::bind(&bind_address)
-        .serve(application.into_make_service())
+    let listener = tokio::net::TcpListener::bind(bind_address)
+        .await
+        .wrap_err("failed to bind to address")?;
+    axum::serve(listener, application.into_make_service())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .wrap_err("failed to serve application")

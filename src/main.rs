@@ -39,7 +39,7 @@ const ICAL_ENDPOINT: &str = "/talks.ics";
 #[command(version)]
 struct Arguments {
     /// Path to the storage directory.
-    #[clap(long, default_value = ".")]
+    #[clap(long, default_value = "storage/")]
     storage: PathBuf,
     /// Port to listen on.
     #[clap(long, default_value = "9559")]
@@ -48,7 +48,7 @@ struct Arguments {
     #[clap(long, default_value = "[::]")]
     address: String,
     /// Path to the frontend directory.
-    #[clap(long, default_value = "./frontend")]
+    #[clap(long, default_value = "frontend/")]
     frontend: String,
 }
 

@@ -1,0 +1,604 @@
+@font-face {
+    font-family: "Roboto";
+    src:
+        local("Roboto"),
+        url(/fonts/roboto/Roboto-Medium.ttf) format("truetype");
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: "Roboto";
+    src:
+        local("Roboto"),
+        url(/fonts/roboto/Roboto-Regular.ttf) format("truetype");
+    font-weight: 400;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0;
+}
+
+html,
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    font-family:
+        "Roboto",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Oxygen",
+        "Ubuntu",
+        "Cantarell",
+        "Fira Sans",
+        "Droid Sans",
+        "Helvetica Neue",
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f2f2f2;
+}
+
+body.center {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    justify-items: center;
+    align-items: center;
+}
+
+#loading h1,
+#login h1,
+#register h1 {
+    font-size: 3rem;
+    font-weight: 500;
+    color: #000;
+    margin: 0;
+}
+
+#loading div {
+    font-size: 0.85rem;
+    color: #888;
+    font-weight: 500;
+}
+
+#loading,
+#login,
+#register {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+}
+
+#login h2,
+#register h2 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #888;
+    margin: 0;
+}
+
+#login h3,
+#register h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #000;
+    margin: 1rem 0 0.5rem 0;
+}
+
+#login input,
+#register input,
+#login select,
+#register select,
+#login button,
+#register button {
+    white-space: nowrap;
+    width: 20rem;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    box-sizing: border-box;
+    font-family: inherit;
+    accent-color: #388e3c;
+}
+
+#register .hint {
+    font-size: 0.8rem;
+    color: #888;
+    margin: -0.25rem 0 0.5rem 0;
+    width: 20rem;
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+}
+
+#login button,
+#register button {
+    cursor: pointer;
+    color: #fff;
+    background-color: #388e3c;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
+}
+
+#login button:hover,
+#register button:hover {
+    color: #fff;
+    background-color: #43a047;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.25);
+}
+
+#login button[disabled],
+#register button[disabled] {
+    cursor: initial;
+    color: #fff;
+    background-color: #aaa;
+    box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
+}
+
+#register .i-am-not-a-nao {
+    margin: 0.5rem 0;
+    width: 20rem;
+}
+
+#register .i-am-not-a-nao input {
+    width: initial;
+    margin: 0 0.5rem 0 0;
+    padding: 0;
+}
+
+#register .i-am-not-a-nao label {
+    font-size: 0.9rem;
+}
+
+#login .login-register-switcher,
+#register .login-register-switcher {
+    margin: 0.5rem 0 1rem 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+#login .login-register-switcher a,
+#register .login-register-switcher a {
+    color: #388e3c;
+}
+
+.footer {
+    line-height: 1.5rem;
+    text-align: center;
+    padding: 0.75rem;
+}
+
+.footer a {
+    font-size: 0.9rem;
+    color: #388e3c;
+}
+
+#talks .add {
+    position: fixed;
+    z-index: 2;
+    right: 1rem;
+    bottom: 1rem;
+    cursor: pointer;
+    width: 4rem;
+    height: 4rem;
+    font-size: 1.667rem;
+    font-family: inherit;
+    line-height: 4rem;
+    text-align: center;
+    color: #fff;
+    background-color: #388e3c;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 2rem;
+    box-shadow:
+        0 0.25rem 0.5rem rgba(0, 0, 0, 0.25),
+        0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .add:hover {
+    background-color: #43a047;
+}
+
+#talks > .calendar-dialog {
+    display: none;
+    position: fixed;
+    z-index: 3;
+    background-color: rgba(0, 0, 0, 0.5);
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+#talks > .calendar-dialog.open {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    justify-items: center;
+    align-items: center;
+}
+
+#talks > .calendar-dialog .box {
+    background-color: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+    padding: 1rem;
+    width: calc(100vw - 3rem);
+    box-sizing: border-box;
+}
+
+#talks > .calendar-dialog .box h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #000;
+}
+
+#talks > .calendar-dialog .box h2 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #888;
+    margin: 0 0 1rem 0;
+}
+
+#talks > .calendar-dialog .box .description {
+    color: #444;
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem 0;
+}
+
+#talks > .calendar-dialog .box a {
+    display: block;
+    font-size: 0.9rem;
+    color: #388e3c;
+    margin: 0 0 0.5rem 0;
+}
+
+#talks > .calendar-dialog .box .personalization {
+    margin: 0 0 0.5rem 0;
+}
+
+#talks > .calendar-dialog .box .personalization input {
+    margin: 0 0.5rem 0 0;
+    padding: 0;
+    accent-color: #388e3c;
+}
+
+#talks > .calendar-dialog .box .personalization label {
+    font-size: 0.9rem;
+    color: #444;
+}
+
+#talks > .calendar-dialog .box .hint {
+    color: #444;
+    font-size: 0.9rem;
+}
+
+#talks > .title {
+    padding: 1rem 1rem 0 1rem;
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    grid-template-rows: min-content;
+    column-gap: 1rem;
+    align-items: center;
+}
+
+#talks > .title h1 {
+    font-size: 2.5rem;
+    font-weight: 500;
+    color: #000;
+}
+
+#talks > .title .calendar {
+    font-size: 0.9rem;
+    color: #388e3c;
+    white-space: nowrap;
+    padding: 0.5rem 0;
+    justify-self: end;
+}
+
+#talks .heading {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+#talks .heading h2 {
+    flex-grow: 1;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #000;
+    margin: 0.25rem 0;
+}
+
+#talks .heading button {
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    box-sizing: border-box;
+    accent-color: #388e3c;
+    color: #888;
+    background-color: transparent;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 500;
+    border: 0.125rem solid #aaa;
+    border-radius: 0.25rem;
+}
+
+#talks .heading button:hover {
+    color: #000;
+    border-color: #000;
+}
+
+#talks .talks {
+    padding: 0.5rem 1rem;
+    display: grid;
+    grid-template-columns: calc(100vw - 2rem);
+    grid-auto-rows: min-content;
+    column-gap: 1rem;
+    row-gap: 1rem;
+    align-items: start;
+    box-sizing: border-box;
+}
+
+#talks .talks .talk {
+    display: grid;
+    position: relative;
+    width: calc(100vw - 2rem);
+    grid-template-columns: calc(100vw - 2rem);
+    grid-template-rows: min-content min-content min-content min-content min-content min-content;
+    background-color: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .talks .talk .delete {
+    position: absolute;
+    z-index: 1;
+    cursor: pointer;
+    top: -0.75rem;
+    right: -0.75rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.667rem;
+    font-family: inherit;
+    font-weight: 500;
+    text-align: center;
+    line-height: 2rem;
+    color: #e64a19;
+    background-color: #fff;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .talks .talk .delete:hover {
+    color: #fff;
+    background-color: #e64a19;
+}
+
+#talks .talks .talk .title {
+    font-size: 1.25rem;
+    font-family: inherit;
+    font-weight: 500;
+    color: #000;
+    padding: 1rem 1rem 0.25rem 1rem;
+    overflow-wrap: break-word;
+}
+
+#talks .talks .talk .title.empty {
+    font-style: italic;
+    color: #666;
+}
+
+#talks .talks .talk .scheduled-at,
+#talks .talks .talk .duration,
+#talks .talks .talk .location,
+#talks .talks .talk .description {
+    font-size: 0.9rem;
+    color: #666;
+    overflow-wrap: break-word;
+}
+
+#talks .talks .talk .scheduled-at {
+    padding: 0.25rem 1rem 0 1rem;
+}
+
+#talks .talks .talk .duration {
+    padding: 0 1rem 0 1rem;
+}
+
+#talks .talks .talk .location {
+    padding: 0 1rem 0.25rem 1rem;
+}
+
+#talks .talks .talk .description {
+    padding: 0.25rem 1rem 0.25rem 1rem;
+}
+
+#talks .talks .talk .description.empty {
+    font-style: italic;
+    color: #aaa;
+}
+
+#talks .talks .talk .editable {
+    cursor: pointer;
+}
+
+#talks .talks .talk .title.editable {
+    border-radius: 1rem 1rem 0 0;
+}
+
+#talks .talks .talk .editable:hover {
+    background-color: #eee;
+}
+
+#talks .talks .talk input.title,
+#talks .talks .talk input.scheduled-at,
+#talks .talks .talk input.duration,
+#talks .talks .talk input.location,
+#talks .talks .talk textarea.description {
+    color: #000;
+    font-family: inherit;
+}
+
+#talks .talks .talk textarea.description {
+    resize: vertical;
+}
+
+#talks .talks .talk .operation {
+    padding: 0.5rem 1rem 1rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: min-content;
+    column-gap: 1rem;
+}
+
+#talks .talks .talk .operation button {
+    cursor: pointer;
+    white-space: nowrap;
+    color: #388e3c;
+    background-color: transparent;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    box-sizing: border-box;
+    border: none;
+    border: 0.125rem solid #c8e6c9;
+    border-radius: 0.25rem;
+}
+
+#talks .talks .talk .operation button.noob {
+    grid-column: 1 / 2;
+}
+
+#talks .talks .talk .operation button.nerd {
+    grid-column: 2 / 3;
+}
+
+#talks .talks .talk .operation button:hover {
+    border-color: #388e3c;
+}
+
+#talks .talks .talk.participating {
+    background-color: #388e3c;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .talks .talk.participating h1.title {
+    color: #fff;
+}
+
+#talks .talks .talk.participating div.scheduled-at,
+#talks .talks .talk.participating div.duration,
+#talks .talks .talk.participating div.location,
+#talks .talks .talk.participating div.description {
+    color: #c8e6c9;
+}
+
+#talks .talks .talk.participating .editable:hover {
+    background-color: #43a047;
+}
+
+#talks .talks .talk.participating .operation button {
+    border-color: #c8e6c9;
+    color: #c8e6c9;
+    box-shadow: none;
+}
+
+#talks .talks .talk.participating .operation button:hover {
+    background-color: #43a047;
+}
+
+#talks .talks .talk.participating .operation button.participating {
+    border-color: transparent;
+    color: #388e3c;
+    background-color: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.25);
+}
+
+#talks .talks .talk.participating .operation button.participating:hover {
+    background-color: #c8e6c9;
+}
+
+@media (min-width: 32em) {
+    #talks > .calendar-dialog .box {
+        width: 25rem;
+    }
+
+    #talks .talks {
+        grid-template-columns: repeat(2, calc((100vw - 3rem) / 2));
+    }
+
+    #talks .talks .talk {
+        width: calc((100vw - 3rem) / 2);
+        grid-template-columns: calc((100vw - 3rem) / 2);
+    }
+}
+
+@media (min-width: 48em) {
+    #talks .talks {
+        grid-template-columns: repeat(3, calc((100vw - 4rem) / 3));
+    }
+
+    #talks .talks .talk {
+        width: calc((100vw - 4rem) / 3);
+        grid-template-columns: calc((100vw - 4rem) / 3);
+    }
+}
+
+@media (min-width: 64em) {
+    #talks .talks {
+        grid-template-columns: repeat(4, calc((100vw - 5rem) / 4));
+    }
+
+    #talks .talks .talk {
+        width: calc((100vw - 5rem) / 4);
+        grid-template-columns: calc((100vw - 5rem) / 4);
+    }
+}
+
+@media (min-width: 80em) {
+    #talks .talks {
+        grid-template-columns: repeat(5, calc((100vw - 6rem) / 5));
+    }
+
+    #talks .talks .talk {
+        width: calc((100vw - 6rem) / 5);
+        grid-template-columns: calc((100vw - 6rem) / 5);
+    }
+}
+
+@media (min-width: 96em) {
+    body {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: min-content;
+        justify-items: center;
+        align-items: center;
+    }
+
+    #talks .heading {
+        width: 94rem;
+    }
+
+    #talks .talks {
+        grid-template-columns: repeat(6, calc((96rem - 7rem) / 6));
+    }
+
+    #talks .talks .talk {
+        width: calc((96rem - 7rem) / 6);
+        grid-template-columns: calc((96rem - 7rem) / 6);
+    }
+}

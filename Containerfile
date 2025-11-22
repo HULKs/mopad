@@ -10,6 +10,8 @@ FROM debian:bookworm-slim
 
 COPY --from=builder /usr/local/cargo/bin/mopad /usr/local/bin/mopad
 WORKDIR /mopad
-COPY ./frontend/ ./frontend/
+
+# TODO(oleflb): Build frontend (npm run build)
+COPY ./frontend/dist ./frontend/
 
 CMD ["mopad"]

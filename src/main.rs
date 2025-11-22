@@ -41,7 +41,7 @@ struct Arguments {
     #[clap(long, default_value = ".")]
     storage: PathBuf,
     /// Port to listen on.
-    #[clap(long, default_value = "80")]
+    #[clap(long, default_value = "9559")]
     port: u16,
     /// Address to listen on.
     #[clap(long, default_value = "[::]")]

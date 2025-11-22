@@ -1,5 +1,5 @@
 import { signal, effect } from "@preact/signals";
-import type { Talk, User, AuthCommand, Command } from "./types";
+import type { Talk, User, AuthCommand, Command, AttendanceMode } from "./types";
 
 export const currentUser = signal<User | null>(null);
 export const users = signal<Record<number, User>>({});
@@ -127,6 +127,18 @@ function handleMessage(msg: any) {
       patchTalk(t.id, {
         nerds: t.nerds.filter((id) => id !== msg.RemoveNerd.user_id),
       });
+  } else if (msg.UpdateAttendanceMode) {
+    const user_id = msg.UpdateAttendanceMode.user_id;
+    const mode: AttendanceMode = msg.UpdateAttendanceMode.attendance_mode;
+    users.value = {
+      ...users.value,
+      [user_id]: {
+        ...users.value[user_id],
+        attendance_mode: mode,
+      },
+    };
+  } else {
+    console.log("Unknown message", msg);
   }
 }
 

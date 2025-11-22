@@ -78,6 +78,10 @@ export interface TalkUserPayload {
   talk_id: number;
 }
 
+export interface SetAttendanceModePayload {
+  attendance_mode: AttendanceMode;
+}
+
 export type AddTalkCommand = { AddTalk: AddTalkPayload };
 export type RemoveTalkCommand = { RemoveTalk: RemoveTalkPayload };
 export type UpdateTitleCommand = { UpdateTitle: UpdateTitlePayload };
@@ -93,6 +97,7 @@ export type AddNoobCommand = { AddNoob: TalkUserPayload };
 export type RemoveNoobCommand = { RemoveNoob: TalkUserPayload };
 export type AddNerdCommand = { AddNerd: TalkUserPayload };
 export type RemoveNerdCommand = { RemoveNerd: TalkUserPayload };
+export type SetAttendanceMode = { SetAttendanceMode: SetAttendanceModePayload };
 
 export type Command =
   | AddTalkCommand
@@ -105,6 +110,7 @@ export type Command =
   | AddNoobCommand
   | RemoveNoobCommand
   | AddNerdCommand
+  | SetAttendanceMode
   | RemoveNerdCommand;
 
 export type AuthCommand =

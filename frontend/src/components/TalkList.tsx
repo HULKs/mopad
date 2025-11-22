@@ -2,7 +2,7 @@ import { computed } from "@preact/signals";
 import { useState } from "preact/hooks";
 import { talks, currentTimeSecs, sendCommand, currentUser } from "../store";
 import { TalkCard } from "./TalkCard";
-import { type Talk } from "../types";
+import { AttendanceMode, type Talk } from "../types";
 
 export function TalkList() {
   const user = currentUser.value!;
@@ -115,20 +115,72 @@ function Section({
 }
 
 function Header() {
+  const user = currentUser.value;
+  const isRemote = user?.attendance_mode === AttendanceMode.Remote;
+
+  const toggleMode = (e: Event) => {
+    const checked = (e.currentTarget as HTMLInputElement).checked;
+    const newMode = checked ? AttendanceMode.Remote : AttendanceMode.OnSite;
+
+    sendCommand({
+      SetAttendanceMode: { attendance_mode: newMode },
+    });
+  };
+
   return (
     <div class="title">
       <h1>MOPAD</h1>
-      <a
-        class="calendar"
-        href="#calendar"
-        onClick={(e) => {
-          e.preventDefault();
-          const dialog = document.querySelector(".calendar-dialog");
-          dialog?.classList.add("open");
+
+      {/* Wrapper to group right-aligned elements */}
+      <div
+        style={{
+          justifySelf: "end",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: "0.5rem",
         }}
       >
-        Subscribe as calendar
-      </a>
+        <a
+          class="calendar"
+          href="#calendar"
+          onClick={(e) => {
+            e.preventDefault();
+            const dialog = document.querySelector(".calendar-dialog");
+            dialog?.classList.add("open");
+          }}
+        >
+          Subscribe as calendar
+        </a>
+
+        {/* New Attendance Checkbox */}
+        <div
+          style={{
+            fontSize: "0.9rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          <input
+            type="checkbox"
+            id="attendance-mode-toggle"
+            checked={isRemote}
+            onChange={toggleMode}
+            style={{ width: "auto", margin: 0 }}
+          />
+          <label
+            htmlFor="attendance-mode-toggle"
+            style={{
+              cursor: "pointer",
+              userSelect: "none",
+              color: "var(--color-primary)",
+            }}
+          >
+            Participating remotely
+          </label>
+        </div>
+      </div>
     </div>
   );
 }

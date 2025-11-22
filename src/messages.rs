@@ -5,7 +5,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::storage::{Role, Talk, User};
+use crate::storage::{AttendanceMode, Role, Talk, User};
 
 /// Authentication command sent by the client.
 #[derive(Clone, Debug, Deserialize)]
@@ -144,6 +144,7 @@ pub struct UserReference {
     id: usize,
     name: String,
     team: String,
+    attendance_mode: AttendanceMode,
 }
 
 impl From<&User> for UserReference {
@@ -152,6 +153,7 @@ impl From<&User> for UserReference {
             id: user.id,
             name: user.name.clone(),
             team: user.team.clone(),
+            attendance_mode: user.attendance_mode,
         }
     }
 }

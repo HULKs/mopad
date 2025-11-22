@@ -429,14 +429,14 @@ body.center,
     &.participating {
         background-color: var(--color-primary);
 
-        & .title {
+        & div.title {
             color: #fff;
         }
 
-        & .scheduled-at,
-        & .duration,
-        & .location,
-        & .description {
+        & div.scheduled-at,
+        & div.duration,
+        & div.location,
+        & div.description {
             color: var(--color-primary-light);
         }
 

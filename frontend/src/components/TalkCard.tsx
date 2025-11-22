@@ -218,7 +218,3 @@ function RoleButton({
     </button>
   );
 }
-
-function getLocation(id: number | null) {
-  locations.value[id!];
-}

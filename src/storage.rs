@@ -151,17 +151,30 @@ impl Storage {
     }
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum AttendanceMode {
+    OnSite,
+    Remote,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct User {
     pub id: usize,
     pub name: String,
     pub team: String,
+    pub attendance_mode: AttendanceMode,
     pub hash: String,
     pub roles: BTreeSet<Role>,
 }
 
 impl User {
-    pub fn new(id: usize, name: String, team: String, password: String) -> Self {
+    pub fn new(
+        id: usize,
+        name: String,
+        team: String,
+        attendance_mode: AttendanceMode,
+        password: String,
+    ) -> Self {
         let salt = SaltString::generate(&mut OsRng);
         let hash = Argon2::default()
             .hash_password(password.as_bytes(), &salt)
@@ -171,6 +184,7 @@ impl User {
             id,
             name,
             team,
+            attendance_mode,
             hash: hash.to_string(),
             roles: BTreeSet::new(),
         }

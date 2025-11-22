@@ -7,7 +7,7 @@ use rand_core::OsRng;
 
 use crate::{
     messages::{AuthenticationCommand, Update},
-    storage::User,
+    storage::{AttendanceMode, User},
     AppState,
 };
 
@@ -22,7 +22,7 @@ pub async fn authenticate(
             name,
             team,
             password,
-        } => register(state, name, team, password)
+        } => register(state, name, team, AttendanceMode::OnSite, password)
             .await
             .wrap_err("failed to register"),
         AuthenticationCommand::Login {
@@ -50,6 +50,7 @@ async fn register(
     state: &AppState,
     name: String,
     team: String,
+    attendance_mode: AttendanceMode,
     password: String,
 ) -> eyre::Result<(User, String)> {
     let storage = &mut state.storage.write().await;
@@ -69,7 +70,7 @@ async fn register(
     let max_user_id = storage.users.keys().copied().max().unwrap_or_default();
     let next_user_id = max_user_id + 1;
 
-    let new_user = User::new(next_user_id, name, team, password);
+    let new_user = User::new(next_user_id, name, team, attendance_mode, password);
     storage.users.insert(next_user_id, new_user.clone());
     storage
         .users

@@ -52,6 +52,7 @@ pub struct Storage {
     pub path: PathBuf,
     pub teams: MirroredToDisk<BTreeSet<String>>,
     pub users: MirroredToDisk<BTreeMap<UserId, User>>,
+    pub locations: MirroredToDisk<BTreeMap<usize, Location>>,
     pub talks: MirroredToDisk<BTreeMap<usize, Talk>>,
     pub tokens: MirroredToDisk<TokenStore>,
 }
@@ -119,6 +120,11 @@ impl Storage {
             }
         }
 
+        let locations = MirroredToDisk::<BTreeMap<usize, Location>>::read_from_or_create_default(
+            path.join("locations.json"),
+        )
+        .await?;
+
         let mut talks = MirroredToDisk::<BTreeMap<usize, Talk>>::read_from_or_create_default(
             path.join("talks.json"),
         )
@@ -155,6 +161,7 @@ impl Storage {
             path: path.to_path_buf(),
             teams,
             users,
+            locations,
             talks,
             tokens,
         })
@@ -236,7 +243,14 @@ pub struct Talk {
     pub description: String,
     pub scheduled_at: Option<SystemTime>,
     pub duration: Duration,
-    pub location: Option<String>,
+    pub location: Option<usize>,
     pub nerds: BTreeSet<usize>,
     pub noobs: BTreeSet<usize>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Location {
+    pub id: usize,
+    pub name: String,
+    pub live_stream: Option<String>,
 }

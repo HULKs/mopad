@@ -68,7 +68,7 @@ pub enum Command {
     },
     UpdateLocation {
         talk_id: usize,
-        location: Option<String>,
+        location: Option<usize>,
     },
     AddNoob {
         talk_id: usize,
@@ -119,7 +119,7 @@ pub enum Update {
     },
     UpdateLocation {
         talk_id: usize,
-        location: Option<String>,
+        location: Option<usize>,
     },
     AddNoob {
         talk_id: usize,

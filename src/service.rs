@@ -292,7 +292,7 @@ impl Service {
         &self,
         talk_id: usize,
         user_id: UserId,
-        location: Option<String>,
+        location: Option<usize>,
     ) -> Result<()> {
         let mut storage = self.storage.write().await;
         let Storage { users, talks, .. } = storage.deref_mut();
@@ -305,7 +305,7 @@ impl Service {
         if !(user.is_scheduler() || user.is_creator(talk)) {
             bail!("user cannot schedule talks");
         }
-        talk.location = location.clone();
+        talk.location = location;
         talks.commit().await.wrap_err("failed to commit talks")?;
         let _ = self
             .updates_sender

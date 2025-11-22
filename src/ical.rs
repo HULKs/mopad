@@ -44,11 +44,12 @@ pub async fn handle_icalendar(
                 talk.description.replace(['\r', '\n'], ""),
             )
             .unwrap();
-            if let Some(location) = &talk.location {
+            if let Some(location_id) = &talk.location {
+                let location = storage.locations.get(location_id).unwrap();
                 write!(
                     response,
                     "LOCATION:{}\r\n",
-                    location.replace(['\r', ';'], "")
+                    location.name.replace(['\r', ';'], "")
                 )
                 .unwrap();
             }

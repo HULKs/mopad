@@ -31,6 +31,7 @@ mod storage;
 const INTERNAL_CHANNEL_CAPACITY: usize = 1337;
 const API_ENDPOINT: &str = "/api";
 const TEAM_ENDPOINT: &str = "/teams.json";
+const LOCATION_ENDPOINT: &str = "/locations.json";
 const ICAL_ENDPOINT: &str = "/talks.ics";
 
 /// Moderated Organization PAD (powerful, agile, distributed)
@@ -79,6 +80,12 @@ async fn main() -> eyre::Result<()> {
             TEAM_ENDPOINT,
             get(move |State(state): State<Service>| async move {
                 Json(state.storage.read().await.teams.clone())
+            }),
+        )
+        .route(
+            LOCATION_ENDPOINT,
+            get(move |State(state): State<Service>| async move {
+                Json(state.storage.read().await.locations.clone())
             }),
         )
         .route(ICAL_ENDPOINT, get(handle_icalendar))

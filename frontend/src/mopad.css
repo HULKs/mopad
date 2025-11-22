@@ -373,10 +373,10 @@ body.center,
 
     /* Inputs inside card */
     & input,
+    & select,
     & textarea {
         font-family: inherit;
         color: var(--text-main);
-        /* Match padding of their div counterparts */
         padding: inherit;
         width: 100%;
         box-sizing: border-box;

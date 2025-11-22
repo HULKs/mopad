@@ -1,5 +1,11 @@
 import { useEffect } from "preact/hooks";
-import { connect, currentUser, fetchTeams, authError } from "./store";
+import {
+  connect,
+  currentUser,
+  fetchTeams,
+  authError,
+  fetchLocations,
+} from "./store";
 import { Auth } from "./components/Auth";
 import { TalkList } from "./components/TalkList";
 import { Loading } from "./components/Loading";
@@ -8,6 +14,7 @@ import "./mopad.css";
 export function App() {
   useEffect(() => {
     fetchTeams();
+    fetchLocations();
     connect();
   }, []);
 

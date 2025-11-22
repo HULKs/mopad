@@ -33,9 +33,15 @@ export interface Talk {
   description: string;
   scheduled_at: SystemTime | null;
   duration: Duration;
-  location: string | null;
+  location: number | null;
   nerds: number[];
   noobs: number[];
+}
+
+export interface Location {
+  id: number;
+  name: string;
+  link: null | string;
 }
 
 // WebSocket Messages
@@ -71,7 +77,7 @@ export interface UpdateDurationPayload {
 
 export interface UpdateLocationPayload {
   talk_id: number;
-  location: string | null;
+  location: number | null; // Changed from string | null
 }
 
 export interface TalkUserPayload {

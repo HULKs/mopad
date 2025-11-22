@@ -15,6 +15,10 @@ export default defineConfig({
         target: "http://localhost:9559",
         changeOrigin: true,
       },
+      "/locations.json": {
+        target: "http://localhost:9559",
+        changeOrigin: true,
+      },
       "/talks.ics": {
         target: "http://localhost:9559",
         changeOrigin: true,

@@ -1,5 +1,2 @@
 target/
-talks.json
-teams.json
-tokens.json
-users.json
+storage/

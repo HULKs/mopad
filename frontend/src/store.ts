@@ -5,6 +5,7 @@ export const currentUser = signal<User | null>(null);
 export const users = signal<Record<number, User>>({});
 export const talks = signal<Record<number, Talk>>({});
 export const teams = signal<string[]>([]);
+export const locations = signal<Record<number, Location>>([]);
 export const connectionStatus = signal<
   "connecting" | "connected" | "disconnected"
 >("connecting");
@@ -159,4 +160,9 @@ export function sendCommand(cmd: Command) {
 export async function fetchTeams() {
   const res = await fetch("/teams.json");
   teams.value = await res.json();
+}
+
+export async function fetchLocations() {
+  const res = await fetch("/locations.json");
+  locations.value = await res.json();
 }

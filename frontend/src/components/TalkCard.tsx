@@ -6,8 +6,15 @@ import {
   type Command,
   type TalkUserPayload,
 } from "../types";
-import { currentUser, users, sendCommand, currentTimeSecs } from "../store";
+import {
+  currentUser,
+  users,
+  sendCommand,
+  currentTimeSecs,
+  locations,
+} from "../store";
 import { EditableField } from "./ui/EditableField";
+import { EditableSelect } from "./ui/EditableSelect";
 import {
   formatScheduleString,
   getDurationString,
@@ -20,6 +27,11 @@ export function TalkCard({ talk }: { talk: Talk }) {
   const isCreator = me.id === talk.creator;
   const isEditor = me.roles.includes(Role.Editor);
   const isScheduler = me.roles.includes(Role.Scheduler);
+
+  const locationOptions = Object.values(locations.value).map((loc) => ({
+    value: loc.id,
+    label: loc.name,
+  }));
 
   const handleDelete = () => {
     if (confirm("Delete talk?"))
@@ -67,7 +79,6 @@ export function TalkCard({ talk }: { talk: Talk }) {
           });
         }}
       >
-        {/* PASS CHILD HERE */}
         {talk.scheduled_at
           ? formatScheduleString(
               talk.scheduled_at,
@@ -92,7 +103,6 @@ export function TalkCard({ talk }: { talk: Talk }) {
           })
         }
       >
-        {/* PASS CHILD HERE */}
         {getDurationString(
           talk.scheduled_at,
           talk.duration,
@@ -101,25 +111,22 @@ export function TalkCard({ talk }: { talk: Talk }) {
       </EditableField>
 
       {/* Location: Input is "Room 1", View is "at Room 1" */}
-      <EditableField
+      <EditableSelect
         className="location"
-        value={talk.location || ""}
-        placeholder="Unknown Location"
+        value={talk.location}
+        options={locationOptions}
         canEdit={isCreator || isScheduler}
-        onSave={(loc) =>
+        placeholder="Unknown Location"
+        onSave={(newId) => {
           sendCommand({
             UpdateLocation: {
               talk_id: talk.id,
-              location: loc || null,
+              location: newId,
             },
-          })
-        }
-      >
-        {/* PASS CHILD HERE */}
-        at {talk.location || "unknown location"}
-      </EditableField>
+          });
+        }}
+      />
 
-      {/* Description: No special formatting needed */}
       <EditableField
         className="description"
         type="textarea"
@@ -210,4 +217,8 @@ function RoleButton({
       {role.charAt(0).toUpperCase() + role.slice(1)} ({count})
     </button>
   );
+}
+
+function getLocation(id: number | null) {
+  locations.value[id!];
 }

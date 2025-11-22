@@ -8,7 +8,7 @@ use axum::{
 use serde::Deserialize;
 use time::{format_description::parse, OffsetDateTime};
 
-use crate::AppState;
+use crate::service::Service;
 
 #[derive(Deserialize)]
 pub struct ICalendarParameters {
@@ -16,13 +16,13 @@ pub struct ICalendarParameters {
 }
 
 pub async fn handle_icalendar(
-    State(state): State<AppState>,
+    State(service): State<Service>,
     parameters: Query<ICalendarParameters>,
 ) -> impl IntoResponse {
     let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:MOPAD\r\nX-WR-CALNAME:MOPAD\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
     let format = parse("[year][month][day]T[hour][minute][second]Z").unwrap();
     let now = OffsetDateTime::now_utc();
-    let storage = state.storage.read().await;
+    let storage = service.storage.read().await;
     for talk in storage.talks.values() {
         match parameters.user_id {
             Some(user_id) if !talk.noobs.contains(&user_id) && !talk.nerds.contains(&user_id) => {

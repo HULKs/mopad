@@ -10,7 +10,6 @@ use client::handle_websocket;
 use eyre::WrapErr;
 use file_watch::refresh_files_from_disk_on_signal;
 use ical::handle_icalendar;
-use messages::Update;
 use storage::Storage;
 use tokio::{
     signal, spawn,
@@ -19,12 +18,14 @@ use tokio::{
 use tower_http::services::ServeDir;
 use tracing::info;
 
-mod authentication;
+use crate::service::Service;
+
 mod client;
 mod file_watch;
 mod ical;
 mod messages;
 mod mirrored_to_disk;
+mod service;
 mod storage;
 
 const INTERNAL_CHANNEL_CAPACITY: usize = 1337;
@@ -52,12 +53,6 @@ struct Arguments {
     frontend: String,
 }
 
-#[derive(Debug, Clone)]
-struct AppState {
-    storage: Arc<RwLock<Storage>>,
-    updates_sender: broadcast::Sender<Update>,
-}
-
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     let arguments = Arguments::parse();
@@ -67,14 +62,14 @@ async fn main() -> eyre::Result<()> {
         .await
         .wrap_err("failed to load storage")?;
     let (updates_sender, _updates_receiver) = broadcast::channel(INTERNAL_CHANNEL_CAPACITY);
-    let state = AppState {
+    let service = Service {
         storage: Arc::new(RwLock::new(storage)),
         updates_sender,
     };
 
     spawn({
-        let storage = state.storage.clone();
-        let updates_sender = state.updates_sender.clone();
+        let storage = service.storage.clone();
+        let updates_sender = service.updates_sender.clone();
         refresh_files_from_disk_on_signal(storage, updates_sender)
     });
 
@@ -82,13 +77,13 @@ async fn main() -> eyre::Result<()> {
         .route(API_ENDPOINT, get(handle_websocket))
         .route(
             TEAM_ENDPOINT,
-            get(move |State(state): State<AppState>| async move {
+            get(move |State(state): State<Service>| async move {
                 Json(state.storage.read().await.teams.clone())
             }),
         )
         .route(ICAL_ENDPOINT, get(handle_icalendar))
         .fallback(get_service(ServeDir::new(arguments.frontend)))
-        .with_state(state);
+        .with_state(service);
 
     let address = format!("{}:{}", arguments.address, arguments.port);
     let bind_address = SocketAddr::from_str(&address)

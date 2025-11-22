@@ -21,10 +21,17 @@ pub async fn authenticate(
         AuthenticationCommand::Register {
             name,
             team,
+            attendance_mode,
             password,
-        } => register(state, name, team, AttendanceMode::OnSite, password)
-            .await
-            .wrap_err("failed to register"),
+        } => register(
+            state,
+            name,
+            team,
+            attendance_mode.unwrap_or(AttendanceMode::OnSite),
+            password,
+        )
+        .await
+        .wrap_err("failed to register"),
         AuthenticationCommand::Login {
             name,
             team,

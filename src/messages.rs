@@ -13,6 +13,7 @@ pub enum AuthenticationCommand {
     Register {
         name: String,
         team: String,
+        attendance_mode: Option<AttendanceMode>,
         password: String,
     },
     Login {

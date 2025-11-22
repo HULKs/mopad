@@ -53,15 +53,16 @@ pub async fn handle_icalendar(
                 .unwrap();
             }
             for nerd in talk.nerds.iter() {
-                let user = storage.users.get(nerd).unwrap();
-                write!(
-                    response,
-                    "ATTENDEE;ROLE=CHAIR;PARTSTAT=ACCEPTED;CN={} ({}):MAILTO:user{}@mopad\r\n",
-                    user.name.replace([';', '\r', '\n'], ""),
-                    user.team.replace([';', '\r', '\n'], ""),
-                    user.id,
-                )
-                .unwrap();
+                if let Some(user) = storage.users.get(nerd) {
+                    write!(
+                        response,
+                        "ATTENDEE;ROLE=CHAIR;PARTSTAT=ACCEPTED;CN={} ({}):MAILTO:user{}@mopad\r\n",
+                        user.name.replace([';', '\r', '\n'], ""),
+                        user.team.replace([';', '\r', '\n'], ""),
+                        user.id,
+                    )
+                    .unwrap();
+                }
             }
             for noob in talk.noobs.iter() {
                 let user = storage.users.get(noob).unwrap();

@@ -16,13 +16,32 @@ setInterval(() => {
 }, 60000);
 
 let socket: WebSocket | null = null;
+let pendingAuthCommand: AuthCommand | null = null;
 
 export function connect() {
+  // 1. Clean up existing connection to prevent phantom "disconnected" events
+  if (socket) {
+    socket.onclose = null; // Remove listener so we don't trigger state change
+    socket.close();
+    socket = null;
+  }
+
+  connectionStatus.value = "connecting";
+
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   socket = new WebSocket(`${protocol}//${window.location.host}/api`);
 
   socket.onopen = () => {
     connectionStatus.value = "connected";
+
+    // Priority 1: Manual Login/Register
+    if (pendingAuthCommand) {
+      sendAuth(pendingAuthCommand);
+      pendingAuthCommand = null;
+      return;
+    }
+
+    // Priority 2: Auto-Relogin
     const token = localStorage.getItem("reloginToken");
     if (token) {
       sendAuth({ Relogin: { token } });
@@ -40,12 +59,18 @@ export function connect() {
   };
 }
 
+export function loginOrRegister(cmd: AuthCommand) {
+  // Queue the command and force a fresh connection
+  localStorage.removeItem("reloginToken");
+  pendingAuthCommand = cmd;
+  authError.value = null;
+  connect();
+}
+
 function handleMessage(msg: any) {
   if (msg.AuthenticationSuccess) {
     const { user_id, roles, token } = msg.AuthenticationSuccess;
     localStorage.setItem("reloginToken", token);
-    // We need to wait for the Users update to fully hydrate the current user object
-    // But we can store the ID for now or handle it when users arrive
     effect(() => {
       if (users.value[user_id]) {
         currentUser.value = { ...users.value[user_id], roles };
@@ -56,10 +81,7 @@ function handleMessage(msg: any) {
     localStorage.removeItem("reloginToken");
   } else if (msg.Users) {
     const newUsers: Record<number, User> = {};
-    // Rust BTreeMap serializes to a JSON Object, not an Array.
-    // We use Object.values() to iterate over the users.
     Object.values(msg.Users.users).forEach((u: any) => {
-      // u is the User object { id: 1, name: "...", team: "..." }
       newUsers[u.id] = { ...u, roles: [] };
     });
     users.value = newUsers;
@@ -115,7 +137,6 @@ function patchTalk(id: number, changes: Partial<Talk>) {
 }
 
 export function sendAuth(cmd: AuthCommand) {
-  console.log(cmd);
   socket?.send(JSON.stringify(cmd));
 }
 

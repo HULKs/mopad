@@ -598,3 +598,43 @@ body.center,
         width: calc((96rem - 7rem) / 6);
     }
 }
+
+#loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Added for better centering */
+    padding: 2rem 1rem;
+    height: 100vh; /* Full height for the loading screen */
+
+    & h1 {
+        font-size: 3rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+    & div {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+}
+
+/* Add this NEW class for the spinner */
+.spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 0.25rem solid var(--color-primary-light);
+    border-top: 0.25rem solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

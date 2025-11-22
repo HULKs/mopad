@@ -1,5 +1,3 @@
-// src/types.ts
-
 export interface Duration {
   secs: number;
   nanos: number;
@@ -8,6 +6,11 @@ export interface Duration {
 export interface SystemTime {
   secs_since_epoch: number;
   nanos_since_epoch: number;
+}
+
+export enum ParticipationKind {
+  Noob = "Noob",
+  Nerd = "Nerd",
 }
 
 export enum Role {
@@ -20,6 +23,7 @@ export interface User {
   name: string;
   team: string;
   roles: Role[];
+  attendance_mode: AttendanceMode;
 }
 
 export interface Talk {

@@ -1,4 +1,4 @@
-import type { Talk } from "../types";
+import { AttendanceMode, Role, type Talk, ParticipationKind } from "../types";
 import { currentUser, users, sendCommand, currentTimeSecs } from "../store";
 import { EditableField } from "./ui/EditableField";
 import {
@@ -11,8 +11,8 @@ import {
 export function TalkCard({ talk }: { talk: Talk }) {
   const me = currentUser.value!;
   const isCreator = me.id === talk.creator;
-  const isEditor = me.roles.includes("Editor");
-  const isScheduler = me.roles.includes("Scheduler");
+  const isEditor = me.roles.includes(Role.Editor);
+  const isScheduler = me.roles.includes(Role.Scheduler);
 
   const handleDelete = () => {
     if (confirm("Delete talk?"))
@@ -124,8 +124,8 @@ export function TalkCard({ talk }: { talk: Talk }) {
       />
 
       <div class="operation">
-        <RoleButton role="noob" talk={talk} myId={me.id} />
-        <RoleButton role="nerd" talk={talk} myId={me.id} />
+        <RoleButton role={ParticipationKind.Noob} talk={talk} myId={me.id} />
+        <RoleButton role={ParticipationKind.Nerd} talk={talk} myId={me.id} />
       </div>
     </div>
   );
@@ -136,35 +136,36 @@ function RoleButton({
   talk,
   myId,
 }: {
-  role: "noob" | "nerd";
+  role: ParticipationKind;
   talk: Talk;
   myId: number;
 }) {
-  // ... (RoleButton code remains exactly the same as before) ...
-  const list = role === "noob" ? talk.noobs : talk.nerds;
+  const list = role === ParticipationKind.Noob ? talk.noobs : talk.nerds;
   const isPart = list.includes(myId);
   const count = list.length;
   const tooltip = list
     .map((id) => {
       const u = users.value[id];
-      return u ? `${u.name} (${u.team})` : id;
+      const icon = u.attendance_mode == AttendanceMode.OnSite ? "👤" : "🌐";
+      return u ? `${icon} ${u.name} (${u.team})` : id;
     })
     .join(", ");
 
   const toggle = () => {
     const cmd = isPart
-      ? role === "noob"
+      ? role === ParticipationKind.Noob
         ? { RemoveNoob: { talk_id: talk.id, user_id: myId } }
         : { RemoveNerd: { talk_id: talk.id, user_id: myId } }
-      : role === "noob"
+      : role === ParticipationKind.Noob
         ? { AddNoob: { talk_id: talk.id, user_id: myId } }
         : { AddNerd: { talk_id: talk.id, user_id: myId } };
 
     if (!isPart) {
-      const otherList = role === "noob" ? talk.nerds : talk.noobs;
+      const otherList =
+        role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
       if (otherList.includes(myId)) {
         const removeOther =
-          role === "noob"
+          role === ParticipationKind.Noob
             ? { RemoveNerd: { talk_id: talk.id, user_id: myId } }
             : { RemoveNoob: { talk_id: talk.id, user_id: myId } };
         sendCommand(removeOther as any);

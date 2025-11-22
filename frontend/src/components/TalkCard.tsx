@@ -184,6 +184,7 @@ function RoleButton({
         cmd = { AddNerd: payload };
       }
     }
+    sendCommand(cmd);
 
     if (!isPart) {
       const otherList =
@@ -198,8 +199,6 @@ function RoleButton({
         sendCommand(removeOtherCmd);
       }
     }
-
-    sendCommand(cmd);
   };
 
   return (

@@ -142,18 +142,18 @@ body.center {
     box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
 }
 
-#register .i-am-not-a-nao {
+#register .registration-checkbox {
     margin: 0.5rem 0;
     width: 20rem;
 }
 
-#register .i-am-not-a-nao input {
+#register .registration-checkbox input {
     width: initial;
     margin: 0 0.5rem 0 0;
     padding: 0;
 }
 
-#register .i-am-not-a-nao label {
+#register .registration-checkbox label {
     font-size: 0.9rem;
 }
 

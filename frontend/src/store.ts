@@ -115,6 +115,7 @@ function patchTalk(id: number, changes: Partial<Talk>) {
 }
 
 export function sendAuth(cmd: AuthCommand) {
+  console.log(cmd);
   socket?.send(JSON.stringify(cmd));
 }
 

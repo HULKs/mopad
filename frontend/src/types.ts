@@ -10,7 +10,10 @@ export interface SystemTime {
   nanos_since_epoch: number;
 }
 
-export type Role = "Editor" | "Scheduler";
+export enum Role {
+  Editor = "Editor",
+  Scheduler = "Scheduler",
+}
 
 export interface User {
   id: number;
@@ -46,6 +49,18 @@ export type Command =
   | { RemoveNerd: { talk_id: number; user_id: number } };
 
 export type AuthCommand =
-  | { Register: { name: string; team: string; password: string } }
+  | {
+      Register: {
+        name: string;
+        team: string;
+        password: string;
+        attendance_mode: null | AttendanceMode;
+      };
+    }
   | { Login: { name: string; team: string; password: string } }
   | { Relogin: { token: string } };
+
+export enum AttendanceMode {
+  OnSite = "OnSite",
+  Remote = "Remote",
+}

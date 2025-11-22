@@ -1,10 +1,12 @@
 import { useState } from "preact/hooks";
 import { sendAuth, teams, authError } from "../store";
+import { AttendanceMode } from "../types";
 
 export function Auth() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [team, setTeam] = useState(teams.value[0] || "");
+  const [attendanceMode, setAttendanceMode] = useState(AttendanceMode.OnSite);
   const [password, setPassword] = useState("");
   const [isNotNao, setIsNotNao] = useState(false);
 
@@ -14,14 +16,19 @@ export function Auth() {
       alert("NAOs are not allowed in MOPAD");
       return;
     }
-    const payload = { name, team, password };
-    sendAuth(mode === "login" ? { Login: payload } : { Register: payload });
+    sendAuth(
+      mode === "login"
+        ? { Login: { name, team, password } }
+        : {
+            Register: { name, team, password, attendance_mode: attendanceMode },
+          },
+    );
   };
 
   const isValid = name && password && (mode === "login" || isNotNao);
 
   return (
-    <div id={mode} class="center">
+    <form id={mode} class="center">
       <h1>MOPAD</h1>
       <h2>Moderated Organization PAD (powerful, agile, distributed)</h2>
       <h3>{mode === "login" ? "Login" : "Register"}</h3>
@@ -54,18 +61,38 @@ export function Auth() {
       />
 
       {mode === "register" && (
-        <div class="i-am-not-a-nao">
-          <input
-            type="checkbox"
-            id="nao-check"
-            checked={isNotNao}
-            onChange={(e) => setIsNotNao(e.currentTarget.checked)}
-          />
-          <label htmlFor="nao-check">I'm not a NAO</label>
-        </div>
+        <>
+          <div class="registration-checkbox">
+            <input
+              type="checkbox"
+              id="attendance-mode-check"
+              checked={attendanceMode == AttendanceMode.Remote}
+              onChange={(e) =>
+                setAttendanceMode(
+                  e.currentTarget.checked
+                    ? AttendanceMode.Remote
+                    : AttendanceMode.OnSite,
+                )
+              }
+            />
+            <label htmlFor="attendance-mode-check">
+              Remote Participation only
+            </label>
+
+            <div class="registration-checkbox">
+              <input
+                type="checkbox"
+                id="nao-check"
+                checked={isNotNao}
+                onChange={(e) => setIsNotNao(e.currentTarget.checked)}
+              />
+              <label htmlFor="nao-check">I'm not a NAO</label>
+            </div>
+          </div>
+        </>
       )}
 
-      <button disabled={!isValid} onClick={handleSubmit}>
+      <button type="submit" disabled={!isValid} onClick={handleSubmit}>
         {mode === "login" ? "Login" : "Register"}
       </button>
 
@@ -85,7 +112,7 @@ export function Auth() {
       </div>
 
       <Footer />
-    </div>
+    </form>
   );
 }
 

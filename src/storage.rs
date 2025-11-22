@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    path::{Path, PathBuf},
+    path::PathBuf,
     time::{Duration, SystemTime},
 };
 
@@ -9,10 +9,7 @@ use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, Pa
 use eyre::Context;
 use rand_core::OsRng;
 use serde::{Deserialize, Serialize};
-use tokio::{
-    fs::{create_dir_all, read, try_exists, File},
-    io::AsyncWriteExt,
-};
+use tokio::fs::{create_dir_all, try_exists};
 
 use crate::mirrored_to_disk::MirroredToDisk;
 
@@ -188,52 +185,4 @@ pub struct Talk {
     pub location: Option<String>,
     pub nerds: BTreeSet<usize>,
     pub noobs: BTreeSet<usize>,
-}
-
-pub trait ReadFromFileExt {
-    async fn read_from_file(path: impl AsRef<Path> + Debug) -> eyre::Result<Self>
-    where
-        Self: Sized;
-}
-
-impl<T> ReadFromFileExt for T
-where
-    T: for<'de> Deserialize<'de>,
-{
-    async fn read_from_file(path: impl AsRef<Path> + Debug) -> eyre::Result<Self> {
-        let contents = read(path).await.wrap_err("failed to read file")?;
-        serde_json::from_slice(&contents).wrap_err("failed to deserialize JSON")
-    }
-}
-
-pub trait WriteToFileExt {
-    async fn write_to_file(&self, path: impl AsRef<Path> + Debug) -> eyre::Result<()>;
-}
-
-impl<T> WriteToFileExt for T
-where
-    T: Serialize,
-{
-    async fn write_to_file(&self, path: impl AsRef<Path> + Debug) -> eyre::Result<()> {
-        let path = path.as_ref();
-
-        let temp_path = path.with_extension("tmp");
-        let contents = serde_json::to_vec_pretty(self).wrap_err("failed to serialize to JSON")?;
-
-        let mut file = File::create(&temp_path)
-            .await
-            .wrap_err("failed to create temp file")?;
-
-        file.write_all(&contents)
-            .await
-            .wrap_err("failed to write to temp file")?;
-
-        file.sync_all().await.wrap_err("failed to sync to disk")?;
-
-        tokio::fs::rename(&temp_path, path)
-            .await
-            .wrap_err("failed to rename temp file to target")?;
-
-        Ok(())
-    }
 }

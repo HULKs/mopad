@@ -1,14 +1,16 @@
+use core::fmt::Debug;
 use std::{
     ops::{Deref, DerefMut},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use eyre::Context as _;
-use serde::Serialize;
-use tokio::fs::{create_dir_all, try_exists};
+use serde::{Deserialize, Serialize};
+use tokio::{
+    fs::{read, try_exists, File},
+    io::AsyncWriteExt as _,
+};
 use tracing::warn;
-
-use crate::storage::{ReadFromFileExt, WriteToFileExt};
 
 #[derive(Debug)]
 pub struct MirroredToDisk<T> {
@@ -66,5 +68,53 @@ where
         T: Serialize,
     {
         self.value.write_to_file(&self.path).await
+    }
+}
+
+pub trait ReadFromFileExt {
+    async fn read_from_file(path: impl AsRef<Path> + Debug) -> eyre::Result<Self>
+    where
+        Self: Sized;
+}
+
+impl<T> ReadFromFileExt for T
+where
+    T: for<'de> Deserialize<'de>,
+{
+    async fn read_from_file(path: impl AsRef<Path> + Debug) -> eyre::Result<Self> {
+        let contents = read(path).await.wrap_err("failed to read file")?;
+        serde_json::from_slice(&contents).wrap_err("failed to deserialize JSON")
+    }
+}
+
+pub trait WriteToFileExt {
+    async fn write_to_file(&self, path: impl AsRef<Path> + Debug) -> eyre::Result<()>;
+}
+
+impl<T> WriteToFileExt for T
+where
+    T: Serialize,
+{
+    async fn write_to_file(&self, path: impl AsRef<Path> + Debug) -> eyre::Result<()> {
+        let path = path.as_ref();
+
+        let temp_path = path.with_extension("tmp");
+        let contents = serde_json::to_vec_pretty(self).wrap_err("failed to serialize to JSON")?;
+
+        let mut file = File::create(&temp_path)
+            .await
+            .wrap_err("failed to create temp file")?;
+
+        file.write_all(&contents)
+            .await
+            .wrap_err("failed to write to temp file")?;
+
+        file.sync_all().await.wrap_err("failed to sync to disk")?;
+
+        tokio::fs::rename(&temp_path, path)
+            .await
+            .wrap_err("failed to rename temp file to target")?;
+
+        Ok(())
     }
 }

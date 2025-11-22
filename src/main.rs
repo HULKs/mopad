@@ -24,6 +24,7 @@ mod client;
 mod file_watch;
 mod ical;
 mod messages;
+mod mirrored_to_disk;
 mod storage;
 
 const INTERNAL_CHANNEL_CAPACITY: usize = 1337;

@@ -274,11 +274,25 @@ where
     T: Serialize,
 {
     async fn write_to_file(&self, path: impl AsRef<Path> + Debug) -> eyre::Result<()> {
+        let path = path.as_ref();
+
+        let temp_path = path.with_extension("tmp");
         let contents = serde_json::to_vec_pretty(self).wrap_err("failed to serialize to JSON")?;
-        let mut file = File::create(path).await.wrap_err("failed to create file")?;
+
+        let mut file = File::create(&temp_path)
+            .await
+            .wrap_err("failed to create temp file")?;
+
         file.write_all(&contents)
             .await
-            .wrap_err("failed to write to file")?;
+            .wrap_err("failed to write to temp file")?;
+
+        file.sync_all().await.wrap_err("failed to sync to disk")?;
+
+        tokio::fs::rename(&temp_path, path)
+            .await
+            .wrap_err("failed to rename temp file to target")?;
+
         Ok(())
     }
 }

@@ -3,7 +3,6 @@ import {
   Role,
   type Talk,
   ParticipationKind,
-  type Command,
   type TalkUserPayload,
 } from "../types";
 import {
@@ -22,132 +21,131 @@ import {
   toSystemTime,
 } from "../utils/time";
 
-export function TalkCard({ talk }: { talk: Talk }) {
-  const me = currentUser.value!;
-  const isCreator = me.id === talk.creator;
-  const isEditor = me.roles.includes(Role.Editor);
-  const isScheduler = me.roles.includes(Role.Scheduler);
 
-  const locationOptions = Object.values(locations.value).map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+function useTalkPermissions(talk: Talk) {
+  const me = currentUser.value!;
+  return {
+    me,
+    isCreator: me.id === talk.creator,
+    isEditor: me.roles.includes(Role.Editor),
+    isScheduler: me.roles.includes(Role.Scheduler),
+  };
+}
+
+function useCurrentLocation(locationId: number | null) {
+  return locationId != null ? locations.value[locationId] : undefined;
+}
+
+
+function DeleteControl({
+  talkId,
+  canDelete,
+}: {
+  talkId: number;
+  canDelete: boolean;
+}) {
+  if (!canDelete) return null;
 
   const handleDelete = () => {
-    if (confirm("Delete talk?"))
-      sendCommand({ RemoveTalk: { talk_id: talk.id } });
+    if (confirm("Delete talk?")) {
+      sendCommand({ RemoveTalk: { talk_id: talkId } });
+    }
   };
 
-  const participationClass =
-    talk.noobs.includes(me.id) || talk.nerds.includes(me.id)
-      ? "participating"
-      : "";
+  return (
+    <div class="delete" onClick={handleDelete}>
+      &#x2015;
+    </div>
+  );
+}
+
+function StreamIndicator({ locationId }: { locationId: number | null }) {
+  const location = useCurrentLocation(locationId);
+
+  if (!location) return null;
 
   return (
-    <div class={`talk ${participationClass}`}>
-      {(isEditor || isCreator || isScheduler) && (
-        <div class="delete" onClick={handleDelete}>
-          &#x2015;
-        </div>
+    <div class="stream">
+      {location.live_stream ? (
+        <a href={location.live_stream} target="_blank" rel="noopener noreferrer">
+          <span class="emoji">📺</span> Watch Stream
+        </a>
+      ) : (
+        <span class="no-stream">
+          <span class="emoji">🚫</span> No Stream available
+        </span>
       )}
+    </div>
+  );
+}
 
-      {/* Title: No special formatting needed, just pass value */}
-      <EditableField
-        className="title"
-        value={talk.title}
-        canEdit={isCreator || isEditor}
-        placeholder="No Title"
-        onSave={(title) =>
-          sendCommand({ UpdateTitle: { talk_id: talk.id, title } })
-        }
-      />
+function TalkScheduleField({
+  talk,
+  canEdit,
+}: {
+  talk: Talk;
+  canEdit: boolean;
+}) {
+  const displayValue = talk.scheduled_at
+    ? toDate(talk.scheduled_at).toISOString().slice(0, 16)
+    : "";
 
-      {/* Schedule: Input is ISO string, View is "at YYYY-MM..." */}
-      <EditableField
-        className="scheduled-at"
-        type="datetime-local"
-        value={
-          talk.scheduled_at
-            ? toDate(talk.scheduled_at).toISOString().slice(0, 16)
-            : ""
-        }
-        canEdit={isScheduler}
-        onSave={(val) => {
-          const scheduled_at = val ? toSystemTime(new Date(val)) : null;
-          sendCommand({
-            UpdateScheduledAt: { talk_id: talk.id, scheduled_at },
-          });
-        }}
-      >
-        {talk.scheduled_at
-          ? formatScheduleString(
-              talk.scheduled_at,
-              talk.duration,
-              currentTimeSecs.value,
-            )
-          : "Unscheduled"}
-      </EditableField>
+  const handleSave = (val: string) => {
+    const scheduled_at = val ? toSystemTime(new Date(val)) : null;
+    sendCommand({ UpdateScheduledAt: { talk_id: talk.id, scheduled_at } });
+  };
 
-      {/* Duration: Input is "30", View is "for 30 minutes..." */}
-      <EditableField
-        className="duration"
-        type="number"
-        value={Math.floor(talk.duration.secs / 60).toString()}
-        canEdit={isCreator || isScheduler}
-        onSave={(val) =>
-          sendCommand({
-            UpdateDuration: {
-              talk_id: talk.id,
-              duration: { secs: parseInt(val) * 60, nanos: 0 },
-            },
-          })
-        }
-      >
-        {getDurationString(
+  return (
+    <EditableField
+      className="scheduled-at"
+      type="datetime-local"
+      value={displayValue}
+      canEdit={canEdit}
+      onSave={handleSave}
+    >
+      {talk.scheduled_at
+        ? formatScheduleString(
           talk.scheduled_at,
           talk.duration,
-          currentTimeSecs.value,
-        )}
-      </EditableField>
+          currentTimeSecs.value
+        )
+        : "Unscheduled"}
+    </EditableField>
+  );
+}
 
-      {/* Location: Input is "Room 1", View is "at Room 1" */}
-      <EditableSelect
-        className="location"
-        value={talk.location}
-        options={locationOptions}
-        canEdit={isCreator || isScheduler}
-        placeholder="Unknown Location"
-        onSave={(newId) => {
-          sendCommand({
-            UpdateLocation: {
-              talk_id: talk.id,
-              location: newId,
-            },
-          });
-        }}
-      />
+function TalkDurationField({
+  talk,
+  canEdit,
+}: {
+  talk: Talk;
+  canEdit: boolean;
+}) {
+  const mins = Math.floor(talk.duration.secs / 60).toString();
 
-      <EditableField
-        className="description"
-        type="textarea"
-        value={talk.description}
-        placeholder="No description"
-        canEdit={isCreator || isEditor}
-        onSave={(desc) =>
-          sendCommand({
-            UpdateDescription: {
-              talk_id: talk.id,
-              description: desc,
-            },
-          })
-        }
-      />
+  const handleSave = (val: string) => {
+    sendCommand({
+      UpdateDuration: {
+        talk_id: talk.id,
+        duration: { secs: parseInt(val, 10) * 60, nanos: 0 },
+      },
+    });
+  };
 
-      <div class="operation">
-        <RoleButton role={ParticipationKind.Noob} talk={talk} myId={me.id} />
-        <RoleButton role={ParticipationKind.Nerd} talk={talk} myId={me.id} />
-      </div>
-    </div>
+  return (
+    <EditableField
+      className="duration"
+      type="number"
+      value={mins}
+      canEdit={canEdit}
+      onSave={handleSave}
+    >
+      {getDurationString(
+        talk.scheduled_at,
+        talk.duration,
+        currentTimeSecs.value
+      )}
+    </EditableField>
   );
 }
 
@@ -161,60 +159,128 @@ function RoleButton({
   myId: number;
 }) {
   const list = role === ParticipationKind.Noob ? talk.noobs : talk.nerds;
-  const isPart = list.includes(myId);
+  const isParticipating = list.includes(myId);
   const count = list.length;
+
+  // Generate Tooltip
   const tooltip = list
     .map((id) => {
       const u = users.value[id];
-      const icon = u.attendance_mode == AttendanceMode.OnSite ? "👤" : "🌐";
-      return u ? `${icon} ${u.name} (${u.team})` : id;
+      if (!u) return id.toString();
+      const icon = u.attendance_mode === AttendanceMode.OnSite ? "👤" : "🌐";
+      return `${icon} ${u.name} (${u.team})`;
     })
     .join(", ");
 
-  const toggle = () => {
-    const payload: TalkUserPayload = {
-      talk_id: talk.id,
-    };
+  const handleToggle = () => {
+    const payload: TalkUserPayload = { talk_id: talk.id };
 
-    let cmd: Command;
-
-    if (isPart) {
-      if (role === ParticipationKind.Noob) {
-        cmd = { RemoveNoob: payload };
-      } else {
-        cmd = { RemoveNerd: payload };
-      }
+    // 1. Send the primary toggle command
+    if (isParticipating) {
+      sendCommand(
+        role === ParticipationKind.Noob
+          ? { RemoveNoob: payload }
+          : { RemoveNerd: payload }
+      );
     } else {
-      if (role === ParticipationKind.Noob) {
-        cmd = { AddNoob: payload };
-      } else {
-        cmd = { AddNerd: payload };
-      }
-    }
-    sendCommand(cmd);
+      sendCommand(
+        role === ParticipationKind.Noob
+          ? { AddNoob: payload }
+          : { AddNerd: payload }
+      );
 
-    if (!isPart) {
-      const otherList =
-        role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
-
+      // 2. If adding, ensure we remove them from the OTHER list (exclusive roles)
+      const otherList = role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
       if (otherList.includes(myId)) {
-        const removeOtherCmd: Command =
+        sendCommand(
           role === ParticipationKind.Noob
             ? { RemoveNerd: payload }
-            : { RemoveNoob: payload };
-
-        sendCommand(removeOtherCmd);
+            : { RemoveNoob: payload }
+        );
       }
     }
   };
 
   return (
     <button
-      class={`${role} ${isPart ? "participating" : ""}`}
+      class={`${role} ${isParticipating ? "participating" : ""}`}
       title={tooltip}
-      onClick={toggle}
+      onClick={handleToggle}
     >
       {role.charAt(0).toUpperCase() + role.slice(1)} ({count})
     </button>
+  );
+}
+
+// ==========================================
+// 3. Main Component
+// ==========================================
+
+export function TalkCard({ talk }: { talk: Talk }) {
+  const { me, isCreator, isEditor, isScheduler } = useTalkPermissions(talk);
+
+  // Determine card styling based on participation
+  const isParticipating =
+    talk.noobs.includes(me.id) || talk.nerds.includes(me.id);
+  const cardClass = `talk ${isParticipating ? "participating" : ""}`;
+
+  // Prepare Location Options for the Select
+  const locationOptions = Object.values(locations.value).map((loc) => ({
+    value: loc.id,
+    label: loc.name,
+  }));
+
+  return (
+    <div class={cardClass}>
+      <DeleteControl
+        talkId={talk.id}
+        canDelete={isEditor || isCreator || isScheduler}
+      />
+
+      <EditableField
+        className="title"
+        value={talk.title}
+        canEdit={isCreator || isEditor}
+        placeholder="No Title"
+        onSave={(title) =>
+          sendCommand({ UpdateTitle: { talk_id: talk.id, title } })
+        }
+      />
+
+      <TalkScheduleField talk={talk} canEdit={isScheduler} />
+
+      <TalkDurationField talk={talk} canEdit={isCreator || isScheduler} />
+
+      <EditableSelect
+        className="location"
+        value={talk.location}
+        options={locationOptions}
+        canEdit={isCreator || isScheduler}
+        placeholder="Unknown Location"
+        onSave={(newId) =>
+          sendCommand({ UpdateLocation: { talk_id: talk.id, location: newId } })
+        }
+      />
+
+      <StreamIndicator locationId={talk.location} />
+
+      <EditableField
+        className="description"
+        type="textarea"
+        value={talk.description}
+        placeholder="No description"
+        canEdit={isCreator || isEditor}
+        onSave={(desc) =>
+          sendCommand({
+            UpdateDescription: { talk_id: talk.id, description: desc },
+          })
+        }
+      />
+
+      <div class="operation">
+        <RoleButton role={ParticipationKind.Noob} talk={talk} myId={me.id} />
+        <RoleButton role={ParticipationKind.Nerd} talk={talk} myId={me.id} />
+      </div>
+    </div>
   );
 }

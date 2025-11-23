@@ -41,7 +41,7 @@ export interface Talk {
 export interface Location {
   id: number;
   name: string;
-  link: null | string;
+  live_stream: null | string;
 }
 
 // WebSocket Messages

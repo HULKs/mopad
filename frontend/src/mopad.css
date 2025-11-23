@@ -182,6 +182,7 @@ body.center,
         font-size: 3rem;
         font-weight: 500;
     }
+
     & div {
         font-size: 0.85rem;
         color: var(--text-muted);
@@ -193,6 +194,7 @@ body.center,
    4. Main Application (#talks)
    ========================================= */
 #talks {
+
     /* Floating Add Button */
     & .add {
         position: fixed;
@@ -218,7 +220,7 @@ body.center,
     }
 
     /* Header Area */
-    & > .title {
+    &>.title {
         padding: 1rem 1rem 0 1rem;
         display: grid;
         grid-template-columns: min-content 1fr;
@@ -301,7 +303,7 @@ body.center,
     /* 1 column by default, inherits width from grid */
     grid-template-columns: 100%;
     /* Title, Schedule, Duration, Location, Desc, Buttons */
-    grid-template-rows: repeat(6, min-content);
+    grid-template-rows: repeat(7, min-content);
 
     /* --- Inner Elements --- */
     & .delete {
@@ -327,6 +329,38 @@ body.center,
         }
     }
 
+    & .stream {
+        padding: 0 1rem 0.25rem 1rem;
+        font-size: 0.9rem;
+
+        & .emoji {
+            font-style: normal;
+            display: inline-block;
+        }
+
+        & a {
+            text-decoration: none;
+            color: var(--color-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+
+            &:hover {
+                text-decoration: underline;
+                color: var(--color-primary-dark);
+            }
+        }
+
+        & span.no-stream {
+            color: var(--text-subtle);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+    }
+
     & .title {
         font-size: 1.25rem;
         font-weight: 500;
@@ -338,6 +372,7 @@ body.center,
             font-style: italic;
             color: var(--text-subtle);
         }
+
         &.editable {
             border-radius: 1rem 1rem 0 0;
         }
@@ -346,15 +381,18 @@ body.center,
     & .scheduled-at {
         padding: 0.25rem 1rem 0 1rem;
     }
+
     & .duration {
         padding: 0 1rem 0 1rem;
     }
+
     & .location {
         padding: 0 1rem 0.25rem 1rem;
     }
 
     & .description {
         padding: 0.25rem 1rem 0.25rem 1rem;
+
         &.empty {
             font-style: italic;
             color: var(--text-placeholder);
@@ -382,12 +420,14 @@ body.center,
         box-sizing: border-box;
         border: 1px solid #eee;
     }
+
     & textarea {
         resize: vertical;
     }
 
     & .editable {
         cursor: pointer;
+
         &:hover {
             background-color: #eee;
         }
@@ -419,6 +459,7 @@ body.center,
             &.noob {
                 grid-column: 1 / 2;
             }
+
             &.nerd {
                 grid-column: 2 / 3;
             }
@@ -463,6 +504,14 @@ body.center,
                 }
             }
         }
+
+        & .stream a {
+            color: #fff;
+        }
+
+        & .stream span.no-stream {
+            color: var(--color-primary-light);
+        }
     }
 }
 
@@ -474,7 +523,8 @@ body.center,
     position: fixed;
     z-index: 3;
     background-color: rgba(0, 0, 0, 0.5);
-    inset: 0; /* Replaces top/right/bottom/left: 0 */
+    inset: 0;
+    /* Replaces top/right/bottom/left: 0 */
 
     &.open {
         display: grid;
@@ -487,7 +537,8 @@ body.center,
         box-shadow: var(--shadow-md);
         padding: 1rem;
         width: calc(100vw - 3rem);
-        max-width: 25rem; /* Added constraint for larger screens */
+        max-width: 25rem;
+        /* Added constraint for larger screens */
         box-sizing: border-box;
 
         & h1 {
@@ -495,6 +546,7 @@ body.center,
             font-weight: 500;
             color: var(--text-main);
         }
+
         & h2 {
             font-size: 0.85rem;
             font-weight: 500;
@@ -517,10 +569,12 @@ body.center,
 
         & .personalization {
             margin-bottom: 0.5rem;
+
             & input {
                 margin-right: 0.5rem;
                 accent-color: var(--color-primary);
             }
+
             & label {
                 font-size: 0.9rem;
                 color: #444;
@@ -588,6 +642,7 @@ body.center,
         & .heading {
             width: 94rem;
         }
+
         & .talks {
             grid-template-columns: repeat(6, calc((96rem - 7rem) / 6));
         }
@@ -603,15 +658,18 @@ body.center,
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Added for better centering */
+    justify-content: center;
+    /* Added for better centering */
     padding: 2rem 1rem;
-    height: 100vh; /* Full height for the loading screen */
+    height: 100vh;
+    /* Full height for the loading screen */
 
     & h1 {
         font-size: 3rem;
         font-weight: 500;
         margin-bottom: 1rem;
     }
+
     & div {
         font-size: 0.85rem;
         color: var(--text-muted);
@@ -634,6 +692,7 @@ body.center,
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }

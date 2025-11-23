@@ -25,23 +25,17 @@ export function EditableField({
   // Optimistic state to hold the value immediately after save
   const [optimisticValue, setOptimisticValue] = useState<string | null>(null);
 
-  // References for DOM access and state tracking without re-renders
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const isCanceling = useRef(false);
 
-  // Sync internal state if prop changes externally (e.g. WebSocket update)
   useEffect(() => {
     setTempValue(value);
-    // When the server value updates, we can clear our optimistic override
-    // because the UI is now consistent with the server (or the server rejected it).
-    setOptimisticValue(null);
+     setOptimisticValue(null);
   }, [value]);
 
-  // Robust Focus Management
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
-      // Automatically select text for easy replacement (except for dates)
       if (
         type !== "datetime-local" &&
         inputRef.current instanceof HTMLInputElement
@@ -52,14 +46,12 @@ export function EditableField({
   }, [isEditing, type]);
 
   const handleSave = () => {
-    // If we are in the middle of cancelling (Escape), do not save.
     if (isCanceling.current) {
       isCanceling.current = false;
       return;
     }
 
     if (tempValue !== value) {
-      // Optimistic Update: Show new value immediately
       setOptimisticValue(tempValue);
       onSave(tempValue);
       setIsEditing(false);
@@ -76,7 +68,7 @@ export function EditableField({
     }
     if (e.key === "Escape") {
       isCanceling.current = true;
-      setTempValue(value); // Revert input value
+      setTempValue(value);
       setIsEditing(false);
     }
   };
@@ -84,8 +76,6 @@ export function EditableField({
   const startEditing = () => {
     if (canEdit) {
       isCanceling.current = false;
-      // Start editing with the visible value (optimistic or server),
-      // so we don't revert to old text if the server is slow.
       setTempValue(optimisticValue !== null ? optimisticValue : value);
       setIsEditing(true);
     }
@@ -106,8 +96,7 @@ export function EditableField({
       <input ref={inputRef as RefObject<HTMLInputElement>} type={type} {...commonProps} />
     );
   }
-
-  // Determine display value: Optimistic -> Server Value -> Placeholder
+  
   const displayValue = optimisticValue !== null ? optimisticValue : value;
 
   return (

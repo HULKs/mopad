@@ -121,13 +121,13 @@ export type Command =
 
 export type AuthCommand =
   | {
-      Register: {
-        name: string;
-        team: string;
-        password: string;
-        attendance_mode: null | AttendanceMode;
-      };
-    }
+    Register: {
+      name: string;
+      team: string;
+      password: string;
+      attendance_mode: null | AttendanceMode;
+    };
+  }
   | { Login: { name: string; team: string; password: string } }
   | { Relogin: { token: string } };
 
@@ -135,3 +135,34 @@ export enum AttendanceMode {
   OnSite = "OnSite",
   Remote = "Remote",
 }
+
+export interface UsersPayload {
+  users: Record<string, User>; // JSON keys are always strings
+}
+
+export interface AuthenticationSuccessPayload {
+  user_id: number;
+  roles: Role[];
+  token: string;
+}
+
+export interface AuthenticationErrorPayload {
+  reason: string;
+}
+
+export type ServerMessage =
+  | { AuthenticationSuccess: AuthenticationSuccessPayload }
+  | { AuthenticationError: AuthenticationErrorPayload }
+  | { Users: UsersPayload }
+  | { AddTalk: { talk: Talk } }
+  | { RemoveTalk: { talk_id: number } }
+  | { UpdateTitle: { talk_id: number; title: string } }
+  | { UpdateDescription: { talk_id: number; description: string } }
+  | { UpdateScheduledAt: { talk_id: number; scheduled_at: SystemTime | null } }
+  | { UpdateDuration: { talk_id: number; duration: Duration } }
+  | { UpdateLocation: { talk_id: number; location: number | null } }
+  | { AddNoob: { talk_id: number; user_id: number } }
+  | { RemoveNoob: { talk_id: number; user_id: number } }
+  | { AddNerd: { talk_id: number; user_id: number } }
+  | { RemoveNerd: { talk_id: number; user_id: number } }
+  | { UpdateAttendanceMode: { user_id: number; attendance_mode: AttendanceMode } };

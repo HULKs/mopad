@@ -1,5 +1,5 @@
 import { signal, effect } from "@preact/signals";
-import type { Talk, User, AuthCommand, Command, AttendanceMode } from "./types";
+import type { Talk, User, AuthCommand, Command, ServerMessage } from "./types";
 
 export const currentUser = signal<User | null>(null);
 export const users = signal<Record<number, User>>({});
@@ -68,8 +68,8 @@ export function loginOrRegister(cmd: AuthCommand) {
   connect();
 }
 
-function handleMessage(msg: any) {
-  if (msg.AuthenticationSuccess) {
+function handleMessage(msg: ServerMessage) {
+  if ("AuthenticationSuccess" in msg) {
     const { user_id, roles, token } = msg.AuthenticationSuccess;
     localStorage.setItem("reloginToken", token);
     effect(() => {
@@ -77,69 +77,70 @@ function handleMessage(msg: any) {
         currentUser.value = { ...users.value[user_id], roles };
       }
     });
-  } else if (msg.AuthenticationError) {
+    return;
+  }
+
+  if ("AuthenticationError" in msg) {
     authError.value = msg.AuthenticationError.reason;
     localStorage.removeItem("reloginToken");
-  } else if (msg.Users) {
+    return;
+  }
+
+  if ("Users" in msg) {
     const newUsers: Record<number, User> = {};
-    Object.values(msg.Users.users).forEach((u: any) => {
-      newUsers[u.id] = { ...u, roles: [] };
+    // Iterate over the Record<string, User> from the payload
+    Object.values(msg.Users.users).forEach((u) => {
+      newUsers[u.id] = { ...u, roles: [] }; // Reset roles as they are session-specific
     });
     users.value = newUsers;
-  } else if (msg.AddTalk) {
+    return;
+  }
+
+  if ("AddTalk" in msg) {
     const t = msg.AddTalk.talk;
     talks.value = { ...talks.value, [t.id]: t };
-  } else if (msg.RemoveTalk) {
+    return;
+  }
+
+  if ("RemoveTalk" in msg) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [msg.RemoveTalk.talk_id]: _, ...rest } = talks.value;
     talks.value = rest;
-  } else if (msg.UpdateTitle) {
+    return;
+  }
+
+
+  // Handle distinct updates via a helper to keep this function clean
+  if ("UpdateTitle" in msg) {
     patchTalk(msg.UpdateTitle.talk_id, { title: msg.UpdateTitle.title });
-  } else if (msg.UpdateDescription) {
-    patchTalk(msg.UpdateDescription.talk_id, {
-      description: msg.UpdateDescription.description,
-    });
-  } else if (msg.UpdateScheduledAt) {
-    patchTalk(msg.UpdateScheduledAt.talk_id, {
-      scheduled_at: msg.UpdateScheduledAt.scheduled_at,
-    });
-  } else if (msg.UpdateDuration) {
-    patchTalk(msg.UpdateDuration.talk_id, {
-      duration: msg.UpdateDuration.duration,
-    });
-  } else if (msg.UpdateLocation) {
-    patchTalk(msg.UpdateLocation.talk_id, {
-      location: msg.UpdateLocation.location,
-    });
-  } else if (msg.AddNoob) {
+  } else if ("UpdateDescription" in msg) {
+    patchTalk(msg.UpdateDescription.talk_id, { description: msg.UpdateDescription.description });
+  } else if ("UpdateScheduledAt" in msg) {
+    patchTalk(msg.UpdateScheduledAt.talk_id, { scheduled_at: msg.UpdateScheduledAt.scheduled_at });
+  } else if ("UpdateDuration" in msg) {
+    patchTalk(msg.UpdateDuration.talk_id, { duration: msg.UpdateDuration.duration });
+  } else if ("UpdateLocation" in msg) {
+    patchTalk(msg.UpdateLocation.talk_id, { location: msg.UpdateLocation.location });
+  } else if ("AddNoob" in msg) {
     const t = talks.value[msg.AddNoob.talk_id];
     if (t) patchTalk(t.id, { noobs: [...t.noobs, msg.AddNoob.user_id] });
-  } else if (msg.RemoveNoob) {
+  } else if ("RemoveNoob" in msg) {
     const t = talks.value[msg.RemoveNoob.talk_id];
-    if (t)
-      patchTalk(t.id, {
-        noobs: t.noobs.filter((id) => id !== msg.RemoveNoob.user_id),
-      });
-  } else if (msg.AddNerd) {
+    if (t) patchTalk(t.id, { noobs: t.noobs.filter((id) => id !== msg.RemoveNoob.user_id) });
+  } else if ("AddNerd" in msg) {
     const t = talks.value[msg.AddNerd.talk_id];
     if (t) patchTalk(t.id, { nerds: [...t.nerds, msg.AddNerd.user_id] });
-  } else if (msg.RemoveNerd) {
+  } else if ("RemoveNerd" in msg) {
     const t = talks.value[msg.RemoveNerd.talk_id];
-    if (t)
-      patchTalk(t.id, {
-        nerds: t.nerds.filter((id) => id !== msg.RemoveNerd.user_id),
-      });
-  } else if (msg.UpdateAttendanceMode) {
-    const user_id = msg.UpdateAttendanceMode.user_id;
-    const mode: AttendanceMode = msg.UpdateAttendanceMode.attendance_mode;
-    users.value = {
-      ...users.value,
-      [user_id]: {
-        ...users.value[user_id],
-        attendance_mode: mode,
-      },
-    };
-  } else {
-    console.log("Unknown message", msg);
+    if (t) patchTalk(t.id, { nerds: t.nerds.filter((id) => id !== msg.RemoveNerd.user_id) });
+  } else if ("UpdateAttendanceMode" in msg) {
+    const { user_id, attendance_mode } = msg.UpdateAttendanceMode;
+    if (users.value[user_id]) {
+      users.value = {
+        ...users.value,
+        [user_id]: { ...users.value[user_id], attendance_mode },
+      };
+    }
   }
 }
 

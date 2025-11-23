@@ -1,5 +1,5 @@
 import { signal, effect } from "@preact/signals";
-import type { Talk, User, AuthCommand, Command, ServerMessage } from "./types";
+import type { Talk, User, AuthCommand, Command, ServerMessage, Location } from "./types";
 
 export const currentUser = signal<User | null>(null);
 export const users = signal<Record<number, User>>({});
@@ -20,9 +20,8 @@ let socket: WebSocket | null = null;
 let pendingAuthCommand: AuthCommand | null = null;
 
 export function connect() {
-  // 1. Clean up existing connection to prevent phantom "disconnected" events
   if (socket) {
-    socket.onclose = null; // Remove listener so we don't trigger state change
+    socket.onclose = null;
     socket.close();
     socket = null;
   }
@@ -35,14 +34,12 @@ export function connect() {
   socket.onopen = () => {
     connectionStatus.value = "connected";
 
-    // Priority 1: Manual Login/Register
     if (pendingAuthCommand) {
       sendAuth(pendingAuthCommand);
       pendingAuthCommand = null;
       return;
     }
 
-    // Priority 2: Auto-Relogin
     const token = localStorage.getItem("reloginToken");
     if (token) {
       sendAuth({ Relogin: { token } });
@@ -61,7 +58,6 @@ export function connect() {
 }
 
 export function loginOrRegister(cmd: AuthCommand) {
-  // Queue the command and force a fresh connection
   localStorage.removeItem("reloginToken");
   pendingAuthCommand = cmd;
   authError.value = null;
@@ -88,7 +84,6 @@ function handleMessage(msg: ServerMessage) {
 
   if ("Users" in msg) {
     const newUsers: Record<number, User> = {};
-    // Iterate over the Record<string, User> from the payload
     Object.values(msg.Users.users).forEach((u) => {
       newUsers[u.id] = { ...u, roles: [] }; // Reset roles as they are session-specific
     });

@@ -4,6 +4,7 @@ import {
   type Talk,
   ParticipationKind,
   type TalkUserPayload,
+  type Location,
 } from "../types";
 import {
   currentUser,
@@ -32,7 +33,7 @@ function useTalkPermissions(talk: Talk) {
   };
 }
 
-function useCurrentLocation(locationId: number | null) {
+function useCurrentLocation(locationId: number | null): Location | undefined{
   return locationId != null ? locations.value[locationId] : undefined;
 }
 

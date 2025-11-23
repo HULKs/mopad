@@ -11,7 +11,7 @@ FROM docker.io/oven/bun:1 AS frontend-builder
 WORKDIR /usr/src/mopad/frontend
 COPY ./frontend/ .
 
-RUN bun run build
+RUN bun i && bun run build
 
 FROM debian:bookworm-slim
 

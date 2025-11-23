@@ -2,7 +2,8 @@ import { computed } from "@preact/signals";
 import { useState } from "preact/hooks";
 import { talks, currentTimeSecs, sendCommand, currentUser } from "../store";
 import { TalkCard } from "./TalkCard";
-import { AttendanceMode, type Talk } from "../types";
+import { AttendanceMode, Role, type Talk } from "../types";
+import { openScheduler } from "../schedulerStore";
 
 export function TalkList() {
   const user = currentUser.value!;
@@ -117,6 +118,7 @@ function Section({
 function Header() {
   const user = currentUser.value;
   const isRemote = user?.attendance_mode === AttendanceMode.Remote;
+  const isScheduler = user?.roles.includes(Role.Scheduler);
 
   const toggleMode = (e: Event) => {
     const checked = (e.currentTarget as HTMLInputElement).checked;
@@ -141,6 +143,24 @@ function Header() {
           gap: "0.5rem",
         }}
       >
+        {isScheduler && (
+          <button
+            onClick={openScheduler}
+            style={{
+              padding: "0.5rem 1rem",
+              fontSize: "0.9rem",
+              background: "var(--color-primary)",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: 500
+            }}
+          >
+            📅 Open Scheduler
+          </button>
+        )}
+
         <a
           class="calendar"
           href="#calendar"

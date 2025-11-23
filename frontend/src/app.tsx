@@ -8,6 +8,7 @@ import {
 } from "./store";
 import { Auth } from "./components/Auth";
 import { TalkList } from "./components/TalkList";
+import { Scheduler } from "./components/Scheduler";
 import { Loading } from "./components/Loading";
 import "./mopad.css";
 
@@ -25,5 +26,16 @@ export function App() {
     return <Loading />;
   }
 
-  return <>{currentUser.value ? <TalkList /> : <Auth />}</>;
+  return (
+    <>
+      {currentUser.value ? (
+        <>
+          <TalkList />
+          <Scheduler />
+        </>
+      ) : (
+        <Auth />
+      )}
+    </>
+  );
 }

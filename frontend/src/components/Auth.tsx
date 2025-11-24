@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { sendAuth, teams, authError } from "../store";
+import { loginOrRegister, teams, authError } from "../store";
 import { AttendanceMode } from "../types";
 
 export function Auth() {
@@ -16,7 +16,7 @@ export function Auth() {
       alert("NAOs are not allowed in MOPAD");
       return;
     }
-    sendAuth(
+    loginOrRegister(
       mode === "login"
         ? { Login: { name, team, password } }
         : {

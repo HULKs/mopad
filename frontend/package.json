@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "check": "eslint .",
+    "check": "eslint src",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview"

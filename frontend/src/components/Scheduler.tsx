@@ -29,7 +29,6 @@ const ZOOM = PIXELS_PER_MINUTE; // Alias for brevity
 // Pre-calculate track background styles since config/zoom are static
 const trackBackgroundStyle = (() => {
   const dayH = MINS_PER_DAY * ZOOM;
-  const hourH = 60 * ZOOM;
   const slotH = SLOT_MINUTES * ZOOM;
   const activeStart = schedulerConfig.activeDayStartMin * ZOOM;
   const activeEnd = schedulerConfig.activeDayEndMin * ZOOM;

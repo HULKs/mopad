@@ -5,7 +5,7 @@ import type { Talk } from "./types";
 export const schedulerConfig = {
   // The starting timestamp of the conference (00:00 of the first day)
   // currently set to: 2025-11-23T00:00:00
-  startEpoch: new Date("2025-11-23T00:00:00").getTime() / 1000,
+  startEpoch: new Date("2025-11-28T00:00:00").getTime() / 1000,
 
   // How many days to render on the vertical timeline
   daysToShow: 3,

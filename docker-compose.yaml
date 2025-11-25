@@ -4,9 +4,6 @@ services:
     build: .
     restart: unless-stopped
     volumes:
-      - ./talks.json:/mopad/talks.json
-      - ./teams.json:/mopad/teams.json
-      - ./tokens.json:/mopad/tokens.json
-      - ./users.json:/mopad/users.json
+      - ./storage:/mopad/storage
     ports:
       - "1337:1337"

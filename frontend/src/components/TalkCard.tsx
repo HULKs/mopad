@@ -167,13 +167,19 @@ function RoleButton({
 
   // Generate Tooltip
   const tooltip = list
-    .map((id) => {
-      const u = users.value[id];
-      if (!u) return id.toString();
+    .map((id) => users.value[id])
+    .filter((u) => !!u)
+    .sort((a, b) => {
+      if (a.attendance_mode !== b.attendance_mode) {
+        return a.attendance_mode === AttendanceMode.OnSite ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    })
+    .map((u) => {
       const icon = u.attendance_mode === AttendanceMode.OnSite ? "👤" : "🌐";
       return `${icon} ${u.name} (${u.team})`;
     })
-    .join(", ");
+    .join("\n");
 
   const handleToggle = () => {
     const payload: TalkUserPayload = { talk_id: talk.id };

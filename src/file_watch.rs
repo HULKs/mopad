@@ -46,6 +46,8 @@ pub async fn refresh_files_from_disk_on_signal(
             });
         }
 
+        storage.locations = refreshed_storage.locations;
+
         for talk_id in storage
             .talks
             .keys()

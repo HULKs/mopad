@@ -1,731 +1,730 @@
 :root {
-    --color-primary: #388e3c;
-    --color-secondary: #023e8a;
-    --color-secondary-light: #0096c7;
-    --color-primary-dark: #43a047;
-    --color-primary-light: #c8e6c9;
-    --color-danger: #e64a19;
+  --color-primary: #388e3c;
+  --color-secondary: #023e8a;
+  --color-secondary-light: #0096c7;
+  --color-primary-dark: #43a047;
+  --color-primary-light: #c8e6c9;
+  --color-danger: #e64a19;
 
-    --bg-body: #f2f2f2;
-    --bg-card: #fff;
+  --bg-body: #f2f2f2;
+  --bg-card: #fff;
 
-    --text-main: #000;
-    --text-muted: #888;
-    --text-subtle: #666;
-    --text-placeholder: #aaa;
+  --text-main: #000;
+  --text-muted: #888;
+  --text-subtle: #666;
+  --text-placeholder: #aaa;
 
-    --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
-    --shadow-md: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
-    --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.125);
+  --shadow-md: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
 
-    --font-main:
-        "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
+  --font-main:
+    "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }
 
 @font-face {
-    font-family: "Roboto";
-    src:
-        local("Roboto"),
-        url(/fonts/roboto/Roboto-Medium.ttf) format("truetype");
-    font-weight: 500;
+  font-family: "Roboto";
+  src:
+    local("Roboto"),
+    url(/fonts/roboto/Roboto-Medium.ttf) format("truetype");
+  font-weight: 500;
 }
 
 @font-face {
-    font-family: "Roboto";
-    src:
-        local("Roboto"),
-        url(/fonts/roboto/Roboto-Regular.ttf) format("truetype");
-    font-weight: 400;
+  font-family: "Roboto";
+  src:
+    local("Roboto"),
+    url(/fonts/roboto/Roboto-Regular.ttf) format("truetype");
+  font-weight: 400;
 }
 
 h1,
 h2,
 h3 {
-    margin: 0;
+  margin: 0;
 }
 
 html,
 body {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    font-family: var(--font-main);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: var(--bg-body);
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-body);
 }
 
 /* Center layout helper (used for Auth pages) */
 body.center,
 .center {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-    justify-items: center;
-    align-items: center;
-    min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  justify-items: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 #login,
 #register {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+
+  & h1 {
+    font-size: 3rem;
+    font-weight: 500;
+    color: var(--text-main);
+  }
+
+  & h2 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  & h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin: 1rem 0 0.5rem 0;
+  }
+
+  & input,
+  & select,
+  & button {
+    white-space: nowrap;
+    width: 20rem;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    box-sizing: border-box;
+    font-family: inherit;
+    accent-color: var(--color-primary);
+  }
+
+  & .hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: -0.25rem 0 0.5rem 0;
+    width: 20rem;
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+  }
+
+  & button {
+    cursor: pointer;
+    color: #fff;
+    background-color: var(--color-primary);
+    text-transform: uppercase;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.25rem;
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      background-color: var(--color-primary-dark);
+      box-shadow: var(--shadow-md);
+    }
+
+    &[disabled] {
+      cursor: initial;
+      background-color: #aaa;
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  & .registration-checkbox {
+    margin: 0.5rem 0;
+    width: 20rem;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 2rem 1rem;
 
-    & h1 {
-        font-size: 3rem;
-        font-weight: 500;
-        color: var(--text-main);
+    & input {
+      width: initial;
+      margin: 0 0.5rem 0 0;
+      padding: 0;
     }
 
-    & h2 {
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--text-muted);
+    & label {
+      font-size: 0.9rem;
     }
+  }
 
-    & h3 {
-        font-size: 1.5rem;
-        font-weight: 500;
-        color: var(--text-main);
-        margin: 1rem 0 0.5rem 0;
+  & .login-register-switcher {
+    margin: 0.5rem 0 1rem 0;
+    font-size: 0.9rem;
+    color: #555;
+
+    & a {
+      color: var(--color-primary);
     }
-
-    & input,
-    & select,
-    & button {
-        white-space: nowrap;
-        width: 20rem;
-        padding: 0.5rem;
-        margin: 0.5rem 0;
-        box-sizing: border-box;
-        font-family: inherit;
-        accent-color: var(--color-primary);
-    }
-
-    & .hint {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        margin: -0.25rem 0 0.5rem 0;
-        width: 20rem;
-        padding: 0 0.5rem;
-        box-sizing: border-box;
-    }
-
-    & button {
-        cursor: pointer;
-        color: #fff;
-        background-color: var(--color-primary);
-        text-transform: uppercase;
-        font-weight: 500;
-        border: none;
-        border-radius: 0.25rem;
-        box-shadow: var(--shadow-sm);
-
-        &:hover {
-            background-color: var(--color-primary-dark);
-            box-shadow: var(--shadow-md);
-        }
-
-        &[disabled] {
-            cursor: initial;
-            background-color: #aaa;
-            box-shadow: var(--shadow-sm);
-        }
-    }
-
-    & .registration-checkbox {
-        margin: 0.5rem 0;
-        width: 20rem;
-        display: flex;
-        align-items: center;
-
-        & input {
-            width: initial;
-            margin: 0 0.5rem 0 0;
-            padding: 0;
-        }
-
-        & label {
-            font-size: 0.9rem;
-        }
-    }
-
-    & .login-register-switcher {
-        margin: 0.5rem 0 1rem 0;
-        font-size: 0.9rem;
-        color: #555;
-
-        & a {
-            color: var(--color-primary);
-        }
-    }
+  }
 }
 
 #loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
 
-    & h1 {
-        font-size: 3rem;
-        font-weight: 500;
-    }
+  & h1 {
+    font-size: 3rem;
+    font-weight: 500;
+  }
 
-    & div {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        font-weight: 500;
-    }
+  & div {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
 }
 
 #talks {
-    & .add {
-        position: fixed;
-        z-index: 2;
-        right: 1rem;
-        bottom: 1rem;
-        cursor: pointer;
-        width: 4rem;
-        height: 4rem;
-        font-size: 1.667rem;
-        line-height: 4rem;
-        text-align: center;
-        color: #fff;
-        background-color: var(--color-primary);
-        border-radius: 2rem;
-        box-shadow:
-            0 0.25rem 0.5rem rgba(0, 0, 0, 0.25),
-            0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+  & .add {
+    position: fixed;
+    z-index: 2;
+    right: 1rem;
+    bottom: 1rem;
+    cursor: pointer;
+    width: 4rem;
+    height: 4rem;
+    font-size: 1.667rem;
+    line-height: 4rem;
+    text-align: center;
+    color: #fff;
+    background-color: var(--color-primary);
+    border-radius: 2rem;
+    box-shadow:
+      0 0.25rem 0.5rem rgba(0, 0, 0, 0.25),
+      0 0.5rem 1rem rgba(0, 0, 0, 0.25);
 
-        &:hover {
-            background-color: var(--color-primary-dark);
-        }
+    &:hover {
+      background-color: var(--color-primary-dark);
+    }
+  }
+
+  /* Header Area */
+  & > .title {
+    padding: 1rem 1rem 0 1rem;
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    grid-template-rows: min-content;
+    column-gap: 1rem;
+    align-items: center;
+
+    & h1 {
+      font-size: 2.5rem;
+      font-weight: 500;
+      color: var(--text-main);
     }
 
-    /* Header Area */
-    & > .title {
-        padding: 1rem 1rem 0 1rem;
-        display: grid;
-        grid-template-columns: min-content 1fr;
-        grid-template-rows: min-content;
-        column-gap: 1rem;
-        align-items: center;
+    & .calendar {
+      font-size: 0.9rem;
+      color: var(--color-primary);
+      white-space: nowrap;
+      padding: 0.5rem 0;
+      justify-self: end;
+    }
+  }
 
-        & h1 {
-            font-size: 2.5rem;
-            font-weight: 500;
-            color: var(--text-main);
-        }
+  /* Section Headings (Past, Current, etc.) */
+  & .heading {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
 
-        & .calendar {
-            font-size: 0.9rem;
-            color: var(--color-primary);
-            white-space: nowrap;
-            padding: 0.5rem 0;
-            justify-self: end;
-        }
+    & h2 {
+      flex-grow: 1;
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--text-main);
+      margin: 0.25rem 0;
     }
 
-    /* Section Headings (Past, Current, etc.) */
-    & .heading {
-        padding: 0.5rem 1rem;
-        display: flex;
-        align-items: center;
+    & button {
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 0.5rem 0.75rem;
+      color: var(--text-muted);
+      background: transparent;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 500;
+      border: 0.125rem solid #aaa;
+      border-radius: 0.25rem;
 
-        & h2 {
-            flex-grow: 1;
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--text-main);
-            margin: 0.25rem 0;
-        }
-
-        & button {
-            cursor: pointer;
-            white-space: nowrap;
-            padding: 0.5rem 0.75rem;
-            color: var(--text-muted);
-            background: transparent;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            font-family: inherit;
-            font-weight: 500;
-            border: 0.125rem solid #aaa;
-            border-radius: 0.25rem;
-
-            &:hover {
-                color: var(--text-main);
-                border-color: var(--text-main);
-            }
-        }
+      &:hover {
+        color: var(--text-main);
+        border-color: var(--text-main);
+      }
     }
+  }
 
-    /* The Grid Container */
-    & .talks {
-        padding: 0.5rem 1rem;
-        display: grid;
-        /* Default mobile layout */
-        grid-template-columns: calc(100vw - 2rem);
-        grid-auto-rows: min-content;
-        column-gap: 1rem;
-        row-gap: 1rem;
-        align-items: start;
-        box-sizing: border-box;
-    }
+  /* The Grid Container */
+  & .talks {
+    padding: 0.5rem 1rem;
+    display: grid;
+    /* Default mobile layout */
+    grid-template-columns: calc(100vw - 2rem);
+    grid-auto-rows: min-content;
+    column-gap: 1rem;
+    row-gap: 1rem;
+    align-items: start;
+    box-sizing: border-box;
+  }
 }
 
 .talk {
-    display: grid;
-    position: relative;
-    background-color: var(--bg-card);
-    border-radius: 1rem;
+  display: grid;
+  position: relative;
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  /* 1 column by default, inherits width from grid */
+  grid-template-columns: 100%;
+  /* Title, Schedule, Duration, Location, Desc, Buttons */
+  grid-template-rows: repeat(7, min-content);
+
+  /* --- Inner Elements --- */
+  & .delete {
+    position: absolute;
+    z-index: 1;
+    cursor: pointer;
+    top: -0.75rem;
+    right: -0.75rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.667rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 2rem;
+    color: var(--color-danger);
+    background-color: #fff;
+    border-radius: 50%;
     box-shadow: var(--shadow-md);
-    /* 1 column by default, inherits width from grid */
-    grid-template-columns: 100%;
-    /* Title, Schedule, Duration, Location, Desc, Buttons */
-    grid-template-rows: repeat(7, min-content);
 
-    /* --- Inner Elements --- */
-    & .delete {
-        position: absolute;
-        z-index: 1;
-        cursor: pointer;
-        top: -0.75rem;
-        right: -0.75rem;
-        width: 2rem;
-        height: 2rem;
-        font-size: 1.667rem;
-        font-weight: 500;
-        text-align: center;
-        line-height: 2rem;
-        color: var(--color-danger);
+    &:hover {
+      color: #fff;
+      background-color: var(--color-danger);
+    }
+  }
+
+  & .stream {
+    padding: 0 1rem 0.25rem 1rem;
+    font-size: 0.9rem;
+
+    & .emoji {
+      font-style: normal;
+      display: inline-block;
+    }
+
+    & a {
+      text-decoration: none;
+      color: var(--color-primary);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+
+      &:hover {
+        text-decoration: underline;
+        color: var(--color-primary-dark);
+      }
+    }
+
+    & span.no-stream {
+      color: var(--text-subtle);
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+  }
+
+  & .title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-main);
+    padding: 1rem 1rem 0.25rem 1rem;
+    overflow-wrap: break-word;
+
+    &.empty {
+      font-style: italic;
+      color: var(--text-subtle);
+    }
+
+    &.editable {
+      border-radius: 1rem 1rem 0 0;
+    }
+  }
+
+  & .scheduled-at {
+    padding: 0.25rem 1rem 0 1rem;
+  }
+
+  & .duration {
+    padding: 0 1rem 0 1rem;
+  }
+
+  & .location {
+    padding: 0 1rem 0.25rem 1rem;
+  }
+
+  & .description {
+    padding: 0.25rem 1rem 0.25rem 1rem;
+
+    &.empty {
+      font-style: italic;
+      color: var(--text-placeholder);
+    }
+  }
+
+  /* Shared text styles */
+  & .scheduled-at,
+  & .duration,
+  & .location,
+  & .description {
+    font-size: 0.9rem;
+    color: var(--text-subtle);
+    overflow-wrap: break-word;
+  }
+
+  /* Inputs inside card */
+  & input,
+  & select,
+  & textarea {
+    font-family: inherit;
+    color: var(--text-main);
+    padding: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #eee;
+  }
+
+  & textarea {
+    resize: vertical;
+  }
+
+  & .editable {
+    cursor: pointer;
+
+    &:hover {
+      background-color: #eee;
+    }
+  }
+
+  /* --- Action Buttons --- */
+  & .operation {
+    padding: 0.5rem 1rem 1rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1rem;
+
+    & button {
+      cursor: pointer;
+      white-space: nowrap;
+      color: var(--color-primary);
+      background-color: transparent;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.5rem 0.75rem;
+      border: 0.125rem solid var(--color-primary-light);
+      border-radius: 0.25rem;
+
+      &:hover {
+        border-color: var(--color-primary);
+      }
+
+      &.noob {
+        grid-column: 1 / 2;
+      }
+
+      &.nerd {
+        grid-column: 2 / 3;
+      }
+    }
+  }
+
+  /* --- Participating State (Green Card) --- */
+  &.participating {
+    background-color: var(--color-primary);
+
+    & div.title {
+      color: #fff;
+    }
+
+    & div.scheduled-at,
+    & div.duration,
+    & div.location,
+    & div.description {
+      color: var(--color-primary-light);
+    }
+
+    & .editable:hover {
+      background-color: var(--color-primary-dark);
+    }
+
+    & .operation button {
+      border-color: var(--color-primary-light);
+      color: var(--color-primary-light);
+
+      &:hover {
+        background-color: var(--color-primary-dark);
+      }
+
+      &.participating {
+        border-color: transparent;
+        color: var(--color-primary);
         background-color: #fff;
-        border-radius: 50%;
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
 
         &:hover {
-            color: #fff;
-            background-color: var(--color-danger);
+          background-color: var(--color-primary-light);
         }
+      }
     }
 
-    & .stream {
-        padding: 0 1rem 0.25rem 1rem;
-        font-size: 0.9rem;
-
-        & .emoji {
-            font-style: normal;
-            display: inline-block;
-        }
-
-        & a {
-            text-decoration: none;
-            color: var(--color-primary);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-
-            &:hover {
-                text-decoration: underline;
-                color: var(--color-primary-dark);
-            }
-        }
-
-        & span.no-stream {
-            color: var(--text-subtle);
-            font-style: italic;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
+    & .stream a {
+      color: #fff;
     }
 
-    & .title {
-        font-size: 1.25rem;
-        font-weight: 500;
-        color: var(--text-main);
-        padding: 1rem 1rem 0.25rem 1rem;
-        overflow-wrap: break-word;
+    & .stream span.no-stream {
+      color: var(--color-primary-light);
+    }
+  }
 
-        &.empty {
-            font-style: italic;
-            color: var(--text-subtle);
-        }
+  &.highlight {
+    background-color: var(--color-secondary);
 
-        &.editable {
-            border-radius: 1rem 1rem 0 0;
-        }
+    & div.title {
+      color: #fff;
     }
 
-    & .scheduled-at {
-        padding: 0.25rem 1rem 0 1rem;
+    & div.scheduled-at,
+    & div.duration,
+    & div.location,
+    & div.description {
+      color: var(--color-primary-light);
     }
 
-    & .duration {
-        padding: 0 1rem 0 1rem;
+    & .editable:hover {
+      background-color: var(--color-secondary-light);
     }
 
-    & .location {
-        padding: 0 1rem 0.25rem 1rem;
-    }
+    & .operation button {
+      border-color: var(--color-primary-light);
+      color: var(--color-primary-light);
 
-    & .description {
-        padding: 0.25rem 1rem 0.25rem 1rem;
+      &:hover {
+        background-color: var(--color-secondary-light);
+      }
 
-        &.empty {
-            font-style: italic;
-            color: var(--text-placeholder);
-        }
-    }
-
-    /* Shared text styles */
-    & .scheduled-at,
-    & .duration,
-    & .location,
-    & .description {
-        font-size: 0.9rem;
-        color: var(--text-subtle);
-        overflow-wrap: break-word;
-    }
-
-    /* Inputs inside card */
-    & input,
-    & select,
-    & textarea {
-        font-family: inherit;
-        color: var(--text-main);
-        padding: inherit;
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid #eee;
-    }
-
-    & textarea {
-        resize: vertical;
-    }
-
-    & .editable {
-        cursor: pointer;
+      &.participating {
+        border-color: transparent;
+        color: var(--color-primary);
+        background-color: #fff;
+        box-shadow: var(--shadow-sm);
 
         &:hover {
-            background-color: #eee;
+          background-color: #f2f2f2;
         }
+      }
     }
 
-    /* --- Action Buttons --- */
-    & .operation {
-        padding: 0.5rem 1rem 1rem 1rem;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        column-gap: 1rem;
-
-        & button {
-            cursor: pointer;
-            white-space: nowrap;
-            color: var(--color-primary);
-            background-color: transparent;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            font-weight: 500;
-            padding: 0.5rem 0.75rem;
-            border: 0.125rem solid var(--color-primary-light);
-            border-radius: 0.25rem;
-
-            &:hover {
-                border-color: var(--color-primary);
-            }
-
-            &.noob {
-                grid-column: 1 / 2;
-            }
-
-            &.nerd {
-                grid-column: 2 / 3;
-            }
-        }
+    & .stream a {
+      color: #fff;
     }
 
-    /* --- Participating State (Green Card) --- */
-    &.participating {
-        background-color: var(--color-primary);
-
-        & div.title {
-            color: #fff;
-        }
-
-        & div.scheduled-at,
-        & div.duration,
-        & div.location,
-        & div.description {
-            color: var(--color-primary-light);
-        }
-
-        & .editable:hover {
-            background-color: var(--color-primary-dark);
-        }
-
-        & .operation button {
-            border-color: var(--color-primary-light);
-            color: var(--color-primary-light);
-
-            &:hover {
-                background-color: var(--color-primary-dark);
-            }
-
-            &.participating {
-                border-color: transparent;
-                color: var(--color-primary);
-                background-color: #fff;
-                box-shadow: var(--shadow-sm);
-
-                &:hover {
-                    background-color: var(--color-primary-light);
-                }
-            }
-        }
-
-        & .stream a {
-            color: #fff;
-        }
-
-        & .stream span.no-stream {
-            color: var(--color-primary-light);
-        }
+    & .stream span.no-stream {
+      color: var(--color-primary-light);
     }
-
-    &.highlight {
-        background-color: var(--color-secondary);
-
-        & div.title {
-            color: #fff;
-        }
-
-        & div.scheduled-at,
-        & div.duration,
-        & div.location,
-        & div.description {
-            color: var(--color-primary-light);
-        }
-
-        & .editable:hover {
-            background-color: var(--color-secondary-light);
-        }
-
-        & .operation button {
-            border-color: var(--color-primary-light);
-            color: var(--color-primary-light);
-
-            &:hover {
-                background-color: var(--color-secondary-light);
-            }
-
-            &.participating {
-                border-color: transparent;
-                color: var(--color-primary);
-                background-color: #fff;
-                box-shadow: var(--shadow-sm);
-
-                &:hover {
-                    background-color: #f2f2f2;
-                }
-            }
-        }
-
-        & .stream a {
-            color: #fff;
-        }
-
-        & .stream span.no-stream {
-            color: var(--color-primary-light);
-        }
-    }
+  }
 }
 
 /* =========================================
    6. Calendar Dialog
    ========================================= */
 .calendar-dialog {
-    display: none;
-    position: fixed;
-    z-index: 3;
-    background-color: rgba(0, 0, 0, 0.5);
-    inset: 0;
-    /* Replaces top/right/bottom/left: 0 */
+  display: none;
+  position: fixed;
+  z-index: 3;
+  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  /* Replaces top/right/bottom/left: 0 */
 
-    &.open {
-        display: grid;
-        place-items: center;
+  &.open {
+    display: grid;
+    place-items: center;
+  }
+
+  & .box {
+    background-color: #fff;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-md);
+    padding: 1rem;
+    width: calc(100vw - 3rem);
+    max-width: 25rem;
+    /* Added constraint for larger screens */
+    box-sizing: border-box;
+
+    & h1 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--text-main);
     }
 
-    & .box {
-        background-color: #fff;
-        border-radius: 1rem;
-        box-shadow: var(--shadow-md);
-        padding: 1rem;
-        width: calc(100vw - 3rem);
-        max-width: 25rem;
-        /* Added constraint for larger screens */
-        box-sizing: border-box;
-
-        & h1 {
-            font-size: 1.5rem;
-            font-weight: 500;
-            color: var(--text-main);
-        }
-
-        & h2 {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        & .description {
-            color: #444;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        & a {
-            display: block;
-            font-size: 0.9rem;
-            color: var(--color-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        & .personalization {
-            margin-bottom: 0.5rem;
-
-            & input {
-                margin-right: 0.5rem;
-                accent-color: var(--color-primary);
-            }
-
-            & label {
-                font-size: 0.9rem;
-                color: #444;
-            }
-        }
-
-        & .hint {
-            color: #444;
-            font-size: 0.9rem;
-        }
+    & h2 {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
     }
+
+    & .description {
+      color: #444;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    & a {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--color-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    & .personalization {
+      margin-bottom: 0.5rem;
+
+      & input {
+        margin-right: 0.5rem;
+        accent-color: var(--color-primary);
+      }
+
+      & label {
+        font-size: 0.9rem;
+        color: #444;
+      }
+    }
+
+    & .hint {
+      color: #444;
+      font-size: 0.9rem;
+    }
+  }
 }
 
 /* =========================================
    7. Footer
    ========================================= */
 .footer {
-    line-height: 1.5rem;
-    text-align: center;
-    padding: 0.75rem;
+  line-height: 1.5rem;
+  text-align: center;
+  padding: 0.75rem;
 
-    & a {
-        font-size: 0.9rem;
-        color: var(--color-primary);
-    }
+  & a {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+  }
 }
 
 /* =========================================
    8. Responsive Grid System
    ========================================= */
 @media (min-width: 32em) {
-    #talks .talks {
-        grid-template-columns: repeat(2, 1fr);
-    }
+  #talks .talks {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 48em) {
-    #talks .talks {
-        grid-template-columns: repeat(3, 1fr);
-    }
+  #talks .talks {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (min-width: 64em) {
-    #talks .talks {
-        grid-template-columns: repeat(4, 1fr);
-    }
+  #talks .talks {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 @media (min-width: 80em) {
-    #talks .talks {
-        grid-template-columns: repeat(5, 1fr);
-    }
+  #talks .talks {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 @media (min-width: 96em) {
-    body {
-        /* Center the whole app on very wide screens */
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: min-content;
-        justify-items: center;
+  body {
+    /* Center the whole app on very wide screens */
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: min-content;
+    justify-items: center;
+  }
+
+  #talks {
+    & .heading {
+      width: 94rem;
     }
 
-    #talks {
-        & .heading {
-            width: 94rem;
-        }
-
-        & .talks {
-            grid-template-columns: repeat(6, calc((96rem - 7rem) / 6));
-        }
+    & .talks {
+      grid-template-columns: repeat(6, calc((96rem - 7rem) / 6));
     }
+  }
 
-    /* Explicit width overrides for the cards in the fixed centered layout */
-    .talk {
-        width: calc((96rem - 7rem) / 6);
-    }
+  /* Explicit width overrides for the cards in the fixed centered layout */
+  .talk {
+    width: calc((96rem - 7rem) / 6);
+  }
 }
 
 #loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    /* Added for better centering */
-    padding: 2rem 1rem;
-    height: 100vh;
-    /* Full height for the loading screen */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Added for better centering */
+  padding: 2rem 1rem;
+  height: 100vh;
+  /* Full height for the loading screen */
 
-    & h1 {
-        font-size: 3rem;
-        font-weight: 500;
-        margin-bottom: 1rem;
-    }
+  & h1 {
+    font-size: 3rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
 
-    & div {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        font-weight: 500;
-    }
+  & div {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
 }
 
 /* Add this NEW class for the spinner */
 .spinner {
-    width: 3rem;
-    height: 3rem;
-    border: 0.25rem solid var(--color-primary-light);
-    border-top: 0.25rem solid var(--color-primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+  width: 3rem;
+  height: 3rem;
+  border: 0.25rem solid var(--color-primary-light);
+  border-top: 0.25rem solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
+  0% {
+    transform: rotate(0deg);
+  }
 
-    100% {
-        transform: rotate(360deg);
-    }
+  100% {
+    transform: rotate(360deg);
+  }
 }

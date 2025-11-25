@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import type { ComponentChildren, RefObject, TargetedEvent, TargetedKeyboardEvent } from "preact";
+import type {
+  ComponentChildren,
+  RefObject,
+  TargetedEvent,
+  TargetedKeyboardEvent,
+} from "preact";
 
 type Props = {
   value: string;
@@ -30,7 +35,7 @@ export function EditableField({
 
   useEffect(() => {
     setTempValue(value);
-     setOptimisticValue(null);
+    setOptimisticValue(null);
   }, [value]);
 
   useEffect(() => {
@@ -85,24 +90,34 @@ export function EditableField({
     const commonProps = {
       class: className,
       value: tempValue,
-      onInput: (e: TargetedEvent<HTMLInputElement | HTMLTextAreaElement>) => setTempValue(e.currentTarget.value),
+      onInput: (e: TargetedEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+        setTempValue(e.currentTarget.value),
       onBlur: handleSave,
       onKeyDown: handleKeyDown,
     };
 
     return type === "textarea" ? (
-      <textarea ref={inputRef as RefObject<HTMLTextAreaElement>} rows={4} {...commonProps} />
+      <textarea
+        ref={inputRef as RefObject<HTMLTextAreaElement>}
+        rows={4}
+        {...commonProps}
+      />
     ) : (
-      <input ref={inputRef as RefObject<HTMLInputElement>} type={type} {...commonProps} />
+      <input
+        ref={inputRef as RefObject<HTMLInputElement>}
+        type={type}
+        {...commonProps}
+      />
     );
   }
-  
+
   const displayValue = optimisticValue !== null ? optimisticValue : value;
 
   return (
     <div
-      className={`${className} ${canEdit ? "editable" : ""} ${!value && !children ? "empty" : ""
-        }`}
+      className={`${className} ${canEdit ? "editable" : ""} ${
+        !value && !children ? "empty" : ""
+      }`}
       onClick={startEditing}
     >
       {children

@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "format": "prettier . --write",
     "check": "eslint src",
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -13,6 +14,7 @@
     "@preact/signals": "^2.5.1",
     "eslint": "^9.39.1",
     "preact": "^10.27.2",
+    "prettier": "^3.6.2",
     "typescript-eslint": "^8.47.0"
   },
   "devDependencies": {

@@ -2,283 +2,307 @@
 
 /* --- Layout Containers --- */
 .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+:global(body.scheduler-open) {
+  overflow: hidden;
 }
 
 .container {
-    background: var(--bg-body);
-    width: 95vw;
-    height: 90vh;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
+  background: var(--bg-body);
+  width: 95vw;
+  height: 90vh;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
 }
 
 .header {
-    padding: 1rem;
-    background: var(--bg-card);
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .header h2 {
-    font-size: 1.5rem;
-    font-weight: 500;
+  font-size: 1.5rem;
+  font-weight: 500;
 }
 
 .controls {
-    display: flex;
-    gap: 1rem;
+  display: flex;
+  gap: 1rem;
 }
 
 .controls button {
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    font-family: inherit;
-    font-weight: 500;
-    background: #e0e0e0;
-    transition: background-color 0.2s;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: 500;
+  background: #e0e0e0;
+  transition: background-color 0.2s;
 }
 
 .controls button:hover {
-    background: #d0d0d0;
+  background: #d0d0d0;
 }
 
 .controls button.save {
-    background: var(--color-primary);
-    color: white;
+  background: var(--color-primary);
+  color: white;
 }
 .controls button.save:hover {
-    background: var(--color-primary-dark);
+  background: var(--color-primary-dark);
 }
 
 .controls button.cancel {
-    background: transparent;
-    border: 1px solid #ccc;
+  background: transparent;
+  border: 1px solid #ccc;
 }
 
 /* --- Workspace Area --- */
 .workspace {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 .sidebar {
-    width: 250px;
-    flex-shrink: 0;
-    border-right: 1px solid #ddd;
-    padding: 1rem;
-    overflow-y: auto;
-    background: #fff;
-    z-index: 20;
+  width: 250px;
+  flex-shrink: 0;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #fff;
+  z-index: 20;
 }
 
 .draggableItem {
-    padding: 0.75rem;
-    background: var(--bg-card);
-    border: 1px solid #eee;
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 0.5rem;
-    cursor: grab;
-    font-size: 0.9rem;
-    border-radius: 0.5rem;
-    transition: transform 0.1s;
+  padding: 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 0.5rem;
+  cursor: grab;
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  transition: transform 0.1s;
+  touch-action: none;
 }
 .draggableItem:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.draggableItem.highlight {
+  background: var(--color-secondary);
 }
 
 /* --- Timeline Scroller --- */
 .timelineContainer {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: #fff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
 }
 
 /* Header (Venue Names) */
 .timelineHeader {
-    display: flex;
-    flex-shrink: 0;
-    border-bottom: 1px solid #ccc;
-    background: #f9f9f9;
-    /* Aligns with TimeAxis width */
-    padding-left: 60px;
-    overflow-y: scroll;
-    scrollbar-width: none;
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccc;
+  background: #f9f9f9;
+  /* Aligns with TimeAxis width */
+  padding-left: 60px;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  box-sizing: border-box;
 }
 .timelineHeader::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .venueHeader {
-    flex: 1;
-    min-width: 200px;
-    text-align: center;
-    padding: 0.75rem;
-    font-weight: 500;
-    border-right: 1px solid #eee;
-    color: var(--text-subtle);
-    font-size: 0.9rem;
-    /* Sticky header ensures venue name stays visible if horizontal scroll is needed */
-    position: sticky;
-    top: 0;
+  flex: 1;
+  min-width: 200px;
+  text-align: center;
+  padding: 0.75rem;
+  font-weight: 500;
+  border-right: 1px solid #eee;
+  color: var(--text-subtle);
+  font-size: 0.9rem;
+  /* Sticky header ensures venue name stays visible if horizontal scroll is needed */
+  position: sticky;
+  top: 0;
+  box-sizing: border-box;
 }
 
 /* Main Body (Time + Tracks) */
 .timelineBody {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: auto;
-    display: flex;
-    position: relative;
-    scroll-behavior: smooth;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  display: flex;
+  position: relative;
+  scroll-behavior: smooth;
 }
 
 /* Left Time Axis */
 .timeAxis {
-    width: 60px;
-    flex-shrink: 0;
-    border-right: 1px solid #ddd;
-    background: #fff;
-    position: sticky;
-    left: 0;
-    z-index: 30;
+  width: 60px;
+  flex-shrink: 0;
+  border-right: 1px solid #ddd;
+  background: #fff;
+  position: sticky;
+  left: 0;
+  z-index: 30;
+  box-sizing: border-box;
 }
 
 .timeLabel {
-    position: absolute;
-    width: 100%;
-    text-align: right;
-    padding-right: 8px;
-    transform: translateY(-50%);
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    pointer-events: none;
+  position: absolute;
+  width: 100%;
+  text-align: right;
+  padding-right: 8px;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 /* Tracks */
 .tracksContainer {
-    display: flex;
-    flex: 1;
+  display: flex;
+  flex: 1;
+  box-sizing: border-box;
 }
 
 .track {
-    flex: 1;
-    min-width: 200px;
-    border-right: 1px solid #eee;
-    position: relative;
+  flex: 1;
+  min-width: 200px;
+  border-right: 1px solid #eee;
+  position: relative;
+  background: transparent;
 }
 
 /* --- Visual Overlays --- */
+.gridLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #d9d9d9;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .daySeparator {
-    position: absolute;
-    left: 0;
-    right: 0;
-    border-bottom: 1px solid #ccc;
-    background: rgba(255, 255, 255, 0.95);
-    z-index: 10;
-    padding: 4px 8px;
-    font-weight: bold;
-    font-size: 0.85rem;
-    color: var(--color-primary);
-    pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 10;
+  padding: 4px 8px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  pointer-events: none;
 }
 
 .currentTimeLine {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--color-danger);
-    z-index: 25;
-    pointer-events: none;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-danger);
+  z-index: 25;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .currentTimeKnob {
-    position: absolute;
-    left: -5px;
-    top: -4px;
-    width: 10px;
-    height: 10px;
-    background: var(--color-danger);
-    border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background: var(--color-danger);
+  border-radius: 50%;
 }
 
 /* --- Events --- */
 .event {
-    position: absolute;
-    left: 3px;
-    right: 3px;
-    background: var(--bg-card);
-    color: var(--text-main);
-    border-radius: 4px;
-    box-shadow: var(--shadow-sm);
-    font-size: 0.85rem;
-    overflow: hidden;
-    cursor: grab;
-    z-index: 5;
-    padding: 2px 4px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    /* Ensure sizing includes border so layout math is accurate */
-    box-sizing: border-box;
-    transition: box-shadow 0.1s;
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.85rem;
+  overflow: hidden;
+  cursor: grab;
+  z-index: 5;
+  padding: 2px 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  /* Ensure sizing includes border so layout math is accurate */
+  box-sizing: border-box;
+  transition: box-shadow 0.1s;
+  touch-action: none;
 }
 
 .event:hover {
-    box-shadow: var(--shadow-md);
-    z-index: 20;
+  box-shadow: var(--shadow-md);
+  z-index: 20;
 }
 
-.event.participating {
-    background: var(--color-primary);
-    color: white;
+.event.highlight {
+  background: var(--color-secondary);
 }
 
 .shadowEvent {
-    position: absolute;
-    left: 3px;
-    right: 3px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 2px dashed #bbb;
-    border-radius: 4px;
-    z-index: 4;
-    pointer-events: none;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding: 2px 4px;
-    box-sizing: border-box;
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px dashed #bbb;
+  border-radius: 4px;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 2px 4px;
+  box-sizing: border-box;
 }
 
 .resizer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 8px;
-    cursor: ns-resize;
-    background: transparent;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  background: transparent;
 }
 .resizer:hover {
-    background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }

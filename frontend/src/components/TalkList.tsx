@@ -154,7 +154,7 @@ function Header() {
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             📅 Open Scheduler

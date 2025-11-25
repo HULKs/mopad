@@ -6,4 +6,4 @@ services:
     volumes:
       - ./storage:/mopad/storage
     ports:
-      - "1337:1337"
+      - "9559:9559"

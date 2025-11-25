@@ -25,6 +25,8 @@ setInterval(() => {
 
 let socket: WebSocket | null = null;
 let pendingAuthCommand: AuthCommand | null = null;
+let reconnectTimeout: number | undefined;
+const RECONNECT_DELAY = 5000;
 
 export function connect() {
   if (socket) {
@@ -32,6 +34,8 @@ export function connect() {
     socket.close();
     socket = null;
   }
+
+  clearTimeout(reconnectTimeout);
 
   connectionStatus.value = "connecting";
 
@@ -56,6 +60,10 @@ export function connect() {
   socket.onclose = () => {
     connectionStatus.value = "disconnected";
     currentUser.value = null;
+
+    reconnectTimeout = setTimeout(() => {
+      connect();
+    }, RECONNECT_DELAY);
   };
 
   socket.onmessage = (event) => {

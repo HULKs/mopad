@@ -158,6 +158,7 @@ impl Service {
             creator: user_id,
             title,
             description,
+            highlight: false,
             scheduled_at: None,
             duration,
             location: None,

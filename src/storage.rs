@@ -241,6 +241,7 @@ pub struct Talk {
     pub creator: UserId,
     pub title: String,
     pub description: String,
+    pub highlight: bool,
     pub scheduled_at: Option<SystemTime>,
     pub duration: Duration,
     pub location: Option<usize>,

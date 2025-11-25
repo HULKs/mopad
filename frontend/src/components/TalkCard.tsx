@@ -22,7 +22,6 @@ import {
   toSystemTime,
 } from "../utils/time";
 
-
 function useTalkPermissions(talk: Talk) {
   const me = currentUser.value!;
   return {
@@ -33,10 +32,9 @@ function useTalkPermissions(talk: Talk) {
   };
 }
 
-function useCurrentLocation(locationId: number | null): Location | undefined{
+function useCurrentLocation(locationId: number | null): Location | undefined {
   return locationId != null ? locations.value[locationId] : undefined;
 }
-
 
 function DeleteControl({
   talkId,
@@ -68,7 +66,11 @@ function StreamIndicator({ locationId }: { locationId: number | null }) {
   return (
     <div class="stream">
       {location.live_stream ? (
-        <a href={location.live_stream} target="_blank" rel="noopener noreferrer">
+        <a
+          href={location.live_stream}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <span class="emoji">📺</span> Watch Stream
         </a>
       ) : (
@@ -106,10 +108,10 @@ function TalkScheduleField({
     >
       {talk.scheduled_at
         ? formatScheduleString(
-          talk.scheduled_at,
-          talk.duration,
-          currentTimeSecs.value
-        )
+            talk.scheduled_at,
+            talk.duration,
+            currentTimeSecs.value,
+          )
         : "Unscheduled"}
     </EditableField>
   );
@@ -144,7 +146,7 @@ function TalkDurationField({
       {getDurationString(
         talk.scheduled_at,
         talk.duration,
-        currentTimeSecs.value
+        currentTimeSecs.value,
       )}
     </EditableField>
   );
@@ -181,22 +183,23 @@ function RoleButton({
       sendCommand(
         role === ParticipationKind.Noob
           ? { RemoveNoob: payload }
-          : { RemoveNerd: payload }
+          : { RemoveNerd: payload },
       );
     } else {
       sendCommand(
         role === ParticipationKind.Noob
           ? { AddNoob: payload }
-          : { AddNerd: payload }
+          : { AddNerd: payload },
       );
 
       // 2. If adding, ensure we remove them from the OTHER list (exclusive roles)
-      const otherList = role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
+      const otherList =
+        role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
       if (otherList.includes(myId)) {
         sendCommand(
           role === ParticipationKind.Noob
             ? { RemoveNerd: payload }
-            : { RemoveNoob: payload }
+            : { RemoveNoob: payload },
         );
       }
     }
@@ -213,17 +216,14 @@ function RoleButton({
   );
 }
 
-// ==========================================
-// 3. Main Component
-// ==========================================
-
 export function TalkCard({ talk }: { talk: Talk }) {
   const { me, isCreator, isEditor, isScheduler } = useTalkPermissions(talk);
 
   // Determine card styling based on participation
   const isParticipating =
     talk.noobs.includes(me.id) || talk.nerds.includes(me.id);
-  const cardClass = `talk ${isParticipating ? "participating" : ""}`;
+
+  const cardClass = `talk ${isParticipating ? "participating" : ""} ${talk.highlight ? "highlight" : ""}`;
 
   // Prepare Location Options for the Select
   const locationOptions = Object.values(locations.value).map((loc) => ({

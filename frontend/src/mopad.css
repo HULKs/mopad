@@ -1,8 +1,7 @@
-/* =========================================
-   1. Variables & Fonts
-   ========================================= */
 :root {
     --color-primary: #388e3c;
+    --color-secondary: #023e8a;
+    --color-secondary-light: #0096c7;
     --color-primary-dark: #43a047;
     --color-primary-light: #c8e6c9;
     --color-danger: #e64a19;
@@ -41,9 +40,6 @@
     font-weight: 400;
 }
 
-/* =========================================
-   2. Global Resets & Body
-   ========================================= */
 h1,
 h2,
 h3 {
@@ -72,9 +68,6 @@ body.center,
     min-height: 100vh;
 }
 
-/* =========================================
-   3. Auth Pages (Login & Register)
-   ========================================= */
 #login,
 #register {
     display: flex;
@@ -190,12 +183,7 @@ body.center,
     }
 }
 
-/* =========================================
-   4. Main Application (#talks)
-   ========================================= */
 #talks {
-
-    /* Floating Add Button */
     & .add {
         position: fixed;
         z-index: 2;
@@ -220,7 +208,7 @@ body.center,
     }
 
     /* Header Area */
-    &>.title {
+    & > .title {
         padding: 1rem 1rem 0 1rem;
         display: grid;
         grid-template-columns: min-content 1fr;
@@ -291,9 +279,6 @@ body.center,
     }
 }
 
-/* =========================================
-   5. Talk Card Component
-   ========================================= */
 .talk {
     display: grid;
     position: relative;
@@ -501,6 +486,53 @@ body.center,
 
                 &:hover {
                     background-color: var(--color-primary-light);
+                }
+            }
+        }
+
+        & .stream a {
+            color: #fff;
+        }
+
+        & .stream span.no-stream {
+            color: var(--color-primary-light);
+        }
+    }
+
+    &.highlight {
+        background-color: var(--color-secondary);
+
+        & div.title {
+            color: #fff;
+        }
+
+        & div.scheduled-at,
+        & div.duration,
+        & div.location,
+        & div.description {
+            color: var(--color-primary-light);
+        }
+
+        & .editable:hover {
+            background-color: var(--color-secondary-light);
+        }
+
+        & .operation button {
+            border-color: var(--color-primary-light);
+            color: var(--color-primary-light);
+
+            &:hover {
+                background-color: var(--color-secondary-light);
+            }
+
+            &.participating {
+                border-color: transparent;
+                color: var(--color-primary);
+                background-color: #fff;
+                box-shadow: var(--shadow-sm);
+
+                &:hover {
+                    background-color: #f2f2f2;
                 }
             }
         }

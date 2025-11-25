@@ -33,6 +33,7 @@ export interface Talk {
   description: string;
   scheduled_at: SystemTime | null;
   duration: Duration;
+  highlight: boolean;
   location: number | null;
   nerds: number[];
   noobs: number[];
@@ -121,13 +122,13 @@ export type Command =
 
 export type AuthCommand =
   | {
-    Register: {
-      name: string;
-      team: string;
-      password: string;
-      attendance_mode: null | AttendanceMode;
-    };
-  }
+      Register: {
+        name: string;
+        team: string;
+        password: string;
+        attendance_mode: null | AttendanceMode;
+      };
+    }
   | { Login: { name: string; team: string; password: string } }
   | { Relogin: { token: string } };
 
@@ -165,4 +166,9 @@ export type ServerMessage =
   | { RemoveNoob: { talk_id: number; user_id: number } }
   | { AddNerd: { talk_id: number; user_id: number } }
   | { RemoveNerd: { talk_id: number; user_id: number } }
-  | { UpdateAttendanceMode: { user_id: number; attendance_mode: AttendanceMode } };
+  | {
+      UpdateAttendanceMode: {
+        user_id: number;
+        attendance_mode: AttendanceMode;
+      };
+    };

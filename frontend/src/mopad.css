@@ -376,6 +376,7 @@ body.center,
 
   & .description {
     padding: 0.25rem 1rem 0.25rem 1rem;
+    white-space: pre-wrap;
 
     &.empty {
       font-style: italic;
@@ -546,9 +547,6 @@ body.center,
   }
 }
 
-/* =========================================
-   6. Calendar Dialog
-   ========================================= */
 .calendar-dialog {
   display: none;
   position: fixed;
@@ -619,9 +617,6 @@ body.center,
   }
 }
 
-/* =========================================
-   7. Footer
-   ========================================= */
 .footer {
   line-height: 1.5rem;
   text-align: center;
@@ -633,9 +628,6 @@ body.center,
   }
 }
 
-/* =========================================
-   8. Responsive Grid System
-   ========================================= */
 @media (min-width: 32em) {
   #talks .talks {
     grid-template-columns: repeat(2, 1fr);

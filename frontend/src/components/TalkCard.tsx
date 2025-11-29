@@ -21,6 +21,7 @@ import {
   toDate,
   toSystemTime,
 } from "../utils/time";
+import { useRef } from "preact/hooks";
 
 function useTalkPermissions(talk: Talk) {
   const me = currentUser.value!;
@@ -108,10 +109,10 @@ function TalkScheduleField({
     >
       {talk.scheduled_at
         ? formatScheduleString(
-            talk.scheduled_at,
-            talk.duration,
-            currentTimeSecs.value,
-          )
+          talk.scheduled_at,
+          talk.duration,
+          currentTimeSecs.value,
+        )
         : "Unscheduled"}
     </EditableField>
   );
@@ -184,7 +185,6 @@ function RoleButton({
   const handleToggle = () => {
     const payload: TalkUserPayload = { talk_id: talk.id };
 
-    // 1. Send the primary toggle command
     if (isParticipating) {
       sendCommand(
         role === ParticipationKind.Noob
@@ -198,7 +198,6 @@ function RoleButton({
           : { AddNerd: payload },
       );
 
-      // 2. If adding, ensure we remove them from the OTHER list (exclusive roles)
       const otherList =
         role === ParticipationKind.Noob ? talk.nerds : talk.noobs;
       if (otherList.includes(myId)) {
@@ -211,11 +210,45 @@ function RoleButton({
     }
   };
 
+  const timerRef = useRef<number | null>(null);
+  const isLongPress = useRef(false);
+
+  const handleTouchStart = () => {
+    isLongPress.current = false;
+    timerRef.current = window.setTimeout(() => {
+      isLongPress.current = true;
+      // Show the names in a native alert window
+      if (tooltip) alert(tooltip);
+    }, 500); // 500ms delay for long press
+  };
+
+  const handleTouchEnd = (e: Event) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    // If it was a long press, prevent the click event from firing
+    if (isLongPress.current && e.cancelable) {
+      e.preventDefault();
+    }
+  };
+
+  const handleClick = (e: Event) => {
+    // Safety check: if we just finished a long press, do not toggle
+    if (isLongPress.current) {
+      e.preventDefault();
+      return;
+    }
+    handleToggle();
+  };
+
   return (
     <button
       class={`${role} ${isParticipating ? "participating" : ""}`}
       title={tooltip}
-      onClick={handleToggle}
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {role.charAt(0).toUpperCase() + role.slice(1)} ({count})
     </button>

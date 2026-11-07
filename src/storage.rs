@@ -5,9 +5,11 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::{
+    password_hash::{phc::PasswordHash, PasswordHasher, PasswordVerifier},
+    Argon2,
+};
 use eyre::Context;
-use rand_core::OsRng;
 use serde::{Deserialize, Serialize};
 use tokio::fs::{create_dir_all, try_exists};
 
@@ -194,9 +196,8 @@ impl User {
         attendance_mode: AttendanceMode,
         password: String,
     ) -> Self {
-        let salt = SaltString::generate(&mut OsRng);
         let hash = Argon2::default()
-            .hash_password(password.as_bytes(), &salt)
+            .hash_password(password.as_bytes())
             .unwrap();
 
         Self {
@@ -254,4 +255,27 @@ pub struct Location {
     pub id: usize,
     pub name: String,
     pub live_stream: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn password_hashing_and_stored_hash_verification() {
+        let mut user = User::new(
+            0,
+            "Alice".into(),
+            "Alpha".into(),
+            AttendanceMode::OnSite,
+            "password".into(),
+        );
+        assert!(user.verify("password".into()));
+        assert!(!user.verify("wrong password".into()));
+
+        // Fixed Argon2 reference vector checks existing PHC hashes independently of generation.
+        user.hash = "$argon2id$v=19$m=256,t=2,p=1$c29tZXNhbHQ$nf65EOgLrQMR/uIPnA4rEsF5h7TKyQwu9U1bMCHGi/4".into();
+        assert!(user.verify("password".into()));
+        assert!(!user.verify("wrong password".into()));
+    }
 }

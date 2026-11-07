@@ -1,6 +1,5 @@
-use argon2::password_hash::SaltString;
+use argon2::password_hash::phc::SaltString;
 use eyre::{bail, Context as _, ContextCompat as _, Result};
-use rand_core::OsRng;
 use std::{
     collections::BTreeSet,
     ops::DerefMut as _,
@@ -66,7 +65,7 @@ impl Service {
         };
         let _ = self.updates_sender.send(users_update);
 
-        let token = SaltString::generate(&mut OsRng).to_string();
+        let token = SaltString::generate().to_string();
         let now = SystemTime::now();
         let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
         storage.tokens.remove_expired(now);
@@ -105,7 +104,7 @@ impl Service {
             bail!("wrong password");
         }
 
-        let token = SaltString::generate(&mut OsRng).to_string();
+        let token = SaltString::generate().to_string();
         let now = SystemTime::now();
         let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
         tokens.remove_expired(now);

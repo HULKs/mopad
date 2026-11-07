@@ -6,7 +6,7 @@ use axum::{
     response::IntoResponse,
 };
 use serde::Deserialize;
-use time::{format_description::parse, OffsetDateTime};
+use time::{format_description::parse_borrowed, OffsetDateTime};
 
 use crate::service::Service;
 
@@ -20,7 +20,7 @@ pub async fn handle_icalendar(
     parameters: Query<ICalendarParameters>,
 ) -> impl IntoResponse {
     let mut response = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HULKs//mopad//EN\r\nNAME:MOPAD\r\nX-WR-CALNAME:MOPAD\r\nX-WR-CALDESC:Moderated Organization PAD (powerful, agile, distributed)\r\n".to_string();
-    let format = parse("[year][month][day]T[hour][minute][second]Z").unwrap();
+    let format = parse_borrowed::<1>("[year][month][day]T[hour][minute][second]Z").unwrap();
     let now = OffsetDateTime::now_utc();
     let storage = service.storage.read().await;
     for talk in storage.talks.values() {

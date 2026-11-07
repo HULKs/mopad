@@ -3,9 +3,44 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
+  check:
+    name: Check backend, bindings, and frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1"
+      - run: cargo fmt --check
+      - name: Build backend and verify bindings regenerate
+        run: |
+          mv frontend/src/generated "$RUNNER_TEMP/mopad-bindings"
+          cargo build --locked
+          diff -ru "$RUNNER_TEMP/mopad-bindings" frontend/src/generated
+      - run: cargo test --locked
+      - name: Check generated bindings are committed
+        run: |
+          git diff --exit-code -- frontend/src/generated
+          test -z "$(git ls-files --others --exclude-standard frontend/src/generated)"
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: bun install --frozen-lockfile
+        working-directory: frontend
+      - run: bun run test
+        working-directory: frontend
+      - run: bun run build
+        working-directory: frontend
+
   publish:
+    needs: check
+    if: github.event_name == 'push'
     name: Build and Publish
     runs-on: ubuntu-latest
     env:

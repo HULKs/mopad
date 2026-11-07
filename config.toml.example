@@ -1,0 +1,30 @@
+# All settings live here. Run mopad config.toml and restart after edits.
+# Use 127.0.0.1 instead for localhost-only development.
+address = "127.0.0.1"
+port = 9559
+storage = "storage/"
+frontend = "frontend/dist"
+
+# Every date is an explicit UTC instant. The frontend displays local times.
+[event]
+start = "2026-11-20T08:00:00Z"
+end = "2026-11-22T18:00:00Z"
+
+# Optional, advisory only. With no opening_hours, the whole event is open.
+[[event.opening_hours]]
+start = "2026-11-20T08:00:00Z"
+end = "2026-11-20T18:00:00Z"
+
+[[event.opening_hours]]
+start = "2026-11-21T08:00:00Z"
+end = "2026-11-21T18:00:00Z"
+
+[[event.opening_hours]]
+start = "2026-11-22T08:00:00Z"
+end = "2026-11-22T18:00:00Z"
+
+# Breaks shade the timeline but do not prevent scheduling.
+[[event.breaks]]
+label = "Lunch"
+start = "2026-11-20T12:00:00Z"
+end = "2026-11-20T13:00:00Z"

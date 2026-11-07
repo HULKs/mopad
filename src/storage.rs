@@ -1,52 +1,25 @@
-use core::fmt::Debug;
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::PathBuf,
-    time::{Duration, SystemTime},
+    time::SystemTime,
 };
 
+use crate::{
+    mirrored_to_disk::MirroredToDisk,
+    wire::{AttendanceMode, Location, Role, Talk, Update, UserId, UserReference},
+};
 use argon2::{
     password_hash::{phc::PasswordHash, PasswordHasher, PasswordVerifier},
     Argon2,
 };
-use eyre::Context;
+use eyre::{Context, ContextCompat, Result};
 use serde::{Deserialize, Serialize};
-use tokio::fs::{create_dir_all, try_exists};
-
-use crate::mirrored_to_disk::MirroredToDisk;
-
-pub type Token = String;
+use tokio::fs::create_dir_all;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct TokenData {
-    pub user_id: usize,
+    pub user_id: UserId,
     pub expires_at: SystemTime,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct TokenStore {
-    #[serde(flatten)]
-    store: BTreeMap<Token, TokenData>,
-}
-
-impl TokenStore {
-    pub fn insert(&mut self, token: Token, user_id: usize, expires_at: SystemTime) {
-        self.store.insert(
-            token,
-            TokenData {
-                user_id,
-                expires_at,
-            },
-        );
-    }
-
-    pub fn remove_expired(&mut self, now: SystemTime) {
-        self.store.retain(|_token, data| data.expires_at >= now);
-    }
-
-    pub fn get(&self, token: &Token) -> Option<&TokenData> {
-        self.store.get(token)
-    }
 }
 
 #[derive(Debug)]
@@ -56,76 +29,66 @@ pub struct Storage {
     pub users: MirroredToDisk<BTreeMap<UserId, User>>,
     pub locations: MirroredToDisk<BTreeMap<usize, Location>>,
     pub talks: MirroredToDisk<BTreeMap<usize, Talk>>,
-    pub tokens: MirroredToDisk<TokenStore>,
+    pub tokens: MirroredToDisk<BTreeMap<String, TokenData>>,
+    pub next_talk_id: MirroredToDisk<usize>,
 }
 
 impl Storage {
-    pub fn add_user(
-        &mut self,
-        name: String,
-        team: String,
-        attendance_mode: AttendanceMode,
-        password: String,
-    ) -> UserId {
-        let new_id = self
-            .users
-            .keys()
-            .max()
-            .map(|id| id + 1)
-            .unwrap_or_else(|| 0);
-        let user = User::new(new_id, name, team, attendance_mode, password);
-        self.users.insert(new_id, user);
-        new_id
+    pub fn snapshot(&self) -> Update {
+        Update::State {
+            users: self
+                .users
+                .values()
+                .map(|user| (user.id, user.into()))
+                .collect(),
+            talks: self.talks.value.clone(),
+            teams: self.teams.value.clone(),
+            locations: self.locations.value.clone(),
+        }
     }
 
-    pub async fn load(path: impl Into<PathBuf> + Debug) -> eyre::Result<Self> {
+    pub fn user_for_token(&self, token: &str) -> Result<&User> {
+        let data = self.tokens.get(token).wrap_err("unknown token")?;
+        eyre::ensure!(data.expires_at > SystemTime::now(), "session expired");
+        self.users
+            .get(&data.user_id)
+            .wrap_err("unknown user id from token")
+    }
+
+    pub async fn load(path: impl Into<PathBuf>) -> Result<Self> {
         let path = path.into();
-        let exists = try_exists(&path)
+        create_dir_all(&path)
             .await
-            .wrap_err("failed to check if storage directory exists")?;
-        if !exists {
-            create_dir_all(&path)
-                .await
-                .wrap_err("failed to create storage directory")?;
-        }
-        let mut teams = MirroredToDisk::<BTreeSet<String>>::read_from_or_create_default(
+            .wrap_err("failed to create storage directory")?;
+        let teams = MirroredToDisk::<BTreeSet<String>>::read_from_or_create_default(
             path.join("teams.json"),
         )
         .await
         .wrap_err("failed to read teams.json")?;
 
-        let mut users = MirroredToDisk::<BTreeMap<usize, User>>::read_from_or_create_default(
+        let users = MirroredToDisk::<BTreeMap<usize, User>>::read_from_or_create_default(
             path.join("users.json"),
         )
         .await
         .wrap_err("failed to read users")?;
 
-        for (user_id, user) in users.iter_mut() {
-            if *user_id != user.id {
-                tracing::warn!(
-                    "Inconsistent user id for user {}: key is {}, but user.id is {}. Syncing user.id to {}.",
-                    user.name,
-                    user_id,
-                    user.id,
-                    user_id,
-                );
-                user.id = *user_id;
-            }
-            if !teams.value.contains(&user.team) {
-                tracing::warn!(
-                    "User {} has unknown team {}. Assigning to 'Unknown' team.",
-                    user.name,
-                    user.team
-                );
-                user.team = "Unknown".to_string();
-                teams.value.insert("Unknown".to_string());
-            }
+        for (user_id, user) in users.iter() {
+            eyre::ensure!(*user_id == user.id, "user {user_id} has inconsistent id");
+            eyre::ensure!(
+                teams.contains(&user.team),
+                "user {user_id} has unknown team {}; restore teams.json",
+                user.team
+            );
         }
 
         let locations = MirroredToDisk::<BTreeMap<usize, Location>>::read_from_or_create_default(
             path.join("locations.json"),
         )
         .await?;
+        eyre::ensure!(
+            locations.iter().all(|(id, room)| *id == room.id),
+            "inconsistent location id in locations.json"
+        );
 
         let mut talks = MirroredToDisk::<BTreeMap<usize, Talk>>::read_from_or_create_default(
             path.join("talks.json"),
@@ -133,50 +96,48 @@ impl Storage {
         .await?;
         let tokens = MirroredToDisk::read_from_or_create_default(path.join("tokens.json")).await?;
 
-        let user_ids: BTreeSet<usize> = users.keys().copied().collect();
+        for (talk_id, talk) in talks.iter_mut() {
+            eyre::ensure!(*talk_id == talk.id, "talk {talk_id} has inconsistent id");
+            eyre::ensure!(
+                users.contains_key(&talk.creator),
+                "talk {talk_id} has missing creator {}; restore users.json before starting",
+                talk.creator
+            );
+            talk.creator_duration.get_or_insert(talk.duration);
 
-        talks.value.retain(|talk_id, talk| {
-            if !user_ids.contains(&talk.creator) {
-                tracing::warn!(
-                    "Dropping orphan talk {talk_id} (creator {} missing)",
-                    talk.creator
-                );
-                return false;
-            }
-
-            let original_nerds = talk.nerds.len();
-            talk.nerds.retain(|id| user_ids.contains(id));
-            if talk.nerds.len() != original_nerds {
-                tracing::info!("Cleaned invalid nerds from talk {talk_id}");
-            }
-
-            let original_noobs = talk.noobs.len();
-            talk.noobs.retain(|id| user_ids.contains(id));
-            if talk.noobs.len() != original_noobs {
-                tracing::info!("Cleaned invalid noobs from talk {talk_id}");
-            }
-
-            true
-        });
+            eyre::ensure!(
+                talk.nerds
+                    .iter()
+                    .chain(&talk.noobs)
+                    .all(|id| users.contains_key(id)),
+                "talk {talk_id} has missing participants; restore users.json before starting"
+            );
+        }
+        let mut next_talk_id =
+            MirroredToDisk::read_from_or_create_default(path.join("next_talk_id.json")).await?;
+        let minimum = talks
+            .keys()
+            .next_back()
+            .copied()
+            .unwrap_or(0)
+            .checked_add(1)
+            .ok_or_else(|| eyre::eyre!("talk IDs exhausted"))?;
+        if *next_talk_id < minimum {
+            *next_talk_id = minimum;
+            next_talk_id.commit().await?;
+        }
 
         Ok(Self {
-            path: path.to_path_buf(),
+            path,
             teams,
             users,
             locations,
             talks,
             tokens,
+            next_talk_id,
         })
     }
 }
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub enum AttendanceMode {
-    OnSite,
-    Remote,
-}
-
-pub type UserId = usize;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct User {
@@ -194,24 +155,26 @@ impl User {
         name: String,
         team: String,
         attendance_mode: AttendanceMode,
-        password: String,
-    ) -> Self {
+        password: &str,
+    ) -> Result<Self> {
         let hash = Argon2::default()
             .hash_password(password.as_bytes())
-            .unwrap();
+            .map_err(|error| eyre::eyre!("failed to hash password: {error}"))?;
 
-        Self {
+        Ok(Self {
             id,
             name,
             team,
             attendance_mode,
             hash: hash.to_string(),
             roles: BTreeSet::new(),
-        }
+        })
     }
 
-    pub fn verify(&self, password: String) -> bool {
-        let stored_hash = PasswordHash::new(&self.hash).unwrap();
+    pub fn verify(&self, password: &str) -> bool {
+        let Ok(stored_hash) = PasswordHash::new(&self.hash) else {
+            return false;
+        };
         Argon2::default()
             .verify_password(password.as_bytes(), &stored_hash)
             .is_ok()
@@ -230,36 +193,33 @@ impl User {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum Role {
-    Editor,
-    Scheduler,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Talk {
-    pub id: usize,
-    pub creator: UserId,
-    pub title: String,
-    pub description: String,
-    pub highlight: bool,
-    pub scheduled_at: Option<SystemTime>,
-    pub duration: Duration,
-    pub location: Option<usize>,
-    pub nerds: BTreeSet<usize>,
-    pub noobs: BTreeSet<usize>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Location {
-    pub id: usize,
-    pub name: String,
-    pub live_stream: Option<String>,
+impl From<&User> for UserReference {
+    fn from(user: &User) -> Self {
+        Self {
+            id: user.id,
+            name: user.name.clone(),
+            team: user.team.clone(),
+            attendance_mode: user.attendance_mode,
+            roles: user.roles.clone(),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stored_highlights_are_preserved_and_legacy_talks_default_to_false() {
+        let mut value = serde_json::json!({"id":1,"creator":0,"title":"Talk","description":"","scheduled_at":null,"duration":{"secs":1800,"nanos":0},"location":null,"nerds":[],"noobs":[]});
+        assert!(
+            !serde_json::from_value::<Talk>(value.clone())
+                .unwrap()
+                .highlight
+        );
+        value["highlight"] = serde_json::json!(true);
+        assert!(serde_json::from_value::<Talk>(value).unwrap().highlight);
+    }
 
     #[test]
     fn password_hashing_and_stored_hash_verification() {
@@ -268,14 +228,18 @@ mod tests {
             "Alice".into(),
             "Alpha".into(),
             AttendanceMode::OnSite,
-            "password".into(),
-        );
-        assert!(user.verify("password".into()));
-        assert!(!user.verify("wrong password".into()));
+            "password",
+        )
+        .unwrap();
+        assert!(user.verify("password"));
+        assert!(!user.verify("wrong password"));
 
-        // Fixed Argon2 reference vector checks existing PHC hashes independently of generation.
-        user.hash = "$argon2id$v=19$m=256,t=2,p=1$c29tZXNhbHQ$nf65EOgLrQMR/uIPnA4rEsF5h7TKyQwu9U1bMCHGi/4".into();
-        assert!(user.verify("password".into()));
-        assert!(!user.verify("wrong password".into()));
+        user.hash =
+            "$argon2id$v=19$m=256,t=2,p=1$c29tZXNhbHQ$nf65EOgLrQMR/uIPnA4rEsF5h7TKyQwu9U1bMCHGi/4"
+                .into();
+        assert!(user.verify("password"));
+        assert!(!user.verify("wrong password"));
+        user.hash = "invalid hash".into();
+        assert!(!user.verify("password"));
     }
 }

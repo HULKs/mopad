@@ -1,13 +1,12 @@
-use std::{net::SocketAddr, path::PathBuf, str::FromStr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
     extract::State,
     routing::{get, get_service},
     Json, Router,
 };
-use clap::Parser;
 use client::handle_websocket;
-use eyre::WrapErr;
+use eyre::{bail, WrapErr};
 use file_watch::refresh_files_from_disk_on_signal;
 use ical::handle_icalendar;
 use storage::Storage;
@@ -20,13 +19,15 @@ use tracing::info;
 
 use crate::service::Service;
 
+mod bindings;
 mod client;
+mod config;
 mod file_watch;
 mod ical;
-mod messages;
 mod mirrored_to_disk;
 mod service;
 mod storage;
+mod wire;
 
 const INTERNAL_CHANNEL_CAPACITY: usize = 1337;
 const API_ENDPOINT: &str = "/api";
@@ -34,38 +35,27 @@ const TEAM_ENDPOINT: &str = "/teams.json";
 const LOCATION_ENDPOINT: &str = "/locations.json";
 const ICAL_ENDPOINT: &str = "/talks.ics";
 
-/// Moderated Organization PAD (powerful, agile, distributed)
-///
-/// Web application for managing talks (title, description, duration, scheduling).
-#[derive(Debug, Parser)]
-#[command(version)]
-struct Arguments {
-    /// Path to the storage directory.
-    #[clap(long, default_value = "storage/")]
-    storage: PathBuf,
-    /// Port to listen on.
-    #[clap(long, default_value = "9559")]
-    port: u16,
-    /// Address to listen on.
-    #[clap(long, default_value = "[::]")]
-    address: String,
-    /// Path to the frontend directory.
-    #[clap(long, default_value = "frontend/")]
-    frontend: String,
-}
-
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    let arguments = Arguments::parse();
     tracing_subscriber::fmt().init();
+    let Some(config) = std::env::args_os().nth(1) else {
+        bail!("pass the config.toml as the only argument!");
+    };
+    eyre::ensure!(
+        std::env::args_os().len() == 2,
+        "pass only the config file path"
+    );
 
-    let storage = Storage::load(&arguments.storage)
+    let config = config::Config::load(config)?;
+
+    let storage = Storage::load(&config.storage)
         .await
         .wrap_err("failed to load storage")?;
     let (updates_sender, _updates_receiver) = broadcast::channel(INTERNAL_CHANNEL_CAPACITY);
     let service = Service {
         storage: Arc::new(RwLock::new(storage)),
         updates_sender,
+        event: config.event.clone(),
     };
 
     spawn({
@@ -74,7 +64,9 @@ async fn main() -> eyre::Result<()> {
         refresh_files_from_disk_on_signal(storage, updates_sender)
     });
 
+    let event = config.event;
     let application = Router::new()
+        .route("/config.json", get(move || async move { Json(event) }))
         .route(API_ENDPOINT, get(handle_websocket))
         .route(
             TEAM_ENDPOINT,
@@ -89,14 +81,12 @@ async fn main() -> eyre::Result<()> {
             }),
         )
         .route(ICAL_ENDPOINT, get(handle_icalendar))
-        .fallback(get_service(ServeDir::new(arguments.frontend)))
+        .fallback(get_service(ServeDir::new(config.frontend)))
         .with_state(service);
 
-    let address = format!("{}:{}", arguments.address, arguments.port);
-    let bind_address = SocketAddr::from_str(&address)
-        .wrap_err_with(|| format!("failed to parse address: {address}"))?;
+    let bind_address = SocketAddr::new(config.address, config.port);
 
-    info!("Listening on http://{address}");
+    info!("Listening on http://{bind_address}");
     let listener = tokio::net::TcpListener::bind(bind_address)
         .await
         .wrap_err("failed to bind to address")?;

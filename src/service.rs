@@ -2,22 +2,23 @@ use argon2::password_hash::phc::SaltString;
 use eyre::{bail, Context as _, ContextCompat as _, Result};
 use std::{
     collections::BTreeSet,
-    ops::DerefMut as _,
     sync::Arc,
     time::{Duration, SystemTime},
 };
 
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tokio::sync::{broadcast, RwLock};
 
 use crate::{
-    messages::Update,
-    storage::{AttendanceMode, Role, Storage, Talk, UserId},
+    storage::{Storage, TokenData, User},
+    wire::{AttendanceMode, EventConfig, Role, Schedule, Talk, Update, UserId},
 };
 
 #[derive(Debug, Clone)]
 pub struct Service {
     pub storage: Arc<RwLock<Storage>>,
     pub updates_sender: broadcast::Sender<Update>,
+    pub event: EventConfig,
 }
 
 pub struct Authentication {
@@ -33,27 +34,41 @@ impl Service {
         team: String,
         attendance_mode: AttendanceMode,
         password: String,
-    ) -> eyre::Result<Authentication> {
-        let storage = &mut self.storage.write().await;
+    ) -> Result<Authentication> {
+        eyre::ensure!(
+            !name.trim().is_empty() && !password.is_empty(),
+            "name and password must not be empty"
+        );
+        let mut user = tokio::task::spawn_blocking(move || {
+            User::new(0, name, team, attendance_mode, &password)
+        })
+        .await??;
+        let mut storage = self.storage.write().await;
 
-        if !storage.teams.contains(&team) {
-            bail!("unknown team {team}");
+        if !storage.teams.contains(&user.team) {
+            bail!("unknown team {}", user.team);
         }
 
         if storage
             .users
             .values()
-            .any(|user| user.name == name && user.team == team)
+            .any(|existing| existing.name == user.name && existing.team == user.team)
         {
-            bail!("user {name} from team {team} already exists");
+            bail!("user {} from team {} already exists", user.name, user.team);
         }
 
-        let new_user_id = storage.add_user(name, team, attendance_mode, password);
+        let new_user_id = match storage.users.keys().next_back() {
+            Some(id) => id.checked_add(1).wrap_err("user IDs exhausted")?,
+            None => 0,
+        };
+        eyre::ensure!(new_user_id <= 9_007_199_254_740_991, "user IDs exhausted");
+        user.id = new_user_id;
+        storage.users.insert(new_user_id, user);
         storage
             .users
             .commit()
             .await
-            .expect("failed to commit users");
+            .wrap_err("failed to commit users")?;
 
         // Inform all connected clients about the new user.
         let users_update = Update::Users {
@@ -65,18 +80,9 @@ impl Service {
         };
         let _ = self.updates_sender.send(users_update);
 
-        let token = SaltString::generate().to_string();
-        let now = SystemTime::now();
-        let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
-        storage.tokens.remove_expired(now);
-        storage
-            .tokens
-            .insert(token.clone(), new_user_id, now + seven_days);
-        storage
-            .tokens
-            .commit()
+        let token = Self::issue_token(&mut storage, new_user_id)
             .await
-            .wrap_err("failed to commit tokens")?;
+            .wrap_err("account created, but signing in failed. Use Login to try again")?;
         Ok(Authentication {
             user_id: new_user_id,
             roles: BTreeSet::new(),
@@ -89,57 +95,143 @@ impl Service {
         name: String,
         team: String,
         password: String,
-    ) -> eyre::Result<Authentication> {
-        let storage = &mut self.storage.write().await;
-        let Storage { users, tokens, .. } = storage.deref_mut();
-
-        let Some(user) = users
+    ) -> Result<Authentication> {
+        let user = self
+            .storage
+            .read()
+            .await
+            .users
             .values()
             .find(|user| user.name == name && user.team == team)
-        else {
-            bail!("unknown user {name} from team {team}");
-        };
-
-        if !user.verify(password) {
-            bail!("wrong password");
-        }
-
-        let token = SaltString::generate().to_string();
-        let now = SystemTime::now();
-        let seven_days = Duration::from_secs(60 * 60 * 24 * 7);
-        tokens.remove_expired(now);
-        tokens.insert(token.clone(), user.id, now + seven_days);
-        tokens.commit().await.wrap_err("failed to commit tokens")?;
+            .cloned()
+            .wrap_err("unknown name or team")?;
+        let user = tokio::task::spawn_blocking(move || {
+            eyre::ensure!(user.verify(&password), "wrong password");
+            Ok::<_, eyre::Report>(user)
+        })
+        .await??;
+        let mut storage = self.storage.write().await;
+        eyre::ensure!(
+            storage.users.get(&user.id) == Some(&user),
+            "user changed during login; try again"
+        );
+        let token = Self::issue_token(&mut storage, user.id).await?;
 
         Ok(Authentication {
             user_id: user.id,
-            roles: user.roles.clone(),
+            roles: user.roles,
             token,
         })
     }
 
-    pub async fn relogin(&self, token: String) -> eyre::Result<Authentication> {
-        let storage = &mut self.storage.write().await;
-
+    async fn issue_token(storage: &mut Storage, user_id: UserId) -> Result<String> {
+        let token = SaltString::generate().to_string();
         let now = SystemTime::now();
-        storage.tokens.remove_expired(now);
+        storage.tokens.retain(|_, data| data.expires_at >= now);
+        storage.tokens.insert(
+            token.clone(),
+            TokenData {
+                user_id,
+                expires_at: now + Duration::from_secs(60 * 60 * 24 * 7),
+            },
+        );
         storage
             .tokens
             .commit()
             .await
             .wrap_err("failed to commit tokens")?;
+        Ok(token)
+    }
 
-        let data = storage.tokens.get(&token).wrap_err("unknown token")?;
-        let user = storage
-            .users
-            .get(&data.user_id)
-            .wrap_err("unknown user id from token")?;
+    pub async fn relogin(&self, token: &str) -> Result<Authentication> {
+        let storage = self.storage.read().await;
+        let user = storage.user_for_token(token)?;
 
         Ok(Authentication {
             user_id: user.id,
             roles: user.roles.clone(),
-            token,
+            token: token.to_owned(),
         })
+    }
+
+    pub async fn logout(&self, token: &str) -> Result<()> {
+        let mut storage = self.storage.write().await;
+        storage.tokens.remove(token);
+        storage.tokens.commit().await
+    }
+
+    fn validate_schedule(
+        &self,
+        scheduled_at: Option<SystemTime>,
+        duration: Duration,
+    ) -> Result<()> {
+        let start = OffsetDateTime::parse(&self.event.start, &Rfc3339)?;
+        let end = OffsetDateTime::parse(&self.event.end, &Rfc3339)?;
+        eyre::ensure!(
+            duration >= Duration::from_secs(60) && duration <= (end - start).unsigned_abs(),
+            "duration must be at least one minute and no longer than the event"
+        );
+        if let Some(at) = scheduled_at {
+            let event_start: SystemTime = start.into();
+            let event_end: SystemTime = end.into();
+            eyre::ensure!(
+                at >= event_start
+                    && at
+                        .checked_add(duration)
+                        .is_some_and(|until| until <= event_end),
+                "keep the whole talk inside the event"
+            );
+        }
+        Ok(())
+    }
+
+    pub async fn schedule_talk(
+        &self,
+        talk_id: usize,
+        user_id: UserId,
+        before: Schedule,
+        after: Schedule,
+    ) -> Result<()> {
+        let mut storage = self.storage.write().await;
+        eyre::ensure!(
+            storage.users.get(&user_id).is_some_and(User::is_scheduler),
+            "user cannot schedule talks"
+        );
+        eyre::ensure!(
+            after
+                .location
+                .is_none_or(|id| storage.locations.contains_key(&id)),
+            "unknown room"
+        );
+        let talk = storage
+            .talks
+            .get_mut(&talk_id)
+            .wrap_err("talk was deleted")?;
+        if Schedule::from(&*talk) == after {
+            return Ok(());
+        }
+        eyre::ensure!(
+            Schedule::from(&*talk) == before,
+            "this talk's schedule changed; cancel and reopen to refresh"
+        );
+        self.validate_schedule(after.scheduled_at, after.duration)?;
+        if talk.duration != after.duration {
+            talk.creator_duration.get_or_insert(talk.duration);
+            if talk.creator == user_id {
+                talk.creator_duration = Some(after.duration);
+            }
+        }
+        talk.scheduled_at = after.scheduled_at;
+        talk.duration = after.duration;
+        talk.location = after.location;
+        let talk = talk.clone();
+        storage
+            .talks
+            .commit()
+            .await
+            .wrap_err("failed to commit talks")?;
+        let _ = self.updates_sender.send(Update::AddTalk { talk });
+        Ok(())
     }
 
     pub async fn add_talk(
@@ -149,9 +241,15 @@ impl Service {
         description: String,
         duration: Duration,
     ) -> Result<()> {
-        let talks = &mut self.storage.write().await.talks;
-        let max_talk_id = talks.keys().copied().max().unwrap_or_default();
-        let next_talk_id = max_talk_id + 1;
+        eyre::ensure!(!title.trim().is_empty(), "talk title must not be empty");
+        self.validate_schedule(None, duration)?;
+        let mut storage = self.storage.write().await;
+        eyre::ensure!(storage.users.contains_key(&user_id), "unknown user");
+        let next_talk_id = *storage.next_talk_id;
+        eyre::ensure!(next_talk_id < 9_007_199_254_740_991, "talk IDs exhausted");
+        *storage.next_talk_id += 1;
+        storage.next_talk_id.commit().await?;
+        let talks = &mut storage.talks;
         let talk = Talk {
             id: next_talk_id,
             creator: user_id,
@@ -160,6 +258,7 @@ impl Service {
             highlight: false,
             scheduled_at: None,
             duration,
+            creator_duration: Some(duration),
             location: None,
             nerds: BTreeSet::from([user_id]),
             noobs: Default::default(),
@@ -172,41 +271,60 @@ impl Service {
 
     pub async fn remove_talk(&self, talk_id: usize, user_id: UserId) -> Result<()> {
         let mut storage = self.storage.write().await;
-        let Storage { users, talks, .. } = storage.deref_mut();
+        let Storage { users, talks, .. } = &mut *storage;
         let user = users
             .get(&user_id)
             .wrap_err_with(|| format!("user {user_id} does not exist"))?;
         let talk = talks
-            .get_mut(&talk_id)
+            .get(&talk_id)
             .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
         if !(user.is_editor() || user.is_scheduler() || user.is_creator(talk)) {
             bail!("user cannot edit talk with id {talk_id}");
         }
-        let id = talk.id;
-        talks.remove(&id);
+        talks.remove(&talk_id);
         talks.commit().await.wrap_err("failed to commit talks")?;
         let _ = self.updates_sender.send(Update::RemoveTalk { talk_id });
         Ok(())
     }
 
-    pub async fn update_title(&self, talk_id: usize, user_id: UserId, title: String) -> Result<()> {
+    async fn edit_talk(
+        &self,
+        talk_id: usize,
+        user_id: UserId,
+        edit: impl FnOnce(&User, &mut Talk, &Storage) -> Result<Update>,
+    ) -> Result<()> {
         let mut storage = self.storage.write().await;
-        let Storage { users, talks, .. } = storage.deref_mut();
-        let user = users
+        let user = storage
+            .users
             .get(&user_id)
             .wrap_err_with(|| format!("user {user_id} does not exist"))?;
-        let talk = talks
-            .get_mut(&talk_id)
+        let mut talk = storage
+            .talks
+            .get(&talk_id)
+            .cloned()
             .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        if !(user.is_editor() || user.is_creator(talk)) {
-            bail!("user cannot edit talk with id {talk_id}");
-        }
-        talk.title = title.clone();
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::UpdateTitle { talk_id, title });
+        let update = edit(user, &mut talk, &storage)?;
+        storage.talks.insert(talk_id, talk);
+        storage
+            .talks
+            .commit()
+            .await
+            .wrap_err("failed to commit talks")?;
+        let _ = self.updates_sender.send(update);
         Ok(())
+    }
+
+    pub async fn update_title(&self, talk_id: usize, user_id: UserId, title: String) -> Result<()> {
+        eyre::ensure!(!title.trim().is_empty(), "talk title must not be empty");
+        self.edit_talk(talk_id, user_id, |user, talk, _| {
+            eyre::ensure!(
+                user.is_editor() || user.is_creator(talk),
+                "user cannot edit talk with id {talk_id}"
+            );
+            talk.title = title.clone();
+            Ok(Update::UpdateTitle { talk_id, title })
+        })
+        .await
     }
 
     pub async fn update_description(
@@ -215,24 +333,18 @@ impl Service {
         user_id: UserId,
         description: String,
     ) -> Result<()> {
-        let mut storage = self.storage.write().await;
-        let Storage { users, talks, .. } = storage.deref_mut();
-        let user = users
-            .get(&user_id)
-            .wrap_err_with(|| format!("user {user_id} does not exist"))?;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        if !(user.is_editor() || user.is_creator(talk)) {
-            bail!("user cannot edit talk with id {talk_id}");
-        }
-        talk.description = description.clone();
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self.updates_sender.send(Update::UpdateDescription {
-            talk_id,
-            description,
-        });
-        Ok(())
+        self.edit_talk(talk_id, user_id, |user, talk, _| {
+            eyre::ensure!(
+                user.is_editor() || user.is_creator(talk),
+                "user cannot edit talk with id {talk_id}"
+            );
+            talk.description = description.clone();
+            Ok(Update::UpdateDescription {
+                talk_id,
+                description,
+            })
+        })
+        .await
     }
 
     pub async fn update_scheduled_at(
@@ -241,26 +353,16 @@ impl Service {
         user_id: UserId,
         scheduled_at: Option<SystemTime>,
     ) -> Result<()> {
-        let mut storage = self.storage.write().await;
-        let Storage { users, talks, .. } = storage.deref_mut();
-        let user = users
-            .get(&user_id)
-            .wrap_err_with(|| format!("user {user_id} does not exist"))?;
-        let talk = {
-            talks
-                .get_mut(&talk_id)
-                .wrap_err_with(|| format!("talk {talk_id} does not exist"))
-        }?;
-        if !user.is_scheduler() {
-            bail!("user cannot schedule talks");
-        }
-        talk.scheduled_at = scheduled_at;
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self.updates_sender.send(Update::UpdateScheduledAt {
-            talk_id,
-            scheduled_at,
-        });
-        Ok(())
+        self.edit_talk(talk_id, user_id, |user, talk, _| {
+            eyre::ensure!(user.is_scheduler(), "user cannot schedule talks");
+            self.validate_schedule(scheduled_at, talk.duration)?;
+            talk.scheduled_at = scheduled_at;
+            Ok(Update::UpdateScheduledAt {
+                talk_id,
+                scheduled_at,
+            })
+        })
+        .await
     }
 
     pub async fn update_duration(
@@ -269,23 +371,24 @@ impl Service {
         user_id: UserId,
         duration: Duration,
     ) -> Result<()> {
-        let mut storage = self.storage.write().await;
-        let Storage { users, talks, .. } = storage.deref_mut();
-        let user = users
-            .get(&user_id)
-            .wrap_err_with(|| format!("user {user_id} does not exist"))?;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        if !(user.is_scheduler() || user.is_creator(talk)) {
-            bail!("user cannot change duration of talk with id {talk_id}");
-        }
-        talk.duration = duration;
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::UpdateDuration { talk_id, duration });
-        Ok(())
+        self.edit_talk(talk_id, user_id, |user, talk, _| {
+            eyre::ensure!(
+                user.is_scheduler() || user.is_creator(talk),
+                "user cannot change duration of talk with id {talk_id}"
+            );
+            self.validate_schedule(talk.scheduled_at, duration)?;
+            if user.is_creator(talk) {
+                talk.creator_duration = Some(duration);
+            }
+            let creator_duration = *talk.creator_duration.get_or_insert(talk.duration);
+            talk.duration = duration;
+            Ok(Update::UpdateDuration {
+                talk_id,
+                duration,
+                creator_duration,
+            })
+        })
+        .await
     }
 
     pub async fn update_location(
@@ -294,89 +397,69 @@ impl Service {
         user_id: UserId,
         location: Option<usize>,
     ) -> Result<()> {
-        let mut storage = self.storage.write().await;
-        let Storage { users, talks, .. } = storage.deref_mut();
-        let user = users
-            .get(&user_id)
-            .wrap_err_with(|| format!("user {user_id} does not exist"))?;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        if !(user.is_scheduler() || user.is_creator(talk)) {
-            bail!("user cannot schedule talks");
-        }
-        talk.location = location;
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::UpdateLocation { talk_id, location });
-        Ok(())
+        self.edit_talk(talk_id, user_id, |user, talk, storage| {
+            eyre::ensure!(
+                location.is_none_or(|id| storage.locations.contains_key(&id)),
+                "unknown room"
+            );
+            eyre::ensure!(
+                user.is_scheduler() || user.is_creator(talk),
+                "user cannot schedule talks"
+            );
+            talk.location = location;
+            Ok(Update::UpdateLocation { talk_id, location })
+        })
+        .await
     }
 
-    pub async fn add_noob(&self, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-        let talks = &mut self.storage.write().await.talks;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        talk.noobs.insert(user_id);
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::AddNoob { talk_id, user_id });
-        Ok(())
+    pub async fn add_noob(&self, talk_id: usize, user_id: UserId) -> Result<()> {
+        self.edit_talk(talk_id, user_id, |_, talk, _| {
+            talk.noobs.insert(user_id);
+            Ok(Update::AddNoob { talk_id, user_id })
+        })
+        .await
     }
 
-    pub async fn remove_noob(&self, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-        let talks = &mut self.storage.write().await.talks;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        talk.noobs.remove(&user_id);
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::RemoveNoob { talk_id, user_id });
-        Ok(())
+    pub async fn remove_noob(&self, talk_id: usize, user_id: UserId) -> Result<()> {
+        self.edit_talk(talk_id, user_id, |_, talk, _| {
+            talk.noobs.remove(&user_id);
+            Ok(Update::RemoveNoob { talk_id, user_id })
+        })
+        .await
     }
 
-    pub async fn add_nerd(&self, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-        let talks = &mut self.storage.write().await.talks;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        talk.nerds.insert(user_id);
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::AddNerd { talk_id, user_id });
-        Ok(())
+    pub async fn add_nerd(&self, talk_id: usize, user_id: UserId) -> Result<()> {
+        self.edit_talk(talk_id, user_id, |_, talk, _| {
+            talk.nerds.insert(user_id);
+            Ok(Update::AddNerd { talk_id, user_id })
+        })
+        .await
     }
 
-    pub async fn remove_nerd(&self, talk_id: usize, user_id: usize) -> Result<(), eyre::Error> {
-        let talks = &mut self.storage.write().await.talks;
-        let talk = talks
-            .get_mut(&talk_id)
-            .wrap_err_with(|| format!("talk {talk_id} does not exist"))?;
-        talk.nerds.remove(&user_id);
-        talks.commit().await.wrap_err("failed to commit talks")?;
-        let _ = self
-            .updates_sender
-            .send(Update::RemoveNerd { talk_id, user_id });
-        Ok(())
+    pub async fn remove_nerd(&self, talk_id: usize, user_id: UserId) -> Result<()> {
+        self.edit_talk(talk_id, user_id, |_, talk, _| {
+            talk.nerds.remove(&user_id);
+            Ok(Update::RemoveNerd { talk_id, user_id })
+        })
+        .await
     }
 
     pub async fn set_attendance_mode(
         &self,
         user_id: UserId,
-        attendance_mode: crate::storage::AttendanceMode,
+        attendance_mode: AttendanceMode,
     ) -> Result<()> {
         let mut storage = self.storage.write().await;
-        let Storage { users, .. } = storage.deref_mut();
-        let user = users
+        let user = storage
+            .users
             .get_mut(&user_id)
             .wrap_err_with(|| format!("user {user_id} does not exist"))?;
         user.attendance_mode = attendance_mode;
-        users.commit().await.wrap_err("failed to commit users")?;
+        storage
+            .users
+            .commit()
+            .await
+            .wrap_err("failed to commit users")?;
         let _ = self.updates_sender.send(Update::UpdateAttendanceMode {
             user_id,
             attendance_mode,

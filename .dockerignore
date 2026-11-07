@@ -3,3 +3,11 @@ talks.json
 teams.json
 tokens.json
 users.json
+storage/
+demo/
+config.json
+config.toml
+.git/
+.direnv/
+frontend/node_modules/
+frontend/dist/

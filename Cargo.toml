@@ -2,17 +2,22 @@
 edition = "2021"
 license = "MIT"
 name = "mopad"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 argon2 = "0.6.0"
 axum = { version = "0.8.9", features = ["json", "query", "ws"] }
-clap = { version = "4.6.7", features = ["derive"] }
 eyre = "0.6.14"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
-time = { version = "0.3.55", features = ["formatting"] }
+time = { version = "0.3.55", features = ["formatting", "parsing"] }
 tokio = { version = "1.54.1", features = ["full"] }
+toml = "1.2.1"
 tower-http = { version = "0.7.1", features = ["fs"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+ts-rs = "12.0.1"
+
+[build-dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+ts-rs = "12.0.1"
